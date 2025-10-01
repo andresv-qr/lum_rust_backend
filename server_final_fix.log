@@ -1,0 +1,32 @@
+[2m2025-09-19T15:16:06.541904Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-09-19T15:16:06.542125Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-09-19T15:16:06.542288Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
+[2m2025-09-19T15:16:07.079607Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
+[2m2025-09-19T15:16:07.079679Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
+[2m2025-09-19T15:16:07.079767Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
+[2m2025-09-19T15:16:07.134730Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
+[2m2025-09-19T15:16:07.135013Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
+[2m2025-09-19T15:16:07.135149Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
+[2m2025-09-19T15:16:07.135208Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
+[2m2025-09-19T15:16:07.135272Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
+[2m2025-09-19T15:16:07.135326Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
+[2m2025-09-19T15:16:07.135371Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
+[2m2025-09-19T15:16:07.135512Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
+[2m2025-09-19T15:16:07.135574Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
+[2m2025-09-19T15:16:07.136931Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
+[2m2025-09-19T15:16:07.137331Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
+[2m2025-09-19T15:16:07.137432Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
+[2m2025-09-19T15:16:07.137500Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
+[2m2025-09-19T15:16:07.142477Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
+[2m2025-09-19T15:17:56.898657Z[0m [32m INFO[0m [2mlum_rust_ws::api::unified_auth_v4[0m[2m:[0m 🔐 Unified authentication request received [3mprovider[0m[2m=[0mEmail [3mcreate_if_not_exists[0m[2m=[0mfalse [3mhas_linking_token[0m[2m=[0mfalse
+[2m2025-09-19T15:17:56.898853Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 🚀 Starting unified authentication [3mrequest_id[0m[2m=[0m6849f3fa-ba96-43f0-b1d7-b017cf6004c3 [3mprovider[0m[2m=[0mEmail { email: "testcase@example.com", password: "TestPassword123", name: None }
+[2m2025-09-19T15:17:56.898911Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 🔑 Email authentication [3memail[0m[2m=[0mtestcase@example.com
+[2m2025-09-19T15:17:56.905131Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 📝 Auth event logged to database [3mrequest_id[0m[2m=[0m6849f3fa-ba96-43f0-b1d7-b017cf6004c3 [3mevent_type[0m[2m=[0mlogin_attempt [3msuccess[0m[2m=[0mtrue
+[2m2025-09-19T15:17:57.818002Z[0m [32m INFO[0m [2mlum_rust_ws::services::token_service[0m[2m:[0m 🔑 Generated access token successfully [3muser_id[0m[2m=[0m69 [3memail[0m[2m=[0mtestcase@example.com [3mexpires_at[0m[2m=[0m2025-09-20 15:17:57.817759410 UTC
+[2m2025-09-19T15:17:57.825778Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 📝 Auth event logged to database [3mrequest_id[0m[2m=[0m6849f3fa-ba96-43f0-b1d7-b017cf6004c3 [3mevent_type[0m[2m=[0mlogin_success [3msuccess[0m[2m=[0mtrue
+[2m2025-09-19T15:17:57.825856Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m ✅ Authentication successful [3mrequest_id[0m[2m=[0m6849f3fa-ba96-43f0-b1d7-b017cf6004c3 [3mexecution_time_ms[0m[2m=[0m927
+[2m2025-09-19T15:18:08.852458Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m69 [3memail[0m[2m=[0mtestcase@example.com
+[2m2025-09-19T15:18:08.852681Z[0m [32m INFO[0m [2mlum_rust_ws::api::verification_v4[0m[2m:[0m Request dd6d2a81-ea39-4e03-ad0e-45a5d7cee160: Send verification code to: testcase@example.com
+[2m2025-09-19T15:18:08.857872Z[0m [32m INFO[0m [2mlum_rust_ws::api::verification_v4[0m[2m:[0m Request dd6d2a81-ea39-4e03-ad0e-45a5d7cee160: Verification code for testcase@example.com: 123456 (method: email)
+[2m2025-09-19T15:18:08.857912Z[0m [32m INFO[0m [2mlum_rust_ws::api::verification_v4[0m[2m:[0m Request dd6d2a81-ea39-4e03-ad0e-45a5d7cee160: Verification code sent successfully to: testcase@example.com
+[2m2025-09-19T15:19:34.366182Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m signal received, starting graceful shutdown

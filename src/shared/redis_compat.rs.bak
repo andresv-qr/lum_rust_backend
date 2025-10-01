@@ -1,0 +1,256 @@
+// ============================================================================
+// REDIS SERVICE COMPATIBILITY LAYER
+// ============================================================================
+// Date: September 18, 2025
+// Purpose: Backward compatibility functions for existing redis_service calls
+// ============================================================================
+
+use redis::AsyncCommands;
+use crate::state::AppState;
+use crate::models::user::UserState;
+use std::sync::Arc;
+use serde::{Serialize, Deserialize};
+use anyhow::{Result, Context};
+use chrono::Utc;
+
+// ============================================================================
+// COMPATIBILITY FUNCTIONS
+// ============================================================================
+
+/// Legacy compatibility: Save user state to Redis
+pub async fn save_user_state(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+    state: &UserState,
+    ttl_seconds: usize,
+) -> Result<()> {
+    let key = format!("user_state:{}", user_id);
+    let state_json = serde_json::to_string(state)?;
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    let _: () = con.set_ex(key, state_json, ttl_seconds as u64).await?;
+    Ok(())
+}
+
+/// Legacy compatibility: Get user state from Redis
+pub async fn get_user_state(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+) -> Result<Option<UserState>> {
+    let key = format!("user_state:{}", user_id);
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    
+    let result: redis::RedisResult<String> = con.get(&key).await;
+    match result {
+        Ok(state_json) => {
+            let state = serde_json::from_str(&state_json)
+                .context("Failed to deserialize user state")?;
+            Ok(Some(state))
+        }
+        Err(redis::RedisError { kind: redis::ErrorKind::TypeError, .. }) => {
+            // Key not found
+            Ok(None)
+        }
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Save user to cache (compatibility wrapper)
+pub async fn save_user_to_cache(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+    user: &crate::models::user::User,
+    ttl_seconds: u64,
+) -> Result<()> {
+    let key = format!("user_cache:{}", user_id);
+    let user_json = serde_json::to_string(user)?;
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    let _: () = con.set_ex(key, user_json, ttl_seconds).await?;
+    Ok(())
+}
+
+/// Get user from cache (compatibility wrapper)
+pub async fn get_user_from_cache(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+) -> Result<Option<crate::models::user::User>> {
+    let key = format!("user_cache:{}", user_id);
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    
+    let result: redis::RedisResult<String> = con.get(&key).await;
+    match result {
+        Ok(user_json) => {
+            let user = serde_json::from_str(&user_json)
+                .context("Failed to deserialize user")?;
+            Ok(Some(user))
+        }
+        Err(redis::RedisError { kind: redis::ErrorKind::TypeError, .. }) => {
+            // Key not found
+            Ok(None)
+        }
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Delete user state (compatibility wrapper)
+pub async fn delete_user_state(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+) -> Result<()> {
+    let key = format!("user_state:{}", user_id);
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    let _: () = con.del(&key).await?;
+    Ok(())
+}
+
+// ============================================================================
+// OCR RATE LIMITING (LEGACY COMPATIBILITY)
+// ============================================================================
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OcrLimits {
+    pub count: i32,
+    pub reset_time: u64,
+    pub cost_lumis: Option<i32>,
+    pub per_hour: Option<i32>,
+    pub per_day: Option<i32>,
+}
+
+pub async fn check_rate_limit(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+    limit: i32,
+    window_seconds: u64,
+) -> Result<bool> {
+    let key = format!("rate_limit:{}", user_id);
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    
+    let current_count: Option<i32> = match con.get(&key).await {
+        Ok(count) => Some(count),
+        Err(redis::RedisError { kind: redis::ErrorKind::TypeError, .. }) => None,
+        Err(e) => return Err(e.into()),
+    };
+
+    match current_count {
+        Some(count) if count >= limit => Ok(false), // Rate limit exceeded
+        Some(count) => {
+            let _: () = con.incr(&key, 1).await?;
+            Ok(true)
+        }
+        None => {
+            let _: () = con.set_ex(&key, 1, window_seconds).await?;
+            Ok(true)
+        }
+    }
+}
+
+pub async fn get_ocr_limits(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+) -> Result<Option<OcrLimits>> {
+    let key = format!("ocr_limits:{}", user_id);
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    
+    let result: redis::RedisResult<String> = con.get(&key).await;
+    match result {
+        Ok(limits_json) => {
+            let limits = serde_json::from_str(&limits_json)
+                .context("Failed to deserialize OCR limits")?;
+            Ok(Some(limits))
+        }
+        Err(redis::RedisError { kind: redis::ErrorKind::TypeError, .. }) => {
+            // Key not found
+            Ok(None)
+        }
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Advanced OCR rate limiting
+pub async fn check_advanced_ocr_rate_limit(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+) -> Result<(bool, String)> {
+    let key = format!("ocr_advanced_rate:{}", user_id);
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    
+    let current_count: Option<i32> = match con.get(&key).await {
+        Ok(count) => Some(count),
+        Err(redis::RedisError { kind: redis::ErrorKind::TypeError, .. }) => None,
+        Err(e) => return Err(e.into()),
+    };
+
+    const ADVANCED_LIMIT: i32 = 50; // per day
+    const WINDOW_SECONDS: u64 = 86400; // 24 hours
+
+    match current_count {
+        Some(count) if count >= ADVANCED_LIMIT => {
+            Ok((false, format!("Rate limit exceeded: {}/{} OCR requests per day", count, ADVANCED_LIMIT)))
+        }
+        Some(count) => {
+            let _: () = con.incr(&key, 1).await?;
+            Ok((true, format!("OCR requests: {}/{} per day", count + 1, ADVANCED_LIMIT)))
+        }
+        None => {
+            let _: () = con.set_ex(&key, 1, WINDOW_SECONDS).await?;
+            Ok((true, format!("OCR requests: 1/{} per day", ADVANCED_LIMIT)))
+        }
+    }
+}
+
+/// Get user OCR limits
+pub async fn get_user_ocr_limits(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+) -> Result<OcrLimits> {
+    let key = format!("ocr_limits:{}", user_id);
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    
+    let result: redis::RedisResult<String> = con.get(&key).await;
+    match result {
+        Ok(limits_json) => {
+            let limits = serde_json::from_str(&limits_json)
+                .context("Failed to deserialize OCR limits")?;
+            Ok(limits)
+        }
+        Err(redis::RedisError { kind: redis::ErrorKind::TypeError, .. }) => {
+            // Return default limits if not found
+            Ok(OcrLimits {
+                count: 0,
+                reset_time: chrono::Utc::now().timestamp() as u64 + 86400, // 24 hours from now
+                cost_lumis: Some(5),   // Default cost
+                per_hour: Some(10),    // Default hourly limit
+                per_day: Some(50),     // Default daily limit
+            })
+        }
+        Err(e) => Err(e.into()),
+    }
+}
+
+/// Get user trust score
+pub async fn get_user_trust_score(
+    app_state: &Arc<AppState>,
+    user_id: &str,
+) -> Result<(f64, String)> {
+    let key = format!("trust_score:{}", user_id);
+    let mut con = app_state.redis_client.get_multiplexed_async_connection().await?;
+    
+    let result: redis::RedisResult<String> = con.get(&key).await;
+    match result {
+        Ok(score_json) => {
+            let score: f64 = serde_json::from_str(&score_json)
+                .context("Failed to deserialize trust score")?;
+            let rating = match score {
+                s if s >= 0.8 => "High Trust",
+                s if s >= 0.6 => "Medium Trust", 
+                s if s >= 0.4 => "Low Trust",
+                _ => "Very Low Trust"
+            };
+            Ok((score, rating.to_string()))
+        }
+        Err(redis::RedisError { kind: redis::ErrorKind::TypeError, .. }) => {
+            // Return default trust score if not found
+            Ok((0.5, "New User".to_string()))
+        }
+        Err(e) => Err(e.into()),
+    }
+}

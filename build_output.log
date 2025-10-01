@@ -1,0 +1,14 @@
+   Compiling lum_rust_ws v0.1.0 (/home/client_1099_1/scripts/lum_rust_ws)
+error: unexpected closing delimiter: `}`
+   --> src/api/invoice_query_v4.rs:419:1
+    |
+235 | ) -> Result<Json<InvoiceHeadersResponse>, StatusCode> {
+    |                                                       - this opening brace...
+...
+411 | }
+    | - ...matches this closing brace
+...
+419 | }
+    | ^ unexpected closing delimiter
+
+error: could not compile `lum_rust_ws` (lib) due to 1 previous error

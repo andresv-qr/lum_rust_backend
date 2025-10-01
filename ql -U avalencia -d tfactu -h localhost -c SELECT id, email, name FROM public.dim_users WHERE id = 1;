@@ -1,0 +1,24 @@
+        column_name         |        data_type         
+----------------------------+--------------------------
+ id                         | bigint
+ email                      | text
+ ws_id                      | text
+ telegram_id                | text
+ email_registration_date    | timestamp with time zone
+ ws_registration_date       | integer
+ telegram_registration_date | integer
+ name                       | character varying
+ date_of_birth              | character varying
+ country_origin             | character varying
+ country_residence          | character varying
+ password_hash              | character varying
+ segment_activity           | character varying
+ updated_at                 | timestamp with time zone
+ source                     | character varying
+ verified_at                | timestamp with time zone
+ trust_score                | integer
+ created_at                 | timestamp with time zone
+ last_login_at              | timestamp with time zone
+ genre                      | character varying
+(20 rows)
+

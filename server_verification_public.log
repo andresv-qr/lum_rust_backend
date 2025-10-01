@@ -1,0 +1,34 @@
+[2m2025-09-19T16:00:57.819162Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-09-19T16:00:57.819256Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-09-19T16:00:57.819309Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
+[2m2025-09-19T16:00:58.349185Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
+[2m2025-09-19T16:00:58.349266Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
+[2m2025-09-19T16:00:58.349347Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
+[2m2025-09-19T16:00:58.403461Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
+[2m2025-09-19T16:00:58.403584Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
+[2m2025-09-19T16:00:58.403708Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
+[2m2025-09-19T16:00:58.403775Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
+[2m2025-09-19T16:00:58.403833Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
+[2m2025-09-19T16:00:58.403890Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
+[2m2025-09-19T16:00:58.403941Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
+[2m2025-09-19T16:00:58.404122Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
+[2m2025-09-19T16:00:58.404216Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
+[2m2025-09-19T16:00:58.405413Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
+[2m2025-09-19T16:00:58.405812Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
+[2m2025-09-19T16:00:58.405925Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
+[2m2025-09-19T16:00:58.406029Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
+[2m2025-09-19T16:00:58.410758Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
+[2m2025-09-19T16:03:22.264164Z[0m [32m INFO[0m [2mlum_rust_ws::api::verification_v4[0m[2m:[0m Request 89f2d743-ec3d-4b5b-9fd6-0ee8f3758b9b: Send verification code to: testcase@example.com
+[2m2025-09-19T16:03:22.270133Z[0m [32m INFO[0m [2mlum_rust_ws::api::verification_v4[0m[2m:[0m Request 89f2d743-ec3d-4b5b-9fd6-0ee8f3758b9b: Verification code for testcase@example.com: 123456 (method: email)
+[2m2025-09-19T16:03:22.270216Z[0m [32m INFO[0m [2mlum_rust_ws::api::verification_v4[0m[2m:[0m Request 89f2d743-ec3d-4b5b-9fd6-0ee8f3758b9b: Verification code sent successfully to: testcase@example.com
+[2m2025-09-19T16:10:53.810597Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request 1d9f0bd2-d287-4e6c-923e-0b86350977aa: Root endpoint accessed
+[2m2025-09-19T16:10:53.915512Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-09-19T16:10:54.939734Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request de30d6e8-f8f6-46b3-b196-e88fa9c53f19: Root endpoint accessed
+[2m2025-09-19T16:10:55.115784Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-09-19T16:10:55.119246Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-09-19T16:10:55.170838Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request 0fbe5287-13e3-4dd2-a002-1512291fafc7: Root endpoint accessed
+[2m2025-09-19T16:10:55.298893Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request 2bf6bb99-bd9e-48fa-96b6-24a0e0ae1ed6: Root endpoint accessed
+[2m2025-09-19T16:10:55.453617Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-09-19T16:10:55.600951Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-09-19T16:11:15.058729Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request e2a19e04-556c-4cc8-90ff-39abe30a8eb0: Root endpoint accessed
+[2m2025-09-19T16:33:25.080815Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m signal received, starting graceful shutdown

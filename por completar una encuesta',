@@ -1,0 +1,6 @@
+       indexname        |                                           indexdef                                           
+------------------------+----------------------------------------------------------------------------------------------
+ dim_accumulations_pkey | CREATE UNIQUE INDEX dim_accumulations_pkey ON rewards.dim_accumulations USING btree (id)
+ idx_accum_dates        | CREATE INDEX idx_accum_dates ON rewards.dim_accumulations USING btree (valid_from, valid_to)
+(2 rows)
+

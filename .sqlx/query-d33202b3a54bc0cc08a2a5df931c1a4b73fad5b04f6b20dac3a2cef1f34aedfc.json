@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE rewards.fact_balance_points SET balance = $1 WHERE user_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d33202b3a54bc0cc08a2a5df931c1a4b73fad5b04f6b20dac3a2cef1f34aedfc"
+}

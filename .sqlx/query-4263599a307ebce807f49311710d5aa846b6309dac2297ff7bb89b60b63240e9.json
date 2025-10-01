@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, ws_id, name, email, date_of_birth, country_origin, country_residence, telegram_id, password, email_registration_date as \"email_registration_date: _\", ws_registration_date as \"ws_registration_date: _\", telegram_registration_date as \"telegram_registration_date: _\" FROM dim_users WHERE ws_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "ws_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "date_of_birth",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "country_origin",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "country_residence",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "telegram_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "password",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "email_registration_date: _",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "ws_registration_date: _",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "telegram_registration_date: _",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "4263599a307ebce807f49311710d5aa846b6309dac2297ff7bb89b60b63240e9"
+}

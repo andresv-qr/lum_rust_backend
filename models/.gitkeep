@@ -1,0 +1,4 @@
+# This directory will contain ONNX models exported from QReader
+# Run the export_qreader_to_onnx.py script to generate:
+# - qreader_detector_small.onnx
+# - qreader_detector_large.onnx

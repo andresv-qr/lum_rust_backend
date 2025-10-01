@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO rewards.fact_redemptions (user_id, redem_id, quantity, date, condition1)\n        VALUES ($1, $2, $3, NOW(), $4)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Text",
+        "Numeric",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2416cb0f5b3bf1d087f9eb66acbab4674e3b348f37297d1f4872224e8abfad73"
+}

@@ -1,0 +1,549 @@
+// ============================================================================
+// UNIFIED AUTHENTICATION SERVICE
+// ============================================================================
+// Date: September 19, 2025
+// Purpose: Core service for unified authentication handling
+// ============================================================================
+
+use crate::{
+    models::{
+        user::{User, AccountStatus},
+        auth_provider::ProviderType,
+        unified_auth::{UnifiedAuthRequest, UnifiedAuthResponse, AuthResult, AuthMetadata, ProviderData, AuthenticatedUser},
+        audit_log::{AuthAuditLog, AuthEvent, AuthEventType},
+    },
+    services::{
+        google_service::{GoogleService, GoogleAuthError},
+        token_service::TokenService,
+        redis_service::RedisService,
+    },
+    state::AppState,
+};
+use anyhow::{Result, Context};
+use axum::http::StatusCode;
+use bcrypt::{hash, verify, DEFAULT_COST};
+use chrono::{DateTime, Utc};
+use sqlx::PgPool;
+use std::sync::Arc;
+use std::time::Instant;
+use tracing::{info, warn, error, debug};
+use uuid::Uuid;
+
+pub struct UnifiedAuthService {
+    pub google: GoogleService,
+    pub token: TokenService,
+    pub redis: RedisService,
+}
+
+impl UnifiedAuthService {
+    pub fn new(google: GoogleService, token: TokenService, redis: RedisService) -> Self {
+        Self {
+            google,
+            token,
+            redis,
+        }
+    }
+
+    /// Main unified authentication handler
+    pub async fn authenticate(
+        &self,
+        app_state: &Arc<AppState>,
+        request: UnifiedAuthRequest,
+    ) -> Result<UnifiedAuthResponse> {
+        let request_id = Uuid::new_v4().to_string();
+        let start_time = Instant::now();
+        
+        info!(
+            request_id = %request_id,
+            provider = ?request.provider_data.provider_type(),
+            create_if_not_exists = request.create_if_not_exists,
+            has_linking_token = request.linking_token.is_some(),
+            "🚀 Starting unified authentication"
+        );
+
+        let result = match &request.provider_data {
+            ProviderData::Email { email, password, name } => {
+                self.handle_email_auth(
+                    app_state,
+                    &request_id,
+                    email,
+                    password,
+                    name.as_deref(),
+                    request.create_if_not_exists,
+                    request.linking_token.as_deref(),
+                ).await
+            }
+            ProviderData::Google { id_token, access_token } => {
+                self.handle_google_auth(
+                    app_state,
+                    &request_id,
+                    id_token,
+                    access_token.as_deref(),
+                    request.create_if_not_exists,
+                    request.linking_token.as_deref(),
+                ).await
+            }
+        };
+
+        let execution_time = start_time.elapsed();
+        let provider_used = request.provider_data.provider_type().to_string();
+
+        // Log the authentication attempt
+        if let Err(ref e) = result {
+            error!(
+                request_id = %request_id,
+                provider = %provider_used,
+                error = %e,
+                execution_time_ms = execution_time.as_millis(),
+                "❌ Unified authentication failed"
+            );
+        }
+
+        // Create metadata
+        let metadata = AuthMetadata {
+            request_id: request_id.clone(),
+            provider_used: provider_used.clone(),
+            is_new_user: false, // Will be updated in handlers
+            linking_performed: request.linking_token.is_some(),
+            execution_time_ms: execution_time.as_millis() as u64,
+            timestamp: Utc::now(),
+        };
+
+        match result {
+            Ok(auth_result) => Ok(UnifiedAuthResponse {
+                result: auth_result,
+                metadata,
+            }),
+            Err(e) => Ok(UnifiedAuthResponse {
+                result: AuthResult::Error {
+                    message: e.to_string(),
+                    error_code: "AUTH_FAILED".to_string(),
+                    retry_after: None,
+                },
+                metadata,
+            }),
+        }
+    }
+
+    /// Handle email-based authentication
+    async fn handle_email_auth(
+        &self,
+        app_state: &Arc<AppState>,
+        request_id: &str,
+        email: &str,
+        password: &str,
+        name: Option<&str>,
+        create_if_not_exists: bool,
+        linking_token: Option<&str>,
+    ) -> Result<AuthResult> {
+        debug!(
+            request_id = %request_id,
+            email = %email,
+            "📧 Processing email authentication"
+        );
+
+        // 1. Find existing user by email
+        let existing_user = self.find_user_by_email(&app_state.db_pool, email).await?;
+
+        match existing_user {
+            Some(user) => {
+                // User exists - validate password
+                self.validate_email_login(&app_state.db_pool, request_id, user, password).await
+            }
+            None if create_if_not_exists => {
+                // Create new user
+                self.create_email_user(&app_state.db_pool, request_id, email, password, name).await
+            }
+            None => {
+                // User not found and not creating
+                warn!(
+                    request_id = %request_id,
+                    email = %email,
+                    "⚠️ User not found for email authentication"
+                );
+                Ok(AuthResult::Error {
+                    message: "User not found. Please register first.".to_string(),
+                    error_code: "USER_NOT_FOUND".to_string(),
+                    retry_after: None,
+                })
+            }
+        }
+    }
+
+    /// Handle Google OAuth authentication
+    async fn handle_google_auth(
+        &self,
+        app_state: &Arc<AppState>,
+        request_id: &str,
+        id_token: &str,
+        _access_token: Option<&str>,
+        create_if_not_exists: bool,
+        linking_token: Option<&str>,
+    ) -> Result<AuthResult> {
+        debug!(
+            request_id = %request_id,
+            "🔍 Processing Google OAuth authentication"
+        );
+
+        // 1. Validate Google ID token
+        let google_user = match self.google.validate_id_token(id_token).await {
+            Ok(user) => user,
+            Err(GoogleAuthError::EmailNotVerified) => {
+                return Ok(AuthResult::EmailVerificationRequired {
+                    message: "Please verify your email with Google first.".to_string(),
+                    user_id: 0, // Will be updated if user exists
+                    email: "".to_string(), // Will be updated
+                });
+            }
+            Err(e) => {
+                error!(
+                    request_id = %request_id,
+                    error = %e,
+                    "❌ Google token validation failed"
+                );
+                return Ok(AuthResult::Error {
+                    message: format!("Google authentication failed: {}", e),
+                    error_code: "GOOGLE_TOKEN_INVALID".to_string(),
+                    retry_after: None,
+                });
+            }
+        };
+
+        debug!(
+            request_id = %request_id,
+            google_id = %google_user.id,
+            email = %google_user.email,
+            "✅ Google token validated successfully"
+        );
+
+        // 2. Find existing user by Google ID or email
+        let existing_user = self.find_user_by_google_id_or_email(&app_state.db_pool, &google_user.id, &google_user.email).await?;
+
+        match existing_user {
+            Some(user) => {
+                // User exists - update Google info if needed and login
+                self.update_and_login_google_user(&app_state.db_pool, request_id, user, &google_user).await
+            }
+            None if create_if_not_exists => {
+                // Create new user from Google
+                self.create_google_user(&app_state.db_pool, request_id, &google_user).await
+            }
+            None => {
+                // User not found and not creating
+                warn!(
+                    request_id = %request_id,
+                    google_id = %google_user.id,
+                    email = %google_user.email,
+                    "⚠️ User not found for Google authentication"
+                );
+                Ok(AuthResult::Error {
+                    message: "User not found. Please register first.".to_string(),
+                    error_code: "USER_NOT_FOUND".to_string(),
+                    retry_after: None,
+                })
+            }
+        }
+    }
+
+    /// Find user by email
+    async fn find_user_by_email(&self, pool: &PgPool, email: &str) -> Result<Option<User>> {
+        let user = sqlx::query_as!(
+            User,
+            r#"SELECT 
+                id, email, password_hash, name, NULL as avatar_url, NULL as phone, NULL as country, is_active,
+                NULL as ws_id, NULL as date_of_birth, NULL as country_origin, NULL as country_residence, NULL as telegram_id,
+                NULL as email_registration_date, NULL as ws_registration_date, NULL as telegram_registration_date,
+                auth_providers, google_id, auth_metadata, email_verified_at, last_login_provider,
+                account_status as "account_status!: AccountStatus",
+                created_at, updated_at, last_login_at
+            FROM dim_users 
+            WHERE email = $1 AND is_active = true"#,
+            email
+        )
+        .fetch_optional(pool)
+        .await
+        .context("Failed to query user by email")?;
+
+        Ok(user)
+    }
+
+    /// Find user by Google ID or email
+    async fn find_user_by_google_id_or_email(&self, pool: &PgPool, google_id: &str, email: &str) -> Result<Option<User>> {
+        let user = sqlx::query_as!(
+            User,
+            r#"SELECT 
+                id, email, password_hash, name, NULL as avatar_url, NULL as phone, NULL as country, is_active,
+                NULL as ws_id, NULL as date_of_birth, NULL as country_origin, NULL as country_residence, NULL as telegram_id,
+                NULL as email_registration_date, NULL as ws_registration_date, NULL as telegram_registration_date,
+                auth_providers, google_id, auth_metadata, email_verified_at, last_login_provider,
+                account_status as "account_status!: AccountStatus",
+                created_at, updated_at, last_login_at
+            FROM dim_users 
+            WHERE (google_id = $1 OR email = $2) AND is_active = true"#,
+            google_id,
+            email
+        )
+        .fetch_optional(pool)
+        .await
+        .context("Failed to query user by Google ID or email")?;
+
+        Ok(user)
+    }
+
+    /// Validate email login
+    async fn validate_email_login(
+        &self,
+        pool: &PgPool,
+        request_id: &str,
+        user: User,
+        password: &str,
+    ) -> Result<AuthResult> {
+        // Check account status
+        match user.account_status {
+            AccountStatus::Suspended => {
+                return Ok(AuthResult::AccountSuspended {
+                    message: "Account is suspended.".to_string(),
+                    reason: Some("Account suspended for policy violation".to_string()),
+                    until: None,
+                });
+            }
+            AccountStatus::Locked => {
+                return Ok(AuthResult::AccountSuspended {
+                    message: "Account is locked.".to_string(),
+                    reason: Some("Too many failed login attempts".to_string()),
+                    until: None,
+                });
+            }
+            AccountStatus::PendingVerification => {
+                return Ok(AuthResult::EmailVerificationRequired {
+                    message: "Please verify your email address.".to_string(),
+                    user_id: user.id,
+                    email: user.email.clone().unwrap_or_default(),
+                });
+            }
+            AccountStatus::Active => {
+                // Continue with login
+            }
+        }
+
+        // Verify password
+        let password_hash = user.password_hash.as_ref().ok_or_else(|| {
+            anyhow::anyhow!("User has no password set")
+        })?;
+
+        if !verify(password, password_hash).context("Failed to verify password")? {
+            warn!(
+                request_id = %request_id,
+                user_id = user.id,
+                "⚠️ Invalid password attempt"
+            );
+            return Ok(AuthResult::Error {
+                message: "Invalid email or password.".to_string(),
+                error_code: "INVALID_CREDENTIALS".to_string(),
+                retry_after: Some(30), // 30 second delay
+            });
+        }
+
+        // Update last login
+        self.update_last_login(pool, user.id, ProviderType::Email).await?;
+
+        // Generate token
+        let token = self.token.generate_access_token(user.id, &user.email.clone().unwrap_or_default()).await?;
+        let expires_at = Utc::now() + chrono::Duration::hours(24);
+
+        info!(
+            request_id = %request_id,
+            user_id = user.id,
+            "✅ Email authentication successful"
+        );
+
+        Ok(AuthResult::Success {
+            user: AuthenticatedUser::from(user),
+            token,
+            expires_at,
+        })
+    }
+
+    /// Create new user from email registration
+    async fn create_email_user(
+        &self,
+        pool: &PgPool,
+        request_id: &str,
+        email: &str,
+        password: &str,
+        name: Option<&str>,
+    ) -> Result<AuthResult> {
+        debug!(
+            request_id = %request_id,
+            email = %email,
+            "🆕 Creating new email user"
+        );
+
+        // Hash password
+        let password_hash = hash(password, DEFAULT_COST).context("Failed to hash password")?;
+
+        // Create user
+        let user = sqlx::query_as!(
+            User,
+            r#"INSERT INTO dim_users (
+                email, password_hash, name, auth_providers, last_login_provider,
+                account_status, created_at, updated_at, is_active
+            ) VALUES (
+                $1, $2, $3, '["email"]', 'email',
+                'active', NOW(), NOW(), true
+            ) RETURNING 
+                id, email, password_hash, name, NULL as avatar_url, NULL as phone, NULL as country, is_active,
+                NULL as ws_id, NULL as date_of_birth, NULL as country_origin, NULL as country_residence, NULL as telegram_id,
+                NULL as email_registration_date, NULL as ws_registration_date, NULL as telegram_registration_date,
+                auth_providers, google_id, auth_metadata, email_verified_at, last_login_provider,
+                account_status as "account_status!: AccountStatus",
+                created_at, updated_at, last_login_at"#,
+            email,
+            password_hash,
+            name
+        )
+        .fetch_one(pool)
+        .await
+        .context("Failed to create email user")?;
+
+        // Generate token
+        let token = self.token.generate_access_token(user.id, email).await?;
+        let expires_at = Utc::now() + chrono::Duration::hours(24);
+
+        info!(
+            request_id = %request_id,
+            user_id = user.id,
+            email = %email,
+            "✅ Email user created successfully"
+        );
+
+        Ok(AuthResult::Success {
+            user: AuthenticatedUser::from(user),
+            token,
+            expires_at,
+        })
+    }
+
+    /// Create new user from Google OAuth
+    async fn create_google_user(
+        &self,
+        pool: &PgPool,
+        request_id: &str,
+        google_user: &crate::models::auth_provider::GoogleUser,
+    ) -> Result<AuthResult> {
+        debug!(
+            request_id = %request_id,
+            google_id = %google_user.id,
+            email = %google_user.email,
+            "🆕 Creating new Google user"
+        );
+
+        // Create user
+        let user = sqlx::query_as!(
+            User,
+            r#"INSERT INTO dim_users (
+                email, name, google_id, auth_providers, last_login_provider,
+                email_verified_at, account_status, created_at, updated_at, is_active
+            ) VALUES (
+                $1, $2, $3, '["google"]', 'google',
+                NOW(), 'active', NOW(), NOW(), true
+            ) RETURNING 
+                id, email, password_hash, name, NULL as avatar_url, NULL as phone, NULL as country, is_active,
+                NULL as ws_id, NULL as date_of_birth, NULL as country_origin, NULL as country_residence, NULL as telegram_id,
+                NULL as email_registration_date, NULL as ws_registration_date, NULL as telegram_registration_date,
+                auth_providers, google_id, auth_metadata, email_verified_at, last_login_provider,
+                account_status as "account_status!: AccountStatus",
+                created_at, updated_at, last_login_at"#,
+            google_user.email,
+            google_user.name,
+            google_user.id,
+            google_user.picture
+        )
+        .fetch_one(pool)
+        .await
+        .context("Failed to create Google user")?;
+
+        // Generate token
+        let token = self.token.generate_access_token(user.id, &google_user.email).await?;
+        let expires_at = Utc::now() + chrono::Duration::hours(24);
+
+        info!(
+            request_id = %request_id,
+            user_id = user.id,
+            google_id = %google_user.id,
+            "✅ Google user created successfully"
+        );
+
+        Ok(AuthResult::Success {
+            user: AuthenticatedUser::from(user),
+            token,
+            expires_at,
+        })
+    }
+
+    /// Update and login existing Google user
+    async fn update_and_login_google_user(
+        &self,
+        pool: &PgPool,
+        request_id: &str,
+        user: User,
+        google_user: &crate::models::auth_provider::GoogleUser,
+    ) -> Result<AuthResult> {
+        debug!(
+            request_id = %request_id,
+            user_id = user.id,
+            google_id = %google_user.id,
+            "🔄 Updating existing Google user"
+        );
+
+        // Update user with latest Google info
+        sqlx::query!(
+            r#"UPDATE dim_users SET 
+                google_id = $2,
+                name = COALESCE($3, name),
+                email_verified_at = COALESCE(email_verified_at, NOW()),
+                last_login_provider = 'google',
+                updated_at = NOW()
+            WHERE id = $1"#,
+            user.id,
+            google_user.id,
+            google_user.name
+        )
+        .execute(pool)
+        .await
+        .context("Failed to update Google user")?;
+
+        // Update last login
+        self.update_last_login(pool, user.id, ProviderType::Google).await?;
+
+        // Generate token
+        let token = self.token.generate_access_token(user.id, &google_user.email).await?;
+        let expires_at = Utc::now() + chrono::Duration::hours(24);
+
+        info!(
+            request_id = %request_id,
+            user_id = user.id,
+            "✅ Google user login successful"
+        );
+
+        Ok(AuthResult::Success {
+            user: AuthenticatedUser::from(user),
+            token,
+            expires_at,
+        })
+    }
+
+    /// Update last login timestamp
+    async fn update_last_login(&self, pool: &PgPool, user_id: i64, provider: ProviderType) -> Result<()> {
+        sqlx::query!(
+            "UPDATE dim_users SET last_login_at = NOW(), last_login_provider = $2 WHERE id = $1",
+            user_id,
+            provider.to_string()
+        )
+        .execute(pool)
+        .await
+        .context("Failed to update last login")?;
+
+        Ok(())
+    }
+}

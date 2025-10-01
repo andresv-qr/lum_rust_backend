@@ -1,0 +1,6 @@
+                                                                                                                  List of functions
+ Schema |         Name         | Result data type |                                                                                    Argument data types                                                                                    | Type 
+--------+----------------------+------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------
+ survey | api_get_user_surveys | json             | p_user_id integer, p_status_filter character varying DEFAULT NULL::character varying, p_campaign_id integer DEFAULT NULL::integer, p_limit integer DEFAULT 50, p_offset integer DEFAULT 0 | func
+(1 row)
+

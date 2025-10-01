@@ -1,0 +1,31 @@
+[2m2025-09-19T15:01:44.306022Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-09-19T15:01:44.306106Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-09-19T15:01:44.306173Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
+[2m2025-09-19T15:01:44.818298Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
+[2m2025-09-19T15:01:44.818379Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
+[2m2025-09-19T15:01:44.818476Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
+[2m2025-09-19T15:01:44.868196Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
+[2m2025-09-19T15:01:44.868237Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
+[2m2025-09-19T15:01:44.868315Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
+[2m2025-09-19T15:01:44.868329Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
+[2m2025-09-19T15:01:44.868337Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
+[2m2025-09-19T15:01:44.868345Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
+[2m2025-09-19T15:01:44.868353Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
+[2m2025-09-19T15:01:44.868485Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
+[2m2025-09-19T15:01:44.868516Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
+[2m2025-09-19T15:01:44.869788Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
+[2m2025-09-19T15:01:44.870105Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
+[2m2025-09-19T15:01:44.870169Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
+[2m2025-09-19T15:01:44.870192Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
+[2m2025-09-19T15:01:44.874963Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
+[2m2025-09-19T15:02:12.113848Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-09-19T15:02:22.504455Z[0m [32m INFO[0m [2mlum_rust_ws::api::unified_auth_v4[0m[2m:[0m 🔐 Unified authentication request received [3mprovider[0m[2m=[0mEmail [3mcreate_if_not_exists[0m[2m=[0mfalse [3mhas_linking_token[0m[2m=[0mfalse
+[2m2025-09-19T15:02:22.504610Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 🚀 Starting unified authentication [3mrequest_id[0m[2m=[0m79eefefc-22c7-450a-b05b-7247f22bdfb6 [3mprovider[0m[2m=[0mEmail { email: "testcase@example.com", password: "TestPassword123", name: None }
+[2m2025-09-19T15:02:22.504639Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 🔑 Email authentication [3memail[0m[2m=[0mtestcase@example.com
+[2m2025-09-19T15:02:22.510608Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 📝 Auth event logged to database [3mrequest_id[0m[2m=[0m79eefefc-22c7-450a-b05b-7247f22bdfb6 [3mevent_type[0m[2m=[0mlogin_attempt [3msuccess[0m[2m=[0mtrue
+[2m2025-09-19T15:02:23.447083Z[0m [32m INFO[0m [2mlum_rust_ws::services::token_service[0m[2m:[0m 🔑 Generated access token successfully [3muser_id[0m[2m=[0m69 [3memail[0m[2m=[0mtestcase@example.com [3mexpires_at[0m[2m=[0m2025-09-20 15:02:23.446863696 UTC
+[2m2025-09-19T15:02:23.453507Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 📝 Auth event logged to database [3mrequest_id[0m[2m=[0m79eefefc-22c7-450a-b05b-7247f22bdfb6 [3mevent_type[0m[2m=[0mlogin_success [3msuccess[0m[2m=[0mtrue
+[2m2025-09-19T15:02:23.453580Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m ✅ Authentication successful [3mrequest_id[0m[2m=[0m79eefefc-22c7-450a-b05b-7247f22bdfb6 [3mexecution_time_ms[0m[2m=[0m948
+[2m2025-09-19T15:02:33.099121Z[0m [31mERROR[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m JWT validation failed: JSON error: missing field `user_id` at line 1 column 77
+[2m2025-09-19T15:02:40.735196Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-09-19T15:05:28.513795Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m signal received, starting graceful shutdown

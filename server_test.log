@@ -1,0 +1,35 @@
+[2m2025-09-20T00:47:38.472340Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-09-20T00:47:38.472440Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-09-20T00:47:38.472463Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
+[2m2025-09-20T00:47:38.629064Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
+[2m2025-09-20T00:47:38.629117Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
+[2m2025-09-20T00:47:38.629152Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
+[2m2025-09-20T00:47:38.678502Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
+[2m2025-09-20T00:47:38.678541Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
+[2m2025-09-20T00:47:38.678558Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
+[2m2025-09-20T00:47:38.678563Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
+[2m2025-09-20T00:47:38.678567Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
+[2m2025-09-20T00:47:38.678572Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
+[2m2025-09-20T00:47:38.678576Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
+[2m2025-09-20T00:47:38.678615Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
+[2m2025-09-20T00:47:38.678623Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
+[2m2025-09-20T00:47:38.679792Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
+[2m2025-09-20T00:47:38.680223Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
+[2m2025-09-20T00:47:38.680301Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
+[2m2025-09-20T00:47:38.680340Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
+[2m2025-09-20T00:47:38.682256Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
+[2m2025-09-20T00:47:53.032221Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m71 [3memail[0m[2m=[0mtest_invoice_auth@example.com
+[2m2025-09-20T00:47:53.032362Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_headers_v4[0m[2m:[0m 🔐 Invoice headers request from user_id: 71 (test_invoice_auth@example.com)
+[2m2025-09-20T00:47:53.032380Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_headers_v4[0m[2m:[0m Executing query for user 71: SELECT date, tot_itbms, issuer_name, no, tot_amount, url, process_date, reception_date, type, cufe FROM public.invoice_header WHERE user_id = $1 ORDER BY date DESC LIMIT 100 OFFSET $2
+[2m2025-09-20T00:47:53.032387Z[0m [32m INFO[0m [2mlum_rust_ws::api::common[0m[2m:[0m Cache miss for key: invoice_headers_get_invoice_headers_list_5_0_{}_user_71, executing database query with user_id: 71 and offset: 0
+[2m2025-09-20T00:47:53.035055Z[0m [32m INFO[0m [2mlum_rust_ws::api::common[0m[2m:[0m Database query with parameters completed in 2.658663ms
+[2m2025-09-20T00:47:53.035086Z[0m [32m INFO[0m [2mlum_rust_ws::api::common[0m[2m:[0m Would cache 0 results for key: invoice_headers_get_invoice_headers_list_5_0_{}_user_71
+[2m2025-09-20T00:47:53.035109Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_headers_v4[0m[2m:[0m 📊 Invoice headers retrieved for user 71: 0 records in 2ms
+[2m2025-09-20T00:49:03.671783Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m70 [3memail[0m[2m=[0manvalenciag@gmail.com
+[2m2025-09-20T00:49:07.874398Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m70 [3memail[0m[2m=[0manvalenciag@gmail.com
+[2m2025-09-20T00:51:17.246949Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-09-20T00:51:17.247047Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_headers_v4[0m[2m:[0m 🔐 Invoice headers request from user_id: 1 (user1@example.com)
+[2m2025-09-20T00:51:17.247060Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_headers_v4[0m[2m:[0m Executing query for user 1: SELECT date, tot_itbms, issuer_name, no, tot_amount, url, process_date, reception_date, type, cufe FROM public.invoice_header WHERE user_id = $1 ORDER BY date DESC LIMIT 100 OFFSET $2
+[2m2025-09-20T00:51:17.247069Z[0m [32m INFO[0m [2mlum_rust_ws::api::common[0m[2m:[0m Cache miss for key: invoice_headers_get_invoice_headers_list_5_0_{}_user_1, executing database query with user_id: 1 and offset: 0
+[2m2025-09-20T00:51:17.250761Z[0m [31mERROR[0m [2mlum_rust_ws::api::common[0m[2m:[0m Database query with parameters failed: error occurred while decoding column "date": mismatched types; Rust type `core::option::Option<chrono::datetime::DateTime<chrono::offset::utc::Utc>>` (as SQL type `TIMESTAMPTZ`) is not compatible with SQL type `TIMESTAMP`
+[2m2025-09-20T00:51:17.250822Z[0m [31mERROR[0m [2mtower_http::trace::on_failure[0m[2m:[0m response failed [3mclassification[0m[2m=[0mStatus code: 500 Internal Server Error [3mlatency[0m[2m=[0m3 ms

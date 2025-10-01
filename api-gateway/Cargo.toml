@@ -1,0 +1,25 @@
+[package]
+name = "api-gateway"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+shared = { path = "../shared" }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+axum = { workspace = true }
+tower = { workspace = true }
+tower-http = { version = "0.5", features = ["timeout", "cors", "trace"] }
+reqwest = { workspace = true }
+uuid = { workspace = true }
+dotenvy = { workspace = true }
+base64 = { workspace = true }
+
+[[bin]]
+name = "api-gateway"
+path = "src/main.rs"

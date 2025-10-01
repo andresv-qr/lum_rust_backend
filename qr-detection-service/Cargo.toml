@@ -1,0 +1,51 @@
+[package]
+name = "qr-detection-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Core dependencies
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "timeout"] }
+
+# Shared workspace dependencies
+shared = { path = "../shared" }
+
+# Image processing
+image = "0.25"
+imageproc = "0.25"  # Para preprocessing estilo CV2
+
+# QR Detection libraries - TODAS ACTIVAS
+rqrr = "0.7"  # Rust QR Reader - funcional
+bardecoder = "0.5"  # Decodificador adicional de códigos de barras
+qrcode-generator = "4.1"  # Para validación inversa
+
+# Estas necesitan versiones específicas para funcionar
+zbar-rust = { version = "0.0.21", default-features = false, features = ["bundled"] }
+quircs = "0.1"  # QR Code Scanner
+rxing = "0.11"  # Port de ZXing para Rust
+
+# ONNX Runtime para QReader ML
+ort = { version = "2.0.0-rc.4", features = ["download-binaries", "cuda", "tensorrt"] }
+
+# HTTP client para fallback a Python API
+reqwest = { version = "0.12", features = ["json"] }
+
+# Utilities
+base64 = "0.22"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dotenvy = "0.15"
+
+[features]
+default = ["full"]
+full = ["onnx"]
+onnx = []
+
+[[bin]]
+name = "qr-detection-service"
+path = "src/main.rs"

@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id FROM rewards.fact_redemptions WHERE user_id = $1 AND redem_id = '2' AND expiration_date >= NOW()",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "336a2facf773056a49a1cfe10b27ed25b578ea334be87b722e6d481adb0e1283"
+}
