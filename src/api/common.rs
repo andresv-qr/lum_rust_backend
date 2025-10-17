@@ -73,7 +73,7 @@ pub enum SortDirection {
     Desc,
 }
 
-impl<T> ApiResponse<T> {
+impl<T: Serialize> ApiResponse<T> {
     pub fn success(data: T, request_id: String, execution_time_ms: Option<u64>, cached: bool) -> Self {
         Self {
             success: true,
@@ -95,6 +95,68 @@ impl<T> ApiResponse<T> {
             timestamp: chrono::Utc::now(),
             execution_time_ms: None,
             cached: false,
+        }
+    }
+}
+
+/// Helper struct for simplified responses (daily game endpoints)
+#[derive(Debug, Serialize)]
+pub struct SimpleApiResponse<T> {
+    pub success: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<T>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<SimpleApiError>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SimpleApiError {
+    pub code: String,
+    pub message: String,
+}
+
+impl<T> SimpleApiResponse<T> {
+    pub fn success(data: T) -> Self {
+        Self {
+            success: true,
+            data: Some(data),
+            error: None,
+            message: None,
+        }
+    }
+    
+    pub fn success_with_message(data: T, message: String) -> Self {
+        Self {
+            success: true,
+            data: Some(data),
+            error: None,
+            message: Some(message),
+        }
+    }
+    
+    pub fn error(message: &str) -> SimpleApiResponse<()> {
+        SimpleApiResponse {
+            success: false,
+            data: None,
+            error: Some(SimpleApiError {
+                code: "ERROR".to_string(),
+                message: message.to_string(),
+            }),
+            message: None,
+        }
+    }
+    
+    pub fn error_with_code(code: &str, message: &str) -> SimpleApiResponse<()> {
+        SimpleApiResponse {
+            success: false,
+            data: None,
+            error: Some(SimpleApiError {
+                code: code.to_string(),
+                message: message.to_string(),
+            }),
+            message: None,
         }
     }
 }

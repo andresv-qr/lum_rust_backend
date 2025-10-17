@@ -1,0 +1,1224 @@
+[2m2025-10-16T11:26:45.504786Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-10-16T11:26:45.504968Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-10-16T11:26:45.505058Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
+[2m2025-10-16T11:26:45.658222Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
+[2m2025-10-16T11:26:45.658348Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
+[2m2025-10-16T11:26:45.658410Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
+[2m2025-10-16T11:26:45.708572Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
+[2m2025-10-16T11:26:45.708687Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
+[2m2025-10-16T11:26:45.708778Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
+[2m2025-10-16T11:26:45.708877Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
+[2m2025-10-16T11:26:45.708958Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
+[2m2025-10-16T11:26:45.709037Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
+[2m2025-10-16T11:26:45.709115Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
+[2m2025-10-16T11:26:45.709296Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
+[2m2025-10-16T11:26:45.709382Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
+[2m2025-10-16T11:26:45.710212Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
+[2m2025-10-16T11:26:45.710596Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
+[2m2025-10-16T11:26:45.710740Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
+[2m2025-10-16T11:26:45.710825Z[0m [32m INFO[0m [2mlum_rust_ws::db::ws_pool[0m[2m:[0m 🔌 Connecting to WS database...
+[2m2025-10-16T11:26:45.730967Z[0m [32m INFO[0m [2mlum_rust_ws::db::ws_pool[0m[2m:[0m ✅ WS database pool created successfully
+[2m2025-10-16T11:26:45.730994Z[0m [32m INFO[0m [2mlum_rust_ws::state[0m[2m:[0m ✅ WS database pool initialized for ofertas
+[2m2025-10-16T11:26:45.731003Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
+[2m2025-10-16T11:26:45.731022Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::rust_qreader[0m[2m:[0m 🔧 Initializing RustQReader with ONNX: "models/qreader_detector_small.onnx"
+[2m2025-10-16T11:26:45.745713Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Session Options {  execution_mode:0 execution_order:DEFAULT enable_profiling:0 optimized_model_filepath:"" enable_mem_pattern:1 enable_mem_reuse:1 enable_cpu_mem_arena:1 profile_file_prefix:onnxruntime_profile_ session_logid: session_log_severity_level:-1 session_log_verbosity_level:0 max_num_graph_transformation_steps:10 graph_optimization_level:3 intra_op_param:OrtThreadPoolParams { thread_pool_size: 0 auto_set_affinity: 0 allow_spinning: 1 dynamic_block_base_: 0 stack_size: 0 affinity_str:  set_denormal_as_zero: 0 } inter_op_param:OrtThreadPoolParams { thread_pool_size: 0 auto_set_affinity: 0 allow_spinning: 1 dynamic_block_base_: 0 stack_size: 0 affinity_str:  set_denormal_as_zero: 0 } use_per_session_threads:1 thread_pool_allow_spinning:1 use_deterministic_compute:0 ep_selection_policy:0 config_options: {  } }
+[2m2025-10-16T11:26:45.745767Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Flush-to-zero and denormal-as-zero are off
+[2m2025-10-16T11:26:45.745776Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Creating and using per session threadpools since use_per_session_threads_ is true
+[2m2025-10-16T11:26:45.745785Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Dynamic block base set to 0
+[2m2025-10-16T11:26:45.796226Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Initializing session.
+[2m2025-10-16T11:26:45.796289Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Adding default CPU execution provider.
+[2m2025-10-16T11:26:45.796332Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Creating BFCArena for Cpu with following configs: initial_chunk_size_bytes: 1048576 max_dead_bytes_per_chunk: 134217728 initial_growth_chunk_size_bytes: 2097152 max_power_of_two_extend_bytes: 1073741824 memory limit: 18446744073709551615 arena_extend_strategy: 0
+[2m2025-10-16T11:26:45.798581Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m This model does not have any local functions defined. AOT Inlining is not performed
+[2m2025-10-16T11:26:45.798736Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-16T11:26:45.798936Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level1_RuleBasedTransformer modified: 1 with status: OK
+[2m2025-10-16T11:26:45.800746Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Constant_61_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800776Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.18/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800782Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.12/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800790Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.4/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800802Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.2/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800808Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.6/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800813Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.8/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800819Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.15/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800824Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.21/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.800994Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DoubleQDQPairsRemover modified: 0 with status: OK
+[2m2025-10-16T11:26:45.801329Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total shared scalar initializer count: 92
+[2m2025-10-16T11:26:45.801352Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantSharing modified: 1 with status: OK
+[2m2025-10-16T11:26:45.803547Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CommonSubexpressionElimination modified: 1 with status: OK
+[2m2025-10-16T11:26:45.805561Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantFolding modified: 1 with status: OK
+[2m2025-10-16T11:26:45.807258Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.807282Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_1'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.807305Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Constant_14_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.807312Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_2'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.807444Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulAddFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.807545Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/dfl/Reshape_output_0
+[2m2025-10-16T11:26:45.807565Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_18_output_0
+[2m2025-10-16T11:26:45.807573Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_19_output_0
+[2m2025-10-16T11:26:45.807581Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_13_output_0
+[2m2025-10-16T11:26:45.807593Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_14_output_0
+[2m2025-10-16T11:26:45.807616Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_8_output_0
+[2m2025-10-16T11:26:45.807628Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_9_output_0
+[2m2025-10-16T11:26:45.807635Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total fused reshape node count: 7
+[2m2025-10-16T11:26:45.807640Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ReshapeFusion modified: 1 with status: OK
+[2m2025-10-16T11:26:45.809238Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/dfl/Constant_3_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.809309Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FreeDimensionOverrideTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.809320Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL1 modified: 0 with status: OK
+[2m2025-10-16T11:26:45.809325Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL1 modified: 0 with status: OK
+[2m2025-10-16T11:26:45.809438Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQPropagationTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.809546Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer WeightBiasQuantization modified: 0 with status: OK
+[2m2025-10-16T11:26:45.809652Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-16T11:26:45.809736Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RocmBlasAltImpl modified: 0 with status: OK
+[2m2025-10-16T11:26:45.810090Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer TransposeOptimizer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.810247Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level1_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.810337Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DoubleQDQPairsRemover modified: 0 with status: OK
+[2m2025-10-16T11:26:45.810700Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CommonSubexpressionElimination modified: 0 with status: OK
+[2m2025-10-16T11:26:45.810871Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantFolding modified: 0 with status: OK
+[2m2025-10-16T11:26:45.810958Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulAddFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.811047Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ReshapeFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.811060Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FreeDimensionOverrideTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.811066Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL1 modified: 0 with status: OK
+[2m2025-10-16T11:26:45.811077Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL1 modified: 0 with status: OK
+[2m2025-10-16T11:26:45.811165Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQPropagationTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.811264Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer WeightBiasQuantization modified: 0 with status: OK
+[2m2025-10-16T11:26:45.811345Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-16T11:26:45.811422Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RocmBlasAltImpl modified: 0 with status: OK
+[2m2025-10-16T11:26:45.812181Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level2_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.812553Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer TransposeOptimizer_CPUExecutionProvider modified: 0 with status: OK
+[2m2025-10-16T11:26:45.812664Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQS8ToU8Transformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.812875Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQSelectorActionTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.812956Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GemmActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813050Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulIntegerToFloatFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813128Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DynamicQuantizeMatMulFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813237Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813320Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL2 modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813397Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL2 modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813477Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SimplifiedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813551Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer AttentionFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813646Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EmbedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813660Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherSliceToSplitFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813735Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherToSliceFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813815Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatmulTransposeFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813908Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.813986Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GroupQueryAttentionFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.814058Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SkipLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.814147Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FastGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.814461Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QuickGeluFusion modified: 1 with status: OK
+[2m2025-10-16T11:26:45.816185Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasSoftmaxFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.816280Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasDropoutFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.816362Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulScaleFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.816431Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.816520Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulNBitsFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.816592Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQFinalCleanupTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.816683Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level2_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.816763Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQS8ToU8Transformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.816940Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQSelectorActionTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817012Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GemmActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817083Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulIntegerToFloatFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817182Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DynamicQuantizeMatMulFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817316Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817393Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL2 modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817461Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL2 modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817528Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SimplifiedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817591Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer AttentionFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817677Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EmbedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817692Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherSliceToSplitFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817755Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherToSliceFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817824Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatmulTransposeFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817922Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.817990Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GroupQueryAttentionFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818057Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SkipLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818131Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FastGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818207Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QuickGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818277Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasSoftmaxFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818343Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasDropoutFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818420Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulScaleFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818503Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818593Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulNBitsFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.818690Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQFinalCleanupTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.874868Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NchwcTransformer modified: 1 with status: OK
+[2m2025-10-16T11:26:45.877958Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1144'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.877983Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1210'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.877989Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1198'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.877995Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1207'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878000Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1258'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878005Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1228'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878010Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1168'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878015Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1156'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878020Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1141'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878025Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1132'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878030Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1138'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878035Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1267'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878039Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1090'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878044Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1162'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878049Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.1.2.bias'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878055Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.2.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878060Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1189'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878065Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1192'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878070Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1177'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878075Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1240'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878080Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.1.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878085Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1153'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878089Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1135'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878105Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1096'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878110Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1147'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878115Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1099'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878120Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.0.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878125Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1123'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878130Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.dfl.conv.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878134Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1186'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878139Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1120'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878144Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1180'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878149Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.1.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878154Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1102'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878159Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.0.2.bias'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878164Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1225'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878170Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1255'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878175Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.0.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878179Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1159'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878184Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1231'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878192Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1081'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878210Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1111'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878221Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1078'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878230Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.2.2.bias'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878240Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1129'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878245Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1093'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878250Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1204'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878255Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.0.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878261Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1165'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878272Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1213'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878277Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1105'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878282Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1108'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878288Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1126'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878293Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.2.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878297Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1084'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878302Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1234'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878307Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1246'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878312Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1150'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878316Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1219'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878321Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1243'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878326Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1201'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878331Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1252'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878336Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1261'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878341Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1264'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878346Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1075'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878352Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1270'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878357Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1237'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878361Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1183'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878366Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.2.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878371Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1174'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878376Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1171'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878380Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1249'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878385Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1117'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878390Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1216'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878396Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1222'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878409Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1114'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878414Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1087'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878418Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1195'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.878423Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.1.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:45.883502Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NhwcTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.883700Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvAddActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.883857Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NchwcTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.884206Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NhwcTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.884399Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvAddActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:45.884800Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RemoveDuplicateCastTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.884820Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CastFloat16Transformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.884854Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MemcpyTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:45.885883Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Use DeviceBasedPartition as default
+[2m2025-10-16T11:26:45.912956Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Saving initialized tensors.
+[2m2025-10-16T11:26:45.913015Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:8 (requested) num_bytes: 65536 (actual) rounded_bytes:65536
+[2m2025-10-16T11:26:45.913023Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 1048576 bytes.
+[2m2025-10-16T11:26:45.913028Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 1048576
+[2m2025-10-16T11:26:45.913034Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5573d3a2bc40 to 0x5573d3b2bc40
+[2m2025-10-16T11:26:45.913121Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:3 (requested) num_bytes: 2048 (actual) rounded_bytes:2048
+[2m2025-10-16T11:26:45.913146Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 2097152 bytes.
+[2m2025-10-16T11:26:45.913151Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 3145728
+[2m2025-10-16T11:26:45.913156Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5573d3b2bc80 to 0x5573d3d2bc80
+[2m2025-10-16T11:26:45.913755Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:10 (requested) num_bytes: 393216 (actual) rounded_bytes:393216
+[2m2025-10-16T11:26:45.913779Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 4194304 bytes.
+[2m2025-10-16T11:26:45.913784Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 7340032
+[2m2025-10-16T11:26:45.913789Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5573d3d2bcc0 to 0x5573d412bcc0
+[2m2025-10-16T11:26:45.915351Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:10 (requested) num_bytes: 294912 (actual) rounded_bytes:294912
+[2m2025-10-16T11:26:45.915384Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 8388608 bytes.
+[2m2025-10-16T11:26:45.915389Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 15728640
+[2m2025-10-16T11:26:45.915400Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x78b5387f7040 to 0x78b538ff7040
+[2m2025-10-16T11:26:45.919563Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:12 (requested) num_bytes: 1572864 (actual) rounded_bytes:1572864
+[2m2025-10-16T11:26:45.919594Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 16777216 bytes.
+[2m2025-10-16T11:26:45.919617Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 32505856
+[2m2025-10-16T11:26:45.919622Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x78b51afff040 to 0x78b51bfff040
+[2m2025-10-16T11:26:45.929509Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:0 (requested) num_bytes: 4 (actual) rounded_bytes:256
+[2m2025-10-16T11:26:45.929543Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 33554432 bytes.
+[2m2025-10-16T11:26:45.929549Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 66060288
+[2m2025-10-16T11:26:45.929554Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x78b518ffe040 to 0x78b51affe040
+[2m2025-10-16T11:26:45.940806Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Done saving initialized tensors
+[2m2025-10-16T11:26:45.941807Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Session successfully initialized.
+[2m2025-10-16T11:26:45.941868Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::rust_qreader[0m[2m:[0m ✅ RustQReader ONNX session initialized for Small model
+[2m2025-10-16T11:26:45.941884Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ ONNX Small model initialized successfully
+[2m2025-10-16T11:26:45.941895Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::rust_qreader[0m[2m:[0m 🔧 Initializing RustQReader with ONNX: "models/qreader_detector_medium.onnx"
+[2m2025-10-16T11:26:45.941920Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Session Options {  execution_mode:0 execution_order:DEFAULT enable_profiling:0 optimized_model_filepath:"" enable_mem_pattern:1 enable_mem_reuse:1 enable_cpu_mem_arena:1 profile_file_prefix:onnxruntime_profile_ session_logid: session_log_severity_level:-1 session_log_verbosity_level:0 max_num_graph_transformation_steps:10 graph_optimization_level:3 intra_op_param:OrtThreadPoolParams { thread_pool_size: 0 auto_set_affinity: 0 allow_spinning: 1 dynamic_block_base_: 0 stack_size: 0 affinity_str:  set_denormal_as_zero: 0 } inter_op_param:OrtThreadPoolParams { thread_pool_size: 0 auto_set_affinity: 0 allow_spinning: 1 dynamic_block_base_: 0 stack_size: 0 affinity_str:  set_denormal_as_zero: 0 } use_per_session_threads:1 thread_pool_allow_spinning:1 use_deterministic_compute:0 ep_selection_policy:0 config_options: {  } }
+[2m2025-10-16T11:26:45.941936Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Creating and using per session threadpools since use_per_session_threads_ is true
+[2m2025-10-16T11:26:45.941943Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Dynamic block base set to 0
+[2m2025-10-16T11:26:45.999045Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Initializing session.
+[2m2025-10-16T11:26:45.999078Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Adding default CPU execution provider.
+[2m2025-10-16T11:26:45.999111Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Creating BFCArena for Cpu with following configs: initial_chunk_size_bytes: 1048576 max_dead_bytes_per_chunk: 134217728 initial_growth_chunk_size_bytes: 2097152 max_power_of_two_extend_bytes: 1073741824 memory limit: 18446744073709551615 arena_extend_strategy: 0
+[2m2025-10-16T11:26:45.999229Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m This model does not have any local functions defined. AOT Inlining is not performed
+[2m2025-10-16T11:26:45.999424Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-16T11:26:45.999662Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level1_RuleBasedTransformer modified: 1 with status: OK
+[2m2025-10-16T11:26:46.002005Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Constant_61_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002032Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.8/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002041Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.12/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002047Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.6/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002057Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.4/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002062Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.18/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002072Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.2/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002080Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.15/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002086Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.21/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.002320Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DoubleQDQPairsRemover modified: 0 with status: OK
+[2m2025-10-16T11:26:46.002677Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total shared scalar initializer count: 92
+[2m2025-10-16T11:26:46.002699Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantSharing modified: 1 with status: OK
+[2m2025-10-16T11:26:46.005231Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CommonSubexpressionElimination modified: 1 with status: OK
+[2m2025-10-16T11:26:46.007556Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantFolding modified: 1 with status: OK
+[2m2025-10-16T11:26:46.011727Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_2'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.011751Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_1'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.011760Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Constant_14_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.011773Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.011980Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulAddFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.012097Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/dfl/Reshape_output_0
+[2m2025-10-16T11:26:46.012115Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_18_output_0
+[2m2025-10-16T11:26:46.012123Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_19_output_0
+[2m2025-10-16T11:26:46.012131Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_13_output_0
+[2m2025-10-16T11:26:46.012139Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_14_output_0
+[2m2025-10-16T11:26:46.012147Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_8_output_0
+[2m2025-10-16T11:26:46.012154Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_9_output_0
+[2m2025-10-16T11:26:46.012161Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total fused reshape node count: 7
+[2m2025-10-16T11:26:46.012174Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ReshapeFusion modified: 1 with status: OK
+[2m2025-10-16T11:26:46.014150Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/dfl/Constant_3_output_0'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.014227Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FreeDimensionOverrideTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.014234Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL1 modified: 0 with status: OK
+[2m2025-10-16T11:26:46.014239Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL1 modified: 0 with status: OK
+[2m2025-10-16T11:26:46.014367Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQPropagationTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.014483Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer WeightBiasQuantization modified: 0 with status: OK
+[2m2025-10-16T11:26:46.014573Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-16T11:26:46.014675Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RocmBlasAltImpl modified: 0 with status: OK
+[2m2025-10-16T11:26:46.015086Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer TransposeOptimizer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.015240Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level1_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.015325Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DoubleQDQPairsRemover modified: 0 with status: OK
+[2m2025-10-16T11:26:46.015773Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CommonSubexpressionElimination modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016013Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantFolding modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016110Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulAddFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016208Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ReshapeFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016219Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FreeDimensionOverrideTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016224Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL1 modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016229Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL1 modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016331Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQPropagationTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016444Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer WeightBiasQuantization modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016536Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-16T11:26:46.016637Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RocmBlasAltImpl modified: 0 with status: OK
+[2m2025-10-16T11:26:46.017427Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level2_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.017889Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer TransposeOptimizer_CPUExecutionProvider modified: 0 with status: OK
+[2m2025-10-16T11:26:46.017998Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQS8ToU8Transformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.018224Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQSelectorActionTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.018324Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GemmActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.018432Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulIntegerToFloatFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.018517Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DynamicQuantizeMatMulFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.018691Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.018791Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL2 modified: 0 with status: OK
+[2m2025-10-16T11:26:46.018896Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL2 modified: 0 with status: OK
+[2m2025-10-16T11:26:46.018984Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SimplifiedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019067Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer AttentionFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019153Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EmbedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019160Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherSliceToSplitFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019240Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherToSliceFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019330Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatmulTransposeFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019421Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019505Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GroupQueryAttentionFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019586Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SkipLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.019708Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FastGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.020068Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QuickGeluFusion modified: 1 with status: OK
+[2m2025-10-16T11:26:46.022058Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasSoftmaxFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022154Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasDropoutFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022248Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulScaleFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022343Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022448Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulNBitsFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022529Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQFinalCleanupTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022627Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level2_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022714Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQS8ToU8Transformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022907Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQSelectorActionTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.022983Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GemmActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023058Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulIntegerToFloatFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023147Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DynamicQuantizeMatMulFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023299Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023380Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL2 modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023458Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL2 modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023527Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SimplifiedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023632Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer AttentionFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023735Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EmbedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023746Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherSliceToSplitFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023817Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherToSliceFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.023931Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatmulTransposeFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024027Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024122Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GroupQueryAttentionFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024196Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SkipLayerNormFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024300Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FastGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024387Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QuickGeluFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024490Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasSoftmaxFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024566Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasDropoutFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024670Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulScaleFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024769Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024889Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulNBitsFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.024969Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQFinalCleanupTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.142128Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NchwcTransformer modified: 1 with status: OK
+[2m2025-10-16T11:26:46.145952Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1320'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.145974Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1437'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.145981Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1431'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.145986Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1425'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.145990Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1479'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.145995Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1419'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146011Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1401'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146016Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1281'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146020Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1434'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146025Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1395'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146030Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.2.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146035Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1371'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146040Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1389'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146045Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1386'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146050Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1380'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146054Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1413'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146075Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1290'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146081Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1365'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146086Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1368'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146090Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1359'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146095Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1404'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146099Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1356'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146104Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1350'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146109Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1341'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146114Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.1.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146119Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1392'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146123Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1485'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146129Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.dfl.conv.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146134Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.1.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146139Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1284'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146144Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1377'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146148Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1293'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146158Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.0.2.bias'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146184Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1302'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146190Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1311'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146194Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1317'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146199Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.1.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146204Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1347'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146208Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1515'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146213Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.2.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146218Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1374'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146222Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.0.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146227Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1329'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146232Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.2.2.bias'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146237Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1323'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146242Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1443'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146247Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1296'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146251Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1422'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146256Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1299'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146261Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1512'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146266Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1416'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146271Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1353'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146275Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1308'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146280Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1461'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146284Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1314'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146289Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1287'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146294Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1305'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146298Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1326'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146308Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1527'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146314Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.0.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146319Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1335'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146323Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.0.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146328Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1440'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146333Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1509'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146338Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1446'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146343Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1449'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146348Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1428'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146352Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1455'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146357Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1458'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146362Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1464'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146367Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1467'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146371Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1470'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146376Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.2.2.weight'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146381Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1362'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146386Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1473'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146391Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1476'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146395Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1482'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146400Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1338'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146405Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1488'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146409Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1344'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146414Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1491'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146419Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1383'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146423Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1497'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146428Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1332'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146433Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1500'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146441Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1494'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146446Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1503'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146451Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1506'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146455Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1518'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146460Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1521'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146465Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1524'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146469Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1530'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146474Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1533'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146479Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.1.2.bias'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146484Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1536'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146489Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1452'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146494Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1398'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146498Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1410'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.146503Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1407'. It is no longer used by any node.
+[2m2025-10-16T11:26:46.147582Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NhwcTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.147819Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvAddActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.148002Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NchwcTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.148352Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NhwcTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.148538Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvAddActivationFusion modified: 0 with status: OK
+[2m2025-10-16T11:26:46.149000Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RemoveDuplicateCastTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.149016Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CastFloat16Transformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.149026Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MemcpyTransformer modified: 0 with status: OK
+[2m2025-10-16T11:26:46.150112Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Use DeviceBasedPartition as default
+[2m2025-10-16T11:26:46.192212Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Saving initialized tensors.
+[2m2025-10-16T11:26:46.192272Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:13 (requested) num_bytes: 3981312 (actual) rounded_bytes:3981312
+[2m2025-10-16T11:26:46.192281Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 4194304 bytes.
+[2m2025-10-16T11:26:46.192286Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 4194304
+[2m2025-10-16T11:26:46.192300Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5573d0e4ba40 to 0x5573d124ba40
+[2m2025-10-16T11:26:46.192672Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:1 (requested) num_bytes: 384 (actual) rounded_bytes:512
+[2m2025-10-16T11:26:46.192712Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 4194304 bytes.
+[2m2025-10-16T11:26:46.192718Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 8388608
+[2m2025-10-16T11:26:46.192722Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5573de05c400 to 0x5573de45c400
+[2m2025-10-16T11:26:46.193023Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:2 (requested) num_bytes: 1536 (actual) rounded_bytes:1536
+[2m2025-10-16T11:26:46.193038Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 8388608 bytes.
+[2m2025-10-16T11:26:46.193043Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 16777216
+[2m2025-10-16T11:26:46.193048Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5573d288bbc0 to 0x5573d308bbc0
+[2m2025-10-16T11:26:46.193624Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:6 (requested) num_bytes: 16384 (actual) rounded_bytes:16384
+[2m2025-10-16T11:26:46.193641Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 16777216 bytes.
+[2m2025-10-16T11:26:46.193646Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 33554432
+[2m2025-10-16T11:26:46.193651Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5573d412bd00 to 0x5573d512bd00
+[2m2025-10-16T11:26:46.194680Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:1 (requested) num_bytes: 768 (actual) rounded_bytes:768
+[2m2025-10-16T11:26:46.194698Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 33554432 bytes.
+[2m2025-10-16T11:26:46.194703Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 67108864
+[2m2025-10-16T11:26:46.194708Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5573d512bd40 to 0x5573d712bd40
+[2m2025-10-16T11:26:46.198190Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:1 (requested) num_bytes: 768 (actual) rounded_bytes:768
+[2m2025-10-16T11:26:46.198225Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 67108864 bytes.
+[2m2025-10-16T11:26:46.198231Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 134217728
+[2m2025-10-16T11:26:46.198235Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x78b4fffff040 to 0x78b503fff040
+[2m2025-10-16T11:26:46.239418Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Done saving initialized tensors
+[2m2025-10-16T11:26:46.241724Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Session successfully initialized.
+[2m2025-10-16T11:26:46.241817Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::rust_qreader[0m[2m:[0m ✅ RustQReader ONNX session initialized for Medium model
+[2m2025-10-16T11:26:46.241854Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ ONNX Medium model initialized successfully
+[2m2025-10-16T11:26:46.241864Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🤖 ONNX ML models initialized for enhanced QR detection
+[2m2025-10-16T11:26:46.241884Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m ⏰ OfertasWs refresh scheduler initialized (10am & 3pm Panamá)
+[2m2025-10-16T11:26:46.242155Z[0m [32m INFO[0m [2mtokio_cron_scheduler::job_scheduler[0m[2m:[0m Uninited
+[2m2025-10-16T11:26:46.242212Z[0m [32m INFO[0m [2mtokio_cron_scheduler::job_scheduler[0m[2m:[0m Job creator created
+[2m2025-10-16T11:26:46.242221Z[0m [32m INFO[0m [2mtokio_cron_scheduler::job_scheduler[0m[2m:[0m Job creator created
+[2m2025-10-16T11:26:46.242227Z[0m [32m INFO[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m ✅ OfertasWs refresh scheduler started
+[2m2025-10-16T11:26:46.242246Z[0m [32m INFO[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m    → 10am Panamá (3pm UTC): Daily refresh
+[2m2025-10-16T11:26:46.242250Z[0m [32m INFO[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m    → 3pm Panamá (8pm UTC): Daily refresh
+[2m2025-10-16T11:26:46.243086Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
+[2m2025-10-16T12:04:00.958773Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:00.958852Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:00.958870Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m Fetching user data for user_id: 1
+[2m2025-10-16T12:04:00.960882Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m User data retrieved in 2ms for user_id: 1 - email: Some("andresfelipevalenciag@gmail.com")
+[2m2025-10-16T12:04:00.971230Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:00.971278Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m Getting user balance for user_id: 1
+[2m2025-10-16T12:04:00.972507Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m User balance retrieved successfully for user 1 in 1ms: 325 Lümis
+[2m2025-10-16T12:04:17.645970Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:17.646029Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:17.646045Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m Fetching user data for user_id: 1
+[2m2025-10-16T12:04:17.647956Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m User data retrieved in 1ms for user_id: 1 - email: Some("andresfelipevalenciag@gmail.com")
+[2m2025-10-16T12:04:18.904861Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:18.904934Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m Getting user balance for user_id: 1
+[2m2025-10-16T12:04:18.907353Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m User balance retrieved successfully for user 1 in 2ms: 325 Lümis
+[2m2025-10-16T12:04:19.458053Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:19.458140Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m1de71d27-2764-45b3-97df-f0f4aadd19f9
+[2m2025-10-16T12:04:19.458156Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 1de71d27-2764-45b3-97df-f0f4aadd19f9: Processing headers for user 1 with limit 50 offset 0
+[2m2025-10-16T12:04:19.458167Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 1de71d27-2764-45b3-97df-f0f4aadd19f9: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T12:04:19.461901Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 1de71d27-2764-45b3-97df-f0f4aadd19f9: Retrieved 0 invoice headers (total: 0) in 3ms with enhanced filtering
+[2m2025-10-16T12:04:19.838488Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:19.838566Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m7cee6aad-61b5-4346-9555-e05401554825
+[2m2025-10-16T12:04:19.838614Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 7cee6aad-61b5-4346-9555-e05401554825: Processing headers for user 1 with limit 50 offset 100
+[2m2025-10-16T12:04:19.838639Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 7cee6aad-61b5-4346-9555-e05401554825: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T12:04:19.838821Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:19.838858Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0me5467f66-e2df-4a2d-abe0-a3115486669f
+[2m2025-10-16T12:04:19.838864Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request e5467f66-e2df-4a2d-abe0-a3115486669f: Processing headers for user 1 with limit 50 offset 50
+[2m2025-10-16T12:04:19.838877Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request e5467f66-e2df-4a2d-abe0-a3115486669f: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T12:04:19.843590Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 7cee6aad-61b5-4346-9555-e05401554825: Retrieved 0 invoice headers (total: 0) in 5ms with enhanced filtering
+[2m2025-10-16T12:04:19.845566Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request e5467f66-e2df-4a2d-abe0-a3115486669f: Retrieved 0 invoice headers (total: 0) in 6ms with enhanced filtering
+[2m2025-10-16T12:04:20.098060Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:20.098152Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m34c7324c-ed59-4a45-b85e-054dfdff21a4
+[2m2025-10-16T12:04:20.098160Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 34c7324c-ed59-4a45-b85e-054dfdff21a4: Processing for user 1 with limit 100 offset 0 order_by date direction DESC
+[2m2025-10-16T12:04:20.098168Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 34c7324c-ed59-4a45-b85e-054dfdff21a4: Querying details for user 1 with enhanced filters
+[2m2025-10-16T12:04:20.098178Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 34c7324c-ed59-4a45-b85e-054dfdff21a4: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T12:04:20.100968Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 34c7324c-ed59-4a45-b85e-054dfdff21a4: Retrieved 0 invoice details (total: 0) in 2ms with enhanced pagination
+[2m2025-10-16T12:04:20.106147Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:20.106193Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0mdf798ec3-7a70-40a7-893b-4605b62f764a
+[2m2025-10-16T12:04:20.106203Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request df798ec3-7a70-40a7-893b-4605b62f764a: Processing for user 1 with limit 100 offset 200 order_by date direction DESC
+[2m2025-10-16T12:04:20.106214Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request df798ec3-7a70-40a7-893b-4605b62f764a: Querying details for user 1 with enhanced filters
+[2m2025-10-16T12:04:20.106225Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request df798ec3-7a70-40a7-893b-4605b62f764a: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T12:04:20.106371Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:04:20.106408Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m31cf1e83-3fd5-40de-a395-f1af5fe70304
+[2m2025-10-16T12:04:20.106418Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 31cf1e83-3fd5-40de-a395-f1af5fe70304: Processing for user 1 with limit 100 offset 100 order_by date direction DESC
+[2m2025-10-16T12:04:20.106426Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 31cf1e83-3fd5-40de-a395-f1af5fe70304: Querying details for user 1 with enhanced filters
+[2m2025-10-16T12:04:20.106435Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 31cf1e83-3fd5-40de-a395-f1af5fe70304: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T12:04:20.110063Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 31cf1e83-3fd5-40de-a395-f1af5fe70304: Retrieved 0 invoice details (total: 0) in 3ms with enhanced pagination
+[2m2025-10-16T12:04:20.110107Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request df798ec3-7a70-40a7-893b-4605b62f764a: Retrieved 0 invoice details (total: 0) in 3ms with enhanced pagination
+[2m2025-10-16T12:09:53.467658Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:09:53.468865Z[0m [32m INFO[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ✅ Cache HIT for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T12:09:53.468895Z[0m [32m INFO[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m 📦 Serving ofertasws: 257193 bytes compressed
+[2m2025-10-16T12:10:15.371789Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T12:10:15.372702Z[0m [32m INFO[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ✅ Cache HIT for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T12:10:15.372731Z[0m [32m INFO[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m 📦 Serving ofertasws: 257193 bytes compressed
+[2m2025-10-16T13:30:42.897424Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:42.897504Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:42.897525Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m Fetching user data for user_id: 1
+[2m2025-10-16T13:30:42.899895Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m User data retrieved in 2ms for user_id: 1 - email: Some("andresfelipevalenciag@gmail.com")
+[2m2025-10-16T13:30:43.886393Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:43.886447Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m Getting user balance for user_id: 1
+[2m2025-10-16T13:30:43.888000Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m User balance retrieved successfully for user 1 in 1ms: 325 Lümis
+[2m2025-10-16T13:30:44.397578Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:44.397692Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0mff6514d7-f33f-4bf7-9206-88abf701a86e
+[2m2025-10-16T13:30:44.397705Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request ff6514d7-f33f-4bf7-9206-88abf701a86e: Processing headers for user 1 with limit 50 offset 0
+[2m2025-10-16T13:30:44.397715Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request ff6514d7-f33f-4bf7-9206-88abf701a86e: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T13:30:44.401787Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request ff6514d7-f33f-4bf7-9206-88abf701a86e: Retrieved 0 invoice headers (total: 0) in 4ms with enhanced filtering
+[2m2025-10-16T13:30:44.668873Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:44.668968Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m9b2882a2-e397-40a6-b320-44332c1364a9
+[2m2025-10-16T13:30:44.668980Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 9b2882a2-e397-40a6-b320-44332c1364a9: Processing headers for user 1 with limit 50 offset 50
+[2m2025-10-16T13:30:44.668994Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 9b2882a2-e397-40a6-b320-44332c1364a9: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T13:30:44.673248Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 9b2882a2-e397-40a6-b320-44332c1364a9: Retrieved 0 invoice headers (total: 0) in 4ms with enhanced filtering
+[2m2025-10-16T13:30:44.676924Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:44.676974Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0mfbb3433e-5109-46c1-9de1-64c0d3636327
+[2m2025-10-16T13:30:44.676984Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request fbb3433e-5109-46c1-9de1-64c0d3636327: Processing headers for user 1 with limit 50 offset 100
+[2m2025-10-16T13:30:44.676994Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request fbb3433e-5109-46c1-9de1-64c0d3636327: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T13:30:44.680916Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request fbb3433e-5109-46c1-9de1-64c0d3636327: Retrieved 0 invoice headers (total: 0) in 3ms with enhanced filtering
+[2m2025-10-16T13:30:44.832962Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:44.833059Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m0b7174cd-8862-4acb-9a5b-773a9a029ad0
+[2m2025-10-16T13:30:44.833073Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 0b7174cd-8862-4acb-9a5b-773a9a029ad0: Processing for user 1 with limit 100 offset 0 order_by date direction DESC
+[2m2025-10-16T13:30:44.833085Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 0b7174cd-8862-4acb-9a5b-773a9a029ad0: Querying details for user 1 with enhanced filters
+[2m2025-10-16T13:30:44.833096Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 0b7174cd-8862-4acb-9a5b-773a9a029ad0: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T13:30:44.834093Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:44.834144Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0ma1d70a76-ff57-4504-8977-7dc037e27b05
+[2m2025-10-16T13:30:44.834152Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request a1d70a76-ff57-4504-8977-7dc037e27b05: Processing for user 1 with limit 100 offset 100 order_by date direction DESC
+[2m2025-10-16T13:30:44.834157Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request a1d70a76-ff57-4504-8977-7dc037e27b05: Querying details for user 1 with enhanced filters
+[2m2025-10-16T13:30:44.834165Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request a1d70a76-ff57-4504-8977-7dc037e27b05: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T13:30:44.836936Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 0b7174cd-8862-4acb-9a5b-773a9a029ad0: Retrieved 0 invoice details (total: 0) in 3ms with enhanced pagination
+[2m2025-10-16T13:30:44.837033Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request a1d70a76-ff57-4504-8977-7dc037e27b05: Retrieved 0 invoice details (total: 0) in 2ms with enhanced pagination
+[2m2025-10-16T13:30:44.837724Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:44.837783Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0mf061da72-dac6-4aaa-aada-1a143ae956ca
+[2m2025-10-16T13:30:44.837795Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f061da72-dac6-4aaa-aada-1a143ae956ca: Processing for user 1 with limit 100 offset 200 order_by date direction DESC
+[2m2025-10-16T13:30:44.837802Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f061da72-dac6-4aaa-aada-1a143ae956ca: Querying details for user 1 with enhanced filters
+[2m2025-10-16T13:30:44.837810Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f061da72-dac6-4aaa-aada-1a143ae956ca: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T13:30:44.840065Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f061da72-dac6-4aaa-aada-1a143ae956ca: Retrieved 0 invoice details (total: 0) in 2ms with enhanced pagination
+[2m2025-10-16T13:30:46.709133Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T13:30:46.709994Z[0m [32m INFO[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ✅ Cache HIT for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T13:30:46.710024Z[0m [32m INFO[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m 📦 Serving ofertasws: 257193 bytes compressed
+[2m2025-10-16T13:39:42.110768Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request a83df0b6-1936-43b3-81b2-7d4420aff24c: Root endpoint accessed
+[2m2025-10-16T15:00:00.249717Z[0m [32m INFO[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m ⏰ Executing scheduled ofertasws refresh (10am Panamá)
+[2m2025-10-16T15:00:00.249793Z[0m [32m INFO[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m 🔄 Starting ofertasws refresh for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T15:00:00.250735Z[0m [33m WARN[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ⚠️ Cache MISS for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T15:00:00.252375Z[0m [31mERROR[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m ❌ Scheduled refresh failed: Database query error: error returned from database: column "precio_minimo_2m" does not exist
+[2m2025-10-16T18:05:57.362694Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:57.362740Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:57.362754Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m Fetching user data for user_id: 1
+[2m2025-10-16T18:05:57.364638Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m User data retrieved in 1ms for user_id: 1 - email: Some("andresfelipevalenciag@gmail.com")
+[2m2025-10-16T18:05:58.537675Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:58.537720Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m Getting user balance for user_id: 1
+[2m2025-10-16T18:05:58.539466Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m User balance retrieved successfully for user 1 in 1ms: 325 Lümis
+[2m2025-10-16T18:05:59.028699Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:59.028784Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m26afbccc-6f6d-4ba5-98c5-aebf90d0456d
+[2m2025-10-16T18:05:59.028791Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 26afbccc-6f6d-4ba5-98c5-aebf90d0456d: Processing headers for user 1 with limit 50 offset 0
+[2m2025-10-16T18:05:59.028801Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 26afbccc-6f6d-4ba5-98c5-aebf90d0456d: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T18:05:59.033939Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 26afbccc-6f6d-4ba5-98c5-aebf90d0456d: Retrieved 0 invoice headers (total: 0) in 5ms with enhanced filtering
+[2m2025-10-16T18:05:59.354988Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:59.355049Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m2ea31106-01d7-49e4-88e3-a4b48841b3ee
+[2m2025-10-16T18:05:59.355054Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 2ea31106-01d7-49e4-88e3-a4b48841b3ee: Processing headers for user 1 with limit 50 offset 100
+[2m2025-10-16T18:05:59.355062Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 2ea31106-01d7-49e4-88e3-a4b48841b3ee: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T18:05:59.358215Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:59.358256Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m37ec3d40-6942-40b9-92e0-a103b0c062f1
+[2m2025-10-16T18:05:59.358262Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 37ec3d40-6942-40b9-92e0-a103b0c062f1: Processing headers for user 1 with limit 50 offset 50
+[2m2025-10-16T18:05:59.358269Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 37ec3d40-6942-40b9-92e0-a103b0c062f1: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T18:05:59.361123Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 2ea31106-01d7-49e4-88e3-a4b48841b3ee: Retrieved 0 invoice headers (total: 0) in 6ms with enhanced filtering
+[2m2025-10-16T18:05:59.364413Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 37ec3d40-6942-40b9-92e0-a103b0c062f1: Retrieved 0 invoice headers (total: 0) in 6ms with enhanced filtering
+[2m2025-10-16T18:05:59.557102Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:59.557188Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m251d5a31-33ec-4f84-b75c-07a6677897ac
+[2m2025-10-16T18:05:59.557195Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 251d5a31-33ec-4f84-b75c-07a6677897ac: Processing for user 1 with limit 100 offset 0 order_by date direction DESC
+[2m2025-10-16T18:05:59.557201Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 251d5a31-33ec-4f84-b75c-07a6677897ac: Querying details for user 1 with enhanced filters
+[2m2025-10-16T18:05:59.557207Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 251d5a31-33ec-4f84-b75c-07a6677897ac: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T18:05:59.561051Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:59.561107Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0me123dfc4-8a79-45a8-89f7-231805b50388
+[2m2025-10-16T18:05:59.561112Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request e123dfc4-8a79-45a8-89f7-231805b50388: Processing for user 1 with limit 100 offset 200 order_by date direction DESC
+[2m2025-10-16T18:05:59.561118Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request e123dfc4-8a79-45a8-89f7-231805b50388: Querying details for user 1 with enhanced filters
+[2m2025-10-16T18:05:59.561123Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request e123dfc4-8a79-45a8-89f7-231805b50388: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T18:05:59.561389Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:05:59.561418Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0mbbd91778-918f-4ab8-bc3a-0bd27967859d
+[2m2025-10-16T18:05:59.561434Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request bbd91778-918f-4ab8-bc3a-0bd27967859d: Processing for user 1 with limit 100 offset 100 order_by date direction DESC
+[2m2025-10-16T18:05:59.561439Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request bbd91778-918f-4ab8-bc3a-0bd27967859d: Querying details for user 1 with enhanced filters
+[2m2025-10-16T18:05:59.561445Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request bbd91778-918f-4ab8-bc3a-0bd27967859d: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-16T18:05:59.561504Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 251d5a31-33ec-4f84-b75c-07a6677897ac: Retrieved 0 invoice details (total: 0) in 4ms with enhanced pagination
+[2m2025-10-16T18:05:59.564089Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request e123dfc4-8a79-45a8-89f7-231805b50388: Retrieved 0 invoice details (total: 0) in 2ms with enhanced pagination
+[2m2025-10-16T18:05:59.564368Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request bbd91778-918f-4ab8-bc3a-0bd27967859d: Retrieved 0 invoice details (total: 0) in 2ms with enhanced pagination
+[2m2025-10-16T18:06:06.689273Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:06:06.689805Z[0m [33m WARN[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ⚠️ Cache MISS for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T18:06:06.691317Z[0m [31mERROR[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ❌ Error fetching ofertasws: Database query error: error returned from database: column "precio_minimo_2m" does not exist
+[2m2025-10-16T18:06:06.716089Z[0m [31mERROR[0m [2mtower_http::trace::on_failure[0m[2m:[0m response failed [3mclassification[0m[2m=[0mStatus code: 500 Internal Server Error [3mlatency[0m[2m=[0m26 ms
+[2m2025-10-16T18:06:18.138913Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:06:18.139331Z[0m [33m WARN[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ⚠️ Cache MISS for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T18:06:18.140533Z[0m [31mERROR[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ❌ Error fetching ofertasws: Database query error: error returned from database: column "precio_minimo_2m" does not exist
+[2m2025-10-16T18:06:18.142241Z[0m [31mERROR[0m [2mtower_http::trace::on_failure[0m[2m:[0m response failed [3mclassification[0m[2m=[0mStatus code: 500 Internal Server Error [3mlatency[0m[2m=[0m3 ms
+[2m2025-10-16T18:06:19.460060Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:06:19.460417Z[0m [33m WARN[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ⚠️ Cache MISS for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T18:06:19.461394Z[0m [31mERROR[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ❌ Error fetching ofertasws: Database query error: error returned from database: column "precio_minimo_2m" does not exist
+[2m2025-10-16T18:06:19.462908Z[0m [31mERROR[0m [2mtower_http::trace::on_failure[0m[2m:[0m response failed [3mclassification[0m[2m=[0mStatus code: 500 Internal Server Error [3mlatency[0m[2m=[0m2 ms
+[2m2025-10-16T18:07:04.015544Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-16T18:07:04.015942Z[0m [33m WARN[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ⚠️ Cache MISS for key: ofertasws:cache:2025-10-16:10:00
+[2m2025-10-16T18:07:04.017019Z[0m [31mERROR[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ❌ Error fetching ofertasws: Database query error: error returned from database: column "precio_minimo_2m" does not exist
+[2m2025-10-16T18:07:04.018728Z[0m [31mERROR[0m [2mtower_http::trace::on_failure[0m[2m:[0m response failed [3mclassification[0m[2m=[0mStatus code: 500 Internal Server Error [3mlatency[0m[2m=[0m3 ms
+[2m2025-10-16T19:16:01.588911Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request 051e4459-5831-4167-bf4b-a51eb7e50971: Root endpoint accessed
+[2m2025-10-16T19:53:55.895264Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request a2e556aa-c4a2-492b-a896-d227277040ad: Root endpoint accessed
+[2m2025-10-16T19:53:56.174132Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-10-16T20:00:00.041766Z[0m [32m INFO[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m ⏰ Executing scheduled ofertasws refresh (3pm Panamá)
+[2m2025-10-16T20:00:00.041820Z[0m [32m INFO[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m 🔄 Starting ofertasws refresh for key: ofertasws:cache:2025-10-16:15:00
+[2m2025-10-16T20:00:00.042310Z[0m [33m WARN[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ⚠️ Cache MISS for key: ofertasws:cache:2025-10-16:15:00
+[2m2025-10-16T20:00:00.043861Z[0m [31mERROR[0m [2mlum_rust_ws::tasks::ofertasws_refresh[0m[2m:[0m ❌ Scheduled refresh failed: Database query error: error returned from database: column "precio_minimo_2m" does not exist
+[2m2025-10-16T20:08:35.887080Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request da994f50-0ea0-437b-b81b-c6ed4c4d467e: Root endpoint accessed
+[2m2025-10-16T20:08:35.999760Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-10-16T20:55:02.357547Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request 5c37713d-0e18-44a9-8c9d-8aab7df03690: Root endpoint accessed
+[2m2025-10-17T01:17:17.306594Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request bdafa0d8-29d2-46a9-ba63-79c1ab823fce: Root endpoint accessed
+[2m2025-10-17T01:23:35.471566Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:35.471636Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:35.471652Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m Fetching user data for user_id: 1
+[2m2025-10-17T01:23:35.473498Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m User data retrieved in 1ms for user_id: 1 - email: Some("andresfelipevalenciag@gmail.com")
+[2m2025-10-17T01:23:36.565559Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:36.565624Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m Getting user balance for user_id: 1
+[2m2025-10-17T01:23:36.567156Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m User balance retrieved successfully for user 1 in 1ms: 325 Lümis
+[2m2025-10-17T01:23:37.068283Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:37.068377Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m78ab4a07-bc8d-41ee-8e1e-4041e53ad902
+[2m2025-10-17T01:23:37.068383Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 78ab4a07-bc8d-41ee-8e1e-4041e53ad902: Processing headers for user 1 with limit 50 offset 0
+[2m2025-10-17T01:23:37.068393Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 78ab4a07-bc8d-41ee-8e1e-4041e53ad902: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-17T01:23:37.073310Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 78ab4a07-bc8d-41ee-8e1e-4041e53ad902: Retrieved 0 invoice headers (total: 0) in 4ms with enhanced filtering
+[2m2025-10-17T01:23:37.488289Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:37.488366Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m82550503-07a5-4a04-9178-a802ccaa0456
+[2m2025-10-17T01:23:37.488372Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 82550503-07a5-4a04-9178-a802ccaa0456: Processing headers for user 1 with limit 50 offset 50
+[2m2025-10-17T01:23:37.488381Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 82550503-07a5-4a04-9178-a802ccaa0456: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-17T01:23:37.492941Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:37.492976Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m59074c24-350e-483e-af61-545f72cee595
+[2m2025-10-17T01:23:37.492981Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 59074c24-350e-483e-af61-545f72cee595: Processing headers for user 1 with limit 50 offset 100
+[2m2025-10-17T01:23:37.492988Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 59074c24-350e-483e-af61-545f72cee595: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            h.issuer_ruc,
+            h.issuer_dv,
+            h.issuer_address,
+            h.issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-17T01:23:37.493272Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 82550503-07a5-4a04-9178-a802ccaa0456: Retrieved 0 invoice headers (total: 0) in 4ms with enhanced filtering
+[2m2025-10-17T01:23:37.497284Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 59074c24-350e-483e-af61-545f72cee595: Retrieved 0 invoice headers (total: 0) in 4ms with enhanced filtering
+[2m2025-10-17T01:23:37.650258Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:37.650312Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m3418b4bf-83f7-401a-a378-a05aa24e64e9
+[2m2025-10-17T01:23:37.650318Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 3418b4bf-83f7-401a-a378-a05aa24e64e9: Processing for user 1 with limit 100 offset 0 order_by date direction DESC
+[2m2025-10-17T01:23:37.650341Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 3418b4bf-83f7-401a-a378-a05aa24e64e9: Querying details for user 1 with enhanced filters
+[2m2025-10-17T01:23:37.650349Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 3418b4bf-83f7-401a-a378-a05aa24e64e9: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-17T01:23:37.653973Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 3418b4bf-83f7-401a-a378-a05aa24e64e9: Retrieved 0 invoice details (total: 0) in 3ms with enhanced pagination
+[2m2025-10-17T01:23:37.654971Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:37.655033Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m2f32834a-a0a6-4bdc-897a-76ad719a791c
+[2m2025-10-17T01:23:37.655041Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 2f32834a-a0a6-4bdc-897a-76ad719a791c: Processing for user 1 with limit 100 offset 100 order_by date direction DESC
+[2m2025-10-17T01:23:37.655050Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 2f32834a-a0a6-4bdc-897a-76ad719a791c: Querying details for user 1 with enhanced filters
+[2m2025-10-17T01:23:37.655063Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 2f32834a-a0a6-4bdc-897a-76ad719a791c: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-17T01:23:37.655112Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:37.655142Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m4b270bac-2c2b-41cb-8736-932fefc146e3
+[2m2025-10-17T01:23:37.655147Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 4b270bac-2c2b-41cb-8736-932fefc146e3: Processing for user 1 with limit 100 offset 200 order_by date direction DESC
+[2m2025-10-17T01:23:37.655152Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 4b270bac-2c2b-41cb-8736-932fefc146e3: Querying details for user 1 with enhanced filters
+[2m2025-10-17T01:23:37.655158Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 4b270bac-2c2b-41cb-8736-932fefc146e3: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-17T01:23:37.658096Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 2f32834a-a0a6-4bdc-897a-76ad719a791c: Retrieved 0 invoice details (total: 0) in 3ms with enhanced pagination
+[2m2025-10-17T01:23:37.659455Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 4b270bac-2c2b-41cb-8736-932fefc146e3: Retrieved 0 invoice details (total: 0) in 4ms with enhanced pagination
+[2m2025-10-17T01:23:45.220555Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:23:45.221055Z[0m [33m WARN[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ⚠️ Cache MISS for key: ofertasws:cache:2025-10-16:15:00
+[2m2025-10-17T01:24:15.245986Z[0m [33m WARN[0m [2msqlx::query[0m[2m:[0m slow statement: execution time exceeded alert threshold [3msummary[0m[2m=[0m"SELECT comercio, producto, codigo, …" [3mdb.statement[0m[2m=[0m"\n\n\n        SELECT \n            comercio,\n            producto,\n            codigo,\n            precio_actual,\n            precio_anterior,\n            precio_minimo_2m,\n            (precio_anterior - precio_actual) as diferencia,\n            CASE \n                WHEN precio_anterior > 0 \n                THEN ((precio_anterior - precio_actual) / precio_anterior * 100)\n                ELSE 0 \n            END as porcentaje_descuento,\n            (precio_anterior - precio_actual) as ahorro,\n            COALESCE(es_precio_mas_bajo, false) as es_precio_mas_bajo,\n            latest_date::text as latest_date,\n            dias_con_precio_actual,\n            link,\n            imagen\n        FROM wsf_consolidado\n        WHERE abs(precio_anterior - precio_actual) > 3\n          AND precio_actual IS NOT NULL \n          AND precio_anterior IS NOT NULL\n          AND precio_actual <> precio_anterior\n          AND NOT (precio_actual = 0 OR precio_anterior = 0)\n        ORDER BY (precio_anterior - precio_actual) DESC\n        LIMIT 7000\n        \n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m30.024325917s [3melapsed_secs[0m[2m=[0m30.024325917 [3mslow_threshold[0m[2m=[0m1s
+[2m2025-10-17T01:24:18.446198Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-17T01:24:18.446623Z[0m [33m WARN[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ⚠️ Cache MISS for key: ofertasws:cache:2025-10-16:15:00
+[2m2025-10-17T01:24:26.410824Z[0m [33m WARN[0m [2msqlx_core::pool::connection[0m[2m:[0m error occurred while testing the connection on-release [3merror[0m[2m=[0merror returned from database: column "precio_minimo_2m" does not exist
+[2m2025-10-17T01:24:26.411101Z[0m [33m WARN[0m [2msqlx::query[0m[2m:[0m slow statement: execution time exceeded alert threshold [3msummary[0m[2m=[0m"SELECT comercio, producto, codigo, …" [3mdb.statement[0m[2m=[0m"\n\n\n        SELECT \n            comercio,\n            producto,\n            codigo,\n            precio_actual,\n            precio_anterior,\n            precio_minimo_2m,\n            (precio_anterior - precio_actual) as diferencia,\n            CASE \n                WHEN precio_anterior > 0 \n                THEN ((precio_anterior - precio_actual) / precio_anterior * 100)\n                ELSE 0 \n            END as porcentaje_descuento,\n            (precio_anterior - precio_actual) as ahorro,\n            COALESCE(es_precio_mas_bajo, false) as es_precio_mas_bajo,\n            latest_date::text as latest_date,\n            dias_con_precio_actual,\n            link,\n            imagen\n        FROM wsf_consolidado\n        WHERE abs(precio_anterior - precio_actual) > 3\n          AND precio_actual IS NOT NULL \n          AND precio_anterior IS NOT NULL\n          AND precio_actual <> precio_anterior\n          AND NOT (precio_actual = 0 OR precio_anterior = 0)\n        ORDER BY (precio_anterior - precio_actual) DESC\n        LIMIT 7000\n        \n" [3mrows_affected[0m[2m=[0m0 [3mrows_returned[0m[2m=[0m0 [3melapsed[0m[2m=[0m7.946663374s [3melapsed_secs[0m[2m=[0m7.946663374 [3mslow_threshold[0m[2m=[0m1s
+[2m2025-10-17T01:24:26.411149Z[0m [31mERROR[0m [2mlum_rust_ws::api::ofertasws_v4[0m[2m:[0m ❌ Error fetching ofertasws: Database query error: error returned from database: column "precio_minimo_2m" does not exist
+[2m2025-10-17T01:24:26.431682Z[0m [31mERROR[0m [2mtower_http::trace::on_failure[0m[2m:[0m response failed [3mclassification[0m[2m=[0mStatus code: 500 Internal Server Error [3mlatency[0m[2m=[0m7985 ms
+[2m2025-10-17T01:46:38.868167Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m signal received, starting graceful shutdown

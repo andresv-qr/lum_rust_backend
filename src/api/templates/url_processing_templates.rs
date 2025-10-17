@@ -22,6 +22,12 @@ pub struct ProcessUrlResponse {
     pub invoice_id: Option<i32>,
     pub cufe: Option<String>,
     pub processing_time_ms: Option<u64>,
+    pub issuer_name: Option<String>,
+    pub tot_amount: Option<f64>,
+    
+    // 🆕 Gamificación - Sistema simplificado (replica Python/WhatsApp)
+    pub lumis_earned: Option<i32>,
+    pub lumis_balance: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]
@@ -174,14 +180,67 @@ impl ProcessUrlResponse {
         invoice_id: Option<i32>,
         cufe: Option<String>,
         processing_time_ms: u64,
+        issuer_name: Option<String>,
+        tot_amount: Option<f64>,
     ) -> Self {
+        // Generar mensaje personalizado en español
+        let message = match (&issuer_name, tot_amount) {
+            (Some(name), Some(amount)) => format!(
+                "Tu factura de {} por valor de ${:.2} fue procesada exitosamente. Tu historial de compras está tomando forma... ¡Vamos por más!",
+                name, amount
+            ),
+            _ => "Tu factura fue procesada exitosamente. ¡Vamos por más!".to_string()
+        };
+        
         Self {
             success: true,
-            message: format!("URL processed successfully ({})", process_type),
+            message,
             process_type: Some(process_type.to_string()),
             invoice_id,
             cufe,
             processing_time_ms: Some(processing_time_ms),
+            issuer_name,
+            tot_amount,
+            lumis_earned: None,
+            lumis_balance: None,
+        }
+    }
+    
+    /// DEPRECATED: Usar success() directamente con campos lumis_earned/lumis_balance
+    pub fn success_with_gamification(
+        process_type: &str,
+        invoice_id: Option<i32>,
+        cufe: Option<String>,
+        processing_time_ms: u64,
+        issuer_name: Option<String>,
+        tot_amount: Option<f64>,
+        lumis_earned: i32,
+        lumis_balance: i32,
+        _level_progress: Option<()>, // Deprecated
+    ) -> Self {
+        // Mensaje enriquecido con información de Lumis
+        let message = match (&issuer_name, tot_amount) {
+            (Some(name), Some(amount)) => format!(
+                "Tu factura de {} por valor de ${:.2} fue procesada exitosamente. ¡Ganaste {} Lumis! 💎 Tu balance actual: {} Lumis.",
+                name, amount, lumis_earned, lumis_balance
+            ),
+            _ => format!(
+                "Tu factura fue procesada exitosamente. ¡Ganaste {} Lumis! 💎 Tu balance actual: {} Lumis.",
+                lumis_earned, lumis_balance
+            )
+        };
+        
+        Self {
+            success: true,
+            message,
+            process_type: Some(process_type.to_string()),
+            invoice_id,
+            cufe,
+            processing_time_ms: Some(processing_time_ms),
+            issuer_name,
+            tot_amount,
+            lumis_earned: Some(lumis_earned),
+            lumis_balance: Some(lumis_balance),
         }
     }
     
@@ -193,17 +252,25 @@ impl ProcessUrlResponse {
             invoice_id: None,
             cufe: None,
             processing_time_ms: None,
+            issuer_name: None,
+            tot_amount: None,
+            lumis_earned: None,
+            lumis_balance: None,
         }
     }
     
     pub fn duplicate(cufe: &str, processing_time_ms: u64) -> Self {
         Self {
             success: true,
-            message: format!("Invoice already processed recently (CUFE: {})", cufe),
+            message: format!("Esta factura ya fue procesada recientemente (CUFE: {})", cufe),
             process_type: Some("DUPLICATE".to_string()),
             invoice_id: None,
             cufe: Some(cufe.to_string()),
             processing_time_ms: Some(processing_time_ms),
+            issuer_name: None,
+            tot_amount: None,
+            lumis_earned: None,
+            lumis_balance: None,
         }
     }
 }

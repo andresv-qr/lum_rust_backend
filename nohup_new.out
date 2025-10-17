@@ -1,38 +1,540 @@
 nohup: ignoring input
-[2m2025-09-25T02:18:23.169900Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
-[2m2025-09-25T02:18:23.169995Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
-[2m2025-09-25T02:18:23.170027Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
-[2m2025-09-25T02:18:23.699876Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
-[2m2025-09-25T02:18:23.699971Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
-[2m2025-09-25T02:18:23.700101Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
-[2m2025-09-25T02:18:23.751105Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
-[2m2025-09-25T02:18:23.751149Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
-[2m2025-09-25T02:18:23.751225Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
-[2m2025-09-25T02:18:23.751242Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
-[2m2025-09-25T02:18:23.751250Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
-[2m2025-09-25T02:18:23.751258Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
-[2m2025-09-25T02:18:23.751266Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
-[2m2025-09-25T02:18:23.751356Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
-[2m2025-09-25T02:18:23.751389Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
-[2m2025-09-25T02:18:23.752664Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
-[2m2025-09-25T02:18:23.753064Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
-[2m2025-09-25T02:18:23.753186Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
-[2m2025-09-25T02:18:23.753221Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
-[2m2025-09-25T02:18:23.757704Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
-[2m2025-09-25T02:19:02.448841Z[0m [32m INFO[0m [2mlum_rust_ws::api::unified_auth_v4[0m[2m:[0m 🔐 Unified authentication request received [3mprovider[0m[2m=[0mGoogle [3mcreate_if_not_exists[0m[2m=[0mtrue [3mhas_linking_token[0m[2m=[0mfalse
-[2m2025-09-25T02:19:02.449049Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 🚀 Starting unified authentication [3mrequest_id[0m[2m=[0m2c3b040e-4a84-45b9-856a-632e81796468 [3mprovider[0m[2m=[0mGoogle { id_token: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjkyN2I4ZmI2N2JiYWQ3NzQ0NWU1ZmVhNGM3MWFhOTg0NmQ3ZGRkMDEiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI5MTY0MjMxNTU1MS1hcjQ0MzVhb2lzcDA5NzVvbmc4cmNpZHRuYm1pYzJnMS5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsImF1ZCI6IjkxNjQyMzE1NTUxLXZjcXRkYTFsY2ZvYWcwbWVqdWJsMTU3aXV2NHE4c3JpLmFwcHMuZ29vZ2xldXNlcmNvbnRlbnQuY29tIiwic3ViIjoiMTA2MDYzOTM2NDI0NDM3NjIxMDgwIiwiZW1haWwiOiJhbmRyZXNmZWxpcGV2YWxlbmNpYWdAZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsIm5hbWUiOiJBbmRyZXMgVmFsZW5jaWEiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jSk9Xd083eUdDWVA1OHB4ZFZCd2R6MGJudWtITHdwcjk0RklVbGNEckxHYnVrYUFBPXM5Ni1jIiwiZ2l2ZW5fbmFtZSI6IkFuZHJlcyIsImZhbWlseV9uYW1lIjoiVmFsZW5jaWEiLCJpYXQiOjE3NTg3NjQ1MzEsImV4cCI6MTc1ODc2ODEzMX0.h_vqH0L4rVN8kPLqTCgiqNCO3ZO4hu9Sis5byl0Htm7ojFkTLU-lzT_JP6CEzcHc1PEVol-HPLnuBS8V6NlrLb_vOy2UfMhtZER0JDIIXy-4-g6mS7Kh0p4bjbuqr6Xpf3qNLBEVGdF-EbF4wofQ-VdtW62oFTcuDP9lS_82WTkgAuV0UHVkdfQ9GJxab3gVHeS5Sq5fXWNKvHrkGRhaYHGHKPdhsM5wFnoh9TZZJhgpDgL0f0hlRhbm_8Thb5TTkNB1emOEJy87T6LNiqrDcOYcETxoEF3myVpCqMiR_z2Z-g8RLdSwz3lA1nn8PZQwV6tngoR1WALEwIIwa_7NXA", access_token: None }
-[2m2025-09-25T02:19:02.449147Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 🔑 Google authentication
-[2m2025-09-25T02:19:02.455470Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 📝 Auth event logged to database [3mrequest_id[0m[2m=[0m2c3b040e-4a84-45b9-856a-632e81796468 [3mevent_type[0m[2m=[0mgoogle_auth [3msuccess[0m[2m=[0mtrue
-[2m2025-09-25T02:19:02.455556Z[0m [32m INFO[0m [2mlum_rust_ws::services::google_service[0m[2m:[0m 🔍 Starting Google ID token validation [3mrequest_id[0m[2m=[0mee579c32-c2ff-4a71-a00d-684753424593
-[2m2025-09-25T02:19:02.456942Z[0m [32m INFO[0m [2mlum_rust_ws::services::google_service[0m[2m:[0m ✅ Google ID token validated successfully [3mrequest_id[0m[2m=[0mee579c32-c2ff-4a71-a00d-684753424593 [3muser_id[0m[2m=[0m106063936424437621080 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com [3mname[0m[2m=[0mSome("Andres Valencia") [3memail_verified[0m[2m=[0mtrue [3mexecution_time_ms[0m[2m=[0m1
-[2m2025-09-25T02:19:02.478591Z[0m [32m INFO[0m [2mlum_rust_ws::services::token_service[0m[2m:[0m 🔑 Generated access token successfully [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com [3mexpires_at[0m[2m=[0m2025-09-26 02:19:02.478500356 UTC
-[2m2025-09-25T02:19:02.483590Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m 📝 Auth event logged to database [3mrequest_id[0m[2m=[0m2c3b040e-4a84-45b9-856a-632e81796468 [3mevent_type[0m[2m=[0mlogin_success [3msuccess[0m[2m=[0mtrue
-[2m2025-09-25T02:19:02.483647Z[0m [32m INFO[0m [2mlum_rust_ws::services::unified_auth_simple[0m[2m:[0m ✅ Authentication successful [3mrequest_id[0m[2m=[0m2c3b040e-4a84-45b9-856a-632e81796468 [3mexecution_time_ms[0m[2m=[0m34
-[2m2025-09-25T02:19:03.562096Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
-[2m2025-09-25T02:19:03.562262Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m Getting user balance for user_id: 1
-[2m2025-09-25T02:19:03.564342Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m User balance retrieved successfully for user 1 in 2ms: 284 Lümis
-[2m2025-09-25T02:19:03.579346Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
-[2m2025-09-25T02:19:03.579463Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
-[2m2025-09-25T02:19:03.579533Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m Fetching user data for user_id: 1
-[2m2025-09-25T02:19:03.581898Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m User data retrieved in 2ms for user_id: 1 - email: Some("andresfelipevalenciag@gmail.com")
-[2m2025-09-25T02:20:21.288917Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m signal received, starting graceful shutdown
+   Compiling lum_rust_ws v0.1.0 (/home/client_1099_1/scripts/lum_rust_ws)
+warning: function `apply_clahe_optimized` is never used
+  --> src/processing/qr_detection.rs:56:4
+   |
+56 | fn apply_clahe_optimized(image: &GrayImage) -> GrayImage {
+   |    ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: function `morphological_close` is never used
+   --> src/processing/qr_detection.rs:129:4
+    |
+129 | fn morphological_close(image: &GrayImage, kernel_size: u32) -> GrayImage {
+    |    ^^^^^^^^^^^^^^^^^^^
+
+warning: function `detect_noise_level` is never used
+   --> src/processing/qr_detection.rs:144:4
+    |
+144 | fn detect_noise_level(image: &GrayImage) -> f32 {
+    |    ^^^^^^^^^^^^^^^^^^
+
+warning: `lum_rust_ws` (lib) generated 3 warnings
+    Finished `release` profile [optimized] target(s) in 1m 06s
+     Running `target/release/lum_rust_ws`
+[2m2025-10-11T01:59:44.865749Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-10-11T01:59:44.865800Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-10-11T01:59:44.865820Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
+[2m2025-10-11T01:59:45.008847Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
+[2m2025-10-11T01:59:45.008911Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
+[2m2025-10-11T01:59:45.008955Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
+[2m2025-10-11T01:59:45.066454Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
+[2m2025-10-11T01:59:45.066504Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
+[2m2025-10-11T01:59:45.066531Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
+[2m2025-10-11T01:59:45.066537Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
+[2m2025-10-11T01:59:45.066545Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
+[2m2025-10-11T01:59:45.066553Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
+[2m2025-10-11T01:59:45.066562Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
+[2m2025-10-11T01:59:45.066630Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
+[2m2025-10-11T01:59:45.066646Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
+[2m2025-10-11T01:59:45.067534Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
+[2m2025-10-11T01:59:45.067830Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
+[2m2025-10-11T01:59:45.067887Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
+[2m2025-10-11T01:59:45.067912Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
+[2m2025-10-11T01:59:45.067934Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::rust_qreader[0m[2m:[0m 🔧 Initializing RustQReader with ONNX: "models/qreader_detector_small.onnx"
+[2m2025-10-11T01:59:45.081902Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Session Options {  execution_mode:0 execution_order:DEFAULT enable_profiling:0 optimized_model_filepath:"" enable_mem_pattern:1 enable_mem_reuse:1 enable_cpu_mem_arena:1 profile_file_prefix:onnxruntime_profile_ session_logid: session_log_severity_level:-1 session_log_verbosity_level:0 max_num_graph_transformation_steps:10 graph_optimization_level:3 intra_op_param:OrtThreadPoolParams { thread_pool_size: 0 auto_set_affinity: 0 allow_spinning: 1 dynamic_block_base_: 0 stack_size: 0 affinity_str:  set_denormal_as_zero: 0 } inter_op_param:OrtThreadPoolParams { thread_pool_size: 0 auto_set_affinity: 0 allow_spinning: 1 dynamic_block_base_: 0 stack_size: 0 affinity_str:  set_denormal_as_zero: 0 } use_per_session_threads:1 thread_pool_allow_spinning:1 use_deterministic_compute:0 ep_selection_policy:0 config_options: {  } }
+[2m2025-10-11T01:59:45.081970Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Flush-to-zero and denormal-as-zero are off
+[2m2025-10-11T01:59:45.081981Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Creating and using per session threadpools since use_per_session_threads_ is true
+[2m2025-10-11T01:59:45.081989Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Dynamic block base set to 0
+[2m2025-10-11T01:59:45.131851Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Initializing session.
+[2m2025-10-11T01:59:45.131914Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Adding default CPU execution provider.
+[2m2025-10-11T01:59:45.131941Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Creating BFCArena for Cpu with following configs: initial_chunk_size_bytes: 1048576 max_dead_bytes_per_chunk: 134217728 initial_growth_chunk_size_bytes: 2097152 max_power_of_two_extend_bytes: 1073741824 memory limit: 18446744073709551615 arena_extend_strategy: 0
+[2m2025-10-11T01:59:45.134190Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m This model does not have any local functions defined. AOT Inlining is not performed
+[2m2025-10-11T01:59:45.134331Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-11T01:59:45.134566Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level1_RuleBasedTransformer modified: 1 with status: OK
+[2m2025-10-11T01:59:45.136393Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Constant_61_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136427Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.18/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136433Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.12/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136444Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.4/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136463Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.2/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136475Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.6/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136484Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.8/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136490Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.15/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136496Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.21/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.136642Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DoubleQDQPairsRemover modified: 0 with status: OK
+[2m2025-10-11T01:59:45.136959Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total shared scalar initializer count: 92
+[2m2025-10-11T01:59:45.136989Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantSharing modified: 1 with status: OK
+[2m2025-10-11T01:59:45.139244Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CommonSubexpressionElimination modified: 1 with status: OK
+[2m2025-10-11T01:59:45.141505Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantFolding modified: 1 with status: OK
+[2m2025-10-11T01:59:45.143290Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.143329Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_1'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.143346Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Constant_14_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.143354Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_2'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.143535Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulAddFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.143657Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/dfl/Reshape_output_0
+[2m2025-10-11T01:59:45.143682Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_18_output_0
+[2m2025-10-11T01:59:45.143690Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_19_output_0
+[2m2025-10-11T01:59:45.143698Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_13_output_0
+[2m2025-10-11T01:59:45.143706Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_14_output_0
+[2m2025-10-11T01:59:45.143713Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_8_output_0
+[2m2025-10-11T01:59:45.143722Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_9_output_0
+[2m2025-10-11T01:59:45.143729Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total fused reshape node count: 7
+[2m2025-10-11T01:59:45.143736Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ReshapeFusion modified: 1 with status: OK
+[2m2025-10-11T01:59:45.145520Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/dfl/Constant_3_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.145635Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FreeDimensionOverrideTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.145655Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL1 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.145661Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL1 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.145819Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQPropagationTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.145937Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer WeightBiasQuantization modified: 0 with status: OK
+[2m2025-10-11T01:59:45.146029Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-11T01:59:45.146109Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RocmBlasAltImpl modified: 0 with status: OK
+[2m2025-10-11T01:59:45.146489Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer TransposeOptimizer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.146642Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level1_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.146729Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DoubleQDQPairsRemover modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147070Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CommonSubexpressionElimination modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147248Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantFolding modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147352Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulAddFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147477Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ReshapeFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147496Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FreeDimensionOverrideTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147502Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL1 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147507Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL1 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147598Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQPropagationTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147702Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer WeightBiasQuantization modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147786Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-11T01:59:45.147866Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RocmBlasAltImpl modified: 0 with status: OK
+[2m2025-10-11T01:59:45.148704Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level2_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149062Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer TransposeOptimizer_CPUExecutionProvider modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149186Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQS8ToU8Transformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149416Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQSelectorActionTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149514Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GemmActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149612Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulIntegerToFloatFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149692Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DynamicQuantizeMatMulFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149804Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149890Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL2 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.149969Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL2 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150048Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SimplifiedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150144Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer AttentionFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150232Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EmbedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150248Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherSliceToSplitFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150319Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherToSliceFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150416Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatmulTransposeFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150501Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150579Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GroupQueryAttentionFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150656Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SkipLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.150766Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FastGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.151054Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QuickGeluFusion modified: 1 with status: OK
+[2m2025-10-11T01:59:45.152751Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasSoftmaxFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.152842Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasDropoutFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.152924Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulScaleFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.152995Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153086Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulNBitsFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153180Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQFinalCleanupTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153257Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level2_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153333Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQS8ToU8Transformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153519Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQSelectorActionTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153599Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GemmActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153672Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulIntegerToFloatFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153740Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DynamicQuantizeMatMulFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153848Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153922Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL2 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.153981Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL2 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154044Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SimplifiedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154111Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer AttentionFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154197Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EmbedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154210Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherSliceToSplitFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154272Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherToSliceFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154338Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatmulTransposeFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154486Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154573Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GroupQueryAttentionFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154646Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SkipLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154723Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FastGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154802Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QuickGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.154921Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasSoftmaxFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.155004Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasDropoutFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.155087Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulScaleFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.155176Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.155275Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulNBitsFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.155414Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQFinalCleanupTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.212685Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NchwcTransformer modified: 1 with status: OK
+[2m2025-10-11T01:59:45.215779Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1144'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215812Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1210'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215819Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1198'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215824Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1207'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215829Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1258'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215835Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1228'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215840Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1168'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215845Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1156'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215851Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1141'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215856Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1132'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215861Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1138'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215866Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1267'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215871Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1090'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215876Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1162'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215882Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.1.2.bias'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215889Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.2.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215894Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1189'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215902Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1192'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215907Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1177'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215936Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1240'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215941Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.1.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215946Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1153'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215953Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1135'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215958Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1096'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215963Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1147'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215968Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1099'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215974Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.0.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215979Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1123'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215985Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.dfl.conv.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215991Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1186'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.215996Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1120'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216001Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1180'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216007Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.1.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216012Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1102'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216018Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.0.2.bias'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216024Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1225'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216029Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1255'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216035Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.0.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216040Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1159'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216046Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1231'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216051Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1081'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216056Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1111'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216062Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1078'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216067Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.2.2.bias'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216073Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1129'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216078Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1093'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216091Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1204'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216097Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.0.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216102Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1165'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216107Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1213'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216114Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1105'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216141Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1108'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216152Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1126'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216157Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.2.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216162Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1084'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216167Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1234'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216172Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1246'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216177Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1150'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216182Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1219'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216187Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1243'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216192Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1201'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216198Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1252'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216203Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1261'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216209Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1264'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216214Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1075'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216220Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1270'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216225Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1237'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216231Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1183'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216236Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.2.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216242Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1174'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216247Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1171'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216253Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1249'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216271Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1117'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216276Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1216'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216281Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1222'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216288Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1114'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216293Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1087'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216298Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1195'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.216304Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.1.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.221333Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NhwcTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.221529Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvAddActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.221654Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NchwcTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.221946Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NhwcTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.222101Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvAddActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.222695Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RemoveDuplicateCastTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.222733Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CastFloat16Transformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.222745Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MemcpyTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.223738Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Use DeviceBasedPartition as default
+[2m2025-10-11T01:59:45.249836Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Saving initialized tensors.
+[2m2025-10-11T01:59:45.249903Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:13 (requested) num_bytes: 2097152 (actual) rounded_bytes:2097152
+[2m2025-10-11T01:59:45.249921Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 2097152 bytes.
+[2m2025-10-11T01:59:45.249927Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 2097152
+[2m2025-10-11T01:59:45.249933Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5e1339561080 to 0x5e1339761080
+[2m2025-10-11T01:59:45.250588Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:0 (requested) num_bytes: 32 (actual) rounded_bytes:256
+[2m2025-10-11T01:59:45.250624Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 2097152 bytes.
+[2m2025-10-11T01:59:45.250630Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 4194304
+[2m2025-10-11T01:59:45.250635Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5e13397610c0 to 0x5e13399610c0
+[2m2025-10-11T01:59:45.251338Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:14 (requested) num_bytes: 4718592 (actual) rounded_bytes:4718592
+[2m2025-10-11T01:59:45.251378Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 8388608 bytes.
+[2m2025-10-11T01:59:45.251386Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 12582912
+[2m2025-10-11T01:59:45.251415Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x7960967fd040 to 0x796096ffd040
+[2m2025-10-11T01:59:45.254852Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:12 (requested) num_bytes: 1572864 (actual) rounded_bytes:1572864
+[2m2025-10-11T01:59:45.254892Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 8388608 bytes.
+[2m2025-10-11T01:59:45.254899Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 20971520
+[2m2025-10-11T01:59:45.254904Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x796095ffc040 to 0x7960967fc040
+[2m2025-10-11T01:59:45.259168Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:13 (requested) num_bytes: 2359296 (actual) rounded_bytes:2359296
+[2m2025-10-11T01:59:45.259204Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 16777216 bytes.
+[2m2025-10-11T01:59:45.259211Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 37748736
+[2m2025-10-11T01:59:45.259216Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x796076fff040 to 0x796077fff040
+[2m2025-10-11T01:59:45.270445Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:10 (requested) num_bytes: 294912 (actual) rounded_bytes:294912
+[2m2025-10-11T01:59:45.270485Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 33554432 bytes.
+[2m2025-10-11T01:59:45.270492Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 71303168
+[2m2025-10-11T01:59:45.270497Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x796074ffe040 to 0x796076ffe040
+[2m2025-10-11T01:59:45.278919Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Done saving initialized tensors
+[2m2025-10-11T01:59:45.279946Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Session successfully initialized.
+[2m2025-10-11T01:59:45.280003Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::rust_qreader[0m[2m:[0m ✅ RustQReader ONNX session initialized for Small model
+[2m2025-10-11T01:59:45.280013Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ ONNX Small model initialized successfully
+[2m2025-10-11T01:59:45.280042Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::rust_qreader[0m[2m:[0m 🔧 Initializing RustQReader with ONNX: "models/qreader_detector_medium.onnx"
+[2m2025-10-11T01:59:45.280076Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Session Options {  execution_mode:0 execution_order:DEFAULT enable_profiling:0 optimized_model_filepath:"" enable_mem_pattern:1 enable_mem_reuse:1 enable_cpu_mem_arena:1 profile_file_prefix:onnxruntime_profile_ session_logid: session_log_severity_level:-1 session_log_verbosity_level:0 max_num_graph_transformation_steps:10 graph_optimization_level:3 intra_op_param:OrtThreadPoolParams { thread_pool_size: 0 auto_set_affinity: 0 allow_spinning: 1 dynamic_block_base_: 0 stack_size: 0 affinity_str:  set_denormal_as_zero: 0 } inter_op_param:OrtThreadPoolParams { thread_pool_size: 0 auto_set_affinity: 0 allow_spinning: 1 dynamic_block_base_: 0 stack_size: 0 affinity_str:  set_denormal_as_zero: 0 } use_per_session_threads:1 thread_pool_allow_spinning:1 use_deterministic_compute:0 ep_selection_policy:0 config_options: {  } }
+[2m2025-10-11T01:59:45.280089Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Creating and using per session threadpools since use_per_session_threads_ is true
+[2m2025-10-11T01:59:45.280097Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Dynamic block base set to 0
+[2m2025-10-11T01:59:45.340850Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Initializing session.
+[2m2025-10-11T01:59:45.340893Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Adding default CPU execution provider.
+[2m2025-10-11T01:59:45.340928Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Creating BFCArena for Cpu with following configs: initial_chunk_size_bytes: 1048576 max_dead_bytes_per_chunk: 134217728 initial_growth_chunk_size_bytes: 2097152 max_power_of_two_extend_bytes: 1073741824 memory limit: 18446744073709551615 arena_extend_strategy: 0
+[2m2025-10-11T01:59:45.341060Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m This model does not have any local functions defined. AOT Inlining is not performed
+[2m2025-10-11T01:59:45.341229Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-11T01:59:45.341468Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level1_RuleBasedTransformer modified: 1 with status: OK
+[2m2025-10-11T01:59:45.343562Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Constant_61_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343601Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.8/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343611Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.12/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343617Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.6/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343627Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.4/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343634Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.18/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343644Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.2/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343658Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.15/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343664Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.21/Constant_4_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.343834Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DoubleQDQPairsRemover modified: 0 with status: OK
+[2m2025-10-11T01:59:45.344205Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total shared scalar initializer count: 92
+[2m2025-10-11T01:59:45.344246Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantSharing modified: 1 with status: OK
+[2m2025-10-11T01:59:45.346785Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CommonSubexpressionElimination modified: 1 with status: OK
+[2m2025-10-11T01:59:45.349453Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantFolding modified: 1 with status: OK
+[2m2025-10-11T01:59:45.351376Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_2'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.351411Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_1'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.351419Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Constant_14_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.351431Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/Split_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.351594Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulAddFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.351711Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/dfl/Reshape_output_0
+[2m2025-10-11T01:59:45.351736Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_18_output_0
+[2m2025-10-11T01:59:45.351745Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_19_output_0
+[2m2025-10-11T01:59:45.351753Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_13_output_0
+[2m2025-10-11T01:59:45.351783Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_14_output_0
+[2m2025-10-11T01:59:45.351792Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_8_output_0
+[2m2025-10-11T01:59:45.351801Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Fused reshape node: /model.22/Reshape_9_output_0
+[2m2025-10-11T01:59:45.351808Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total fused reshape node count: 7
+[2m2025-10-11T01:59:45.351815Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ReshapeFusion modified: 1 with status: OK
+[2m2025-10-11T01:59:45.353716Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer '/model.22/dfl/Constant_3_output_0'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.353798Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FreeDimensionOverrideTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.353816Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL1 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.353822Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL1 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.353952Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQPropagationTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.354079Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer WeightBiasQuantization modified: 0 with status: OK
+[2m2025-10-11T01:59:45.354209Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-11T01:59:45.354310Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RocmBlasAltImpl modified: 0 with status: OK
+[2m2025-10-11T01:59:45.354730Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer TransposeOptimizer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.354887Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level1_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.354984Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DoubleQDQPairsRemover modified: 0 with status: OK
+[2m2025-10-11T01:59:45.355464Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CommonSubexpressionElimination modified: 0 with status: OK
+[2m2025-10-11T01:59:45.355634Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConstantFolding modified: 0 with status: OK
+[2m2025-10-11T01:59:45.355730Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulAddFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.355830Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ReshapeFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.355843Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FreeDimensionOverrideTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.355848Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL1 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.355854Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL1 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.355952Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQPropagationTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.356070Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer WeightBiasQuantization modified: 0 with status: OK
+[2m2025-10-11T01:59:45.356191Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EnsureUniqueDQForNodeUnit modified: 0 with status: OK
+[2m2025-10-11T01:59:45.356290Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RocmBlasAltImpl modified: 0 with status: OK
+[2m2025-10-11T01:59:45.357089Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level2_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.357548Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer TransposeOptimizer_CPUExecutionProvider modified: 0 with status: OK
+[2m2025-10-11T01:59:45.357662Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQS8ToU8Transformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.357895Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQSelectorActionTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.357990Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GemmActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358100Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulIntegerToFloatFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358223Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DynamicQuantizeMatMulFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358369Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358480Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL2 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358575Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL2 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358666Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SimplifiedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358756Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer AttentionFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358846Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EmbedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358861Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherSliceToSplitFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.358944Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherToSliceFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.359039Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatmulTransposeFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.359163Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.359290Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GroupQueryAttentionFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.359387Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SkipLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.359526Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FastGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.359997Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QuickGeluFusion modified: 1 with status: OK
+[2m2025-10-11T01:59:45.362104Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasSoftmaxFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.362228Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasDropoutFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.362332Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulScaleFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.362425Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.362534Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulNBitsFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.362619Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQFinalCleanupTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.362703Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer Level2_RuleBasedTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.362789Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQS8ToU8Transformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.362985Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQSelectorActionTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363066Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GemmActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363176Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulIntegerToFloatFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363287Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer DynamicQuantizeMatMulFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363455Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363547Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GeluFusionL2 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363634Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer LayerNormFusionL2 modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363712Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SimplifiedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363789Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer AttentionFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363865Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer EmbedLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363881Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherSliceToSplitFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.363949Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GatherToSliceFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364029Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatmulTransposeFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364108Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364208Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer GroupQueryAttentionFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364291Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer SkipLayerNormFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364378Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer FastGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364482Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QuickGeluFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364568Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasSoftmaxFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364647Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer BiasDropoutFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364739Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulScaleFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364816Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.364919Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MatMulNBitsFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.365005Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer QDQFinalCleanupTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.480338Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NchwcTransformer modified: 1 with status: OK
+[2m2025-10-11T01:59:45.483937Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1320'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.483967Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1437'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.483974Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1431'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.483998Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1425'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484005Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1479'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484010Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1419'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484015Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1401'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484021Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1281'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484026Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1434'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484031Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1395'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484036Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.2.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484041Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1371'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484047Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1389'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484052Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1386'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484057Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1380'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484062Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1413'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484067Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1290'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484072Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1365'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484079Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1368'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484084Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1359'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484089Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1404'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484094Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1356'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484100Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1350'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484106Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1341'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484111Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.1.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484116Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1392'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484138Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1485'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484148Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.dfl.conv.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484154Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.1.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484167Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1284'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484172Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1377'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484177Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1293'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484183Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.0.2.bias'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484189Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1302'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484195Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1311'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484200Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1317'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484206Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.1.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484211Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1347'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484216Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1515'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484222Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.2.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484227Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1374'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484232Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.0.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484239Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1329'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484244Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.2.2.bias'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484249Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1323'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484254Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1443'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484260Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1296'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484265Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1422'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484270Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1299'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484275Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1512'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484282Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1416'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484287Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1353'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484292Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1308'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484297Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1461'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484302Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1314'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484320Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1287'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484326Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1305'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484331Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1326'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484337Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1527'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484342Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv2.0.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484348Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1335'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484354Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.0.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484360Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1440'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484365Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1509'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484370Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1446'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484376Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1449'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484382Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1428'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484387Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1455'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484392Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1458'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484415Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1464'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484420Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1467'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484425Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1470'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484430Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv4.2.2.weight'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484436Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1362'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484441Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1473'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484447Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1476'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484452Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1482'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484457Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1338'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484462Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1488'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484467Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1344'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484473Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1491'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484484Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1383'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484491Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1497'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484500Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1332'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484509Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1500'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484524Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1494'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484531Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1503'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484537Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1506'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484543Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1518'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484549Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1521'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484554Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1524'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484559Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1530'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484565Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1533'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484570Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'model.22.cv3.1.2.bias'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484575Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1536'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484580Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1452'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484586Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1398'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484590Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1410'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.484595Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Removing initializer 'onnx::Conv_1407'. It is no longer used by any node.
+[2m2025-10-11T01:59:45.485676Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NhwcTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.485880Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvAddActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.486021Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NchwcTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.486385Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer NhwcTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.486591Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer ConvAddActivationFusion modified: 0 with status: OK
+[2m2025-10-11T01:59:45.487010Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer RemoveDuplicateCastTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.487027Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer CastFloat16Transformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.487036Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m GraphTransformer MemcpyTransformer modified: 0 with status: OK
+[2m2025-10-11T01:59:45.488103Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Use DeviceBasedPartition as default
+[2m2025-10-11T01:59:45.527748Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Saving initialized tensors.
+[2m2025-10-11T01:59:45.527816Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:1 (requested) num_bytes: 768 (actual) rounded_bytes:768
+[2m2025-10-11T01:59:45.527825Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 1048576 bytes.
+[2m2025-10-11T01:59:45.527830Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 1048576
+[2m2025-10-11T01:59:45.527836Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5e1337bddc00 to 0x5e1337cddc00
+[2m2025-10-11T01:59:45.527863Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:13 (requested) num_bytes: 2985984 (actual) rounded_bytes:2985984
+[2m2025-10-11T01:59:45.527872Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 4194304 bytes.
+[2m2025-10-11T01:59:45.527876Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 5242880
+[2m2025-10-11T01:59:45.527881Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5e1336980e80 to 0x5e1336d80e80
+[2m2025-10-11T01:59:45.528266Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:12 (requested) num_bytes: 1327104 (actual) rounded_bytes:1327104
+[2m2025-10-11T01:59:45.528291Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 4194304 bytes.
+[2m2025-10-11T01:59:45.528296Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 9437184
+[2m2025-10-11T01:59:45.528301Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5e13383c1000 to 0x5e13387c1000
+[2m2025-10-11T01:59:45.528457Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:13 (requested) num_bytes: 2985984 (actual) rounded_bytes:2985984
+[2m2025-10-11T01:59:45.528478Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 8388608 bytes.
+[2m2025-10-11T01:59:45.528483Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 17825792
+[2m2025-10-11T01:59:45.528487Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5e13387c1040 to 0x5e1338fc1040
+[2m2025-10-11T01:59:45.529525Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:0 (requested) num_bytes: 32 (actual) rounded_bytes:256
+[2m2025-10-11T01:59:45.529550Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 16777216 bytes.
+[2m2025-10-11T01:59:45.529555Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 34603008
+[2m2025-10-11T01:59:45.529560Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5e1339961100 to 0x5e133a961100
+[2m2025-10-11T01:59:45.531523Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:3 (requested) num_bytes: 2304 (actual) rounded_bytes:2304
+[2m2025-10-11T01:59:45.531570Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 33554432 bytes.
+[2m2025-10-11T01:59:45.531577Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 68157440
+[2m2025-10-11T01:59:45.531582Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x5e133a961140 to 0x5e133c961140
+[2m2025-10-11T01:59:45.535582Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extending BFCArena for Cpu. bin_num:13 (requested) num_bytes: 2654208 (actual) rounded_bytes:2654208
+[2m2025-10-11T01:59:45.535649Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Extended allocation by 67108864 bytes.
+[2m2025-10-11T01:59:45.535662Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Total allocated bytes: 135266304
+[2m2025-10-11T01:59:45.535673Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Allocated memory at 0x796063fff040 to 0x796067fff040
+[2m2025-10-11T01:59:45.564878Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Done saving initialized tensors
+[2m2025-10-11T01:59:45.566596Z[0m [32m INFO[0m [2mort::logging[0m[2m:[0m Session successfully initialized.
+[2m2025-10-11T01:59:45.566679Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::rust_qreader[0m[2m:[0m ✅ RustQReader ONNX session initialized for Medium model
+[2m2025-10-11T01:59:45.566696Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ ONNX Medium model initialized successfully
+[2m2025-10-11T01:59:45.566706Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🤖 ONNX ML models initialized for enhanced QR detection
+[2m2025-10-11T01:59:45.567706Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
+[2m2025-10-11T02:43:54.064547Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request a57493ff-a80a-436d-8c4f-cb5a866ffa4b: Root endpoint accessed
+[2m2025-10-11T03:17:33.851406Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request a8d507ea-f390-415b-be6f-fdb881410e44: Root endpoint accessed
+[2m2025-10-11T05:58:13.162324Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request fdfc4565-5912-402c-a569-e5c884f512b9: Root endpoint accessed
+[2m2025-10-11T05:58:13.193380Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-10-11T05:58:13.231101Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-10-11T05:58:13.231194Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-10-11T10:22:34.047071Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m signal received, starting graceful shutdown

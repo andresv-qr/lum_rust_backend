@@ -1,0 +1,361 @@
+use sqlx::{PgPool, types::Decimal};
+use anyhow::Result;
+use tracing::{info, warn};
+
+/// Calcula los Lumis a otorgar por procesar una factura
+/// 
+/// Fórmula: base_lumis * level_multiplier * event_multiplier
+/// - Base: 1 Lumi por cada $1 de la factura (redondeado hacia abajo)
+/// - Multiplicador por nivel del usuario (1.0x a 1.20x)
+/// - Multiplicador por eventos activos (Happy Hour, promociones especiales)
+pub fn calculate_lumis_for_invoice(
+    tot_amount: f64,
+    user_level: i32,
+    event_multiplier: f64,
+) -> i32 {
+    // Base: 1 Lumi por cada dólar completo
+    let base_lumis = tot_amount.floor() as i32;
+    
+    if base_lumis <= 0 {
+        return 0; // No otorgar Lumis por facturas de $0
+    }
+    
+    // Multiplicador por nivel del usuario
+    let level_multiplier = match user_level {
+        1 => 1.0,      // Chispa Lüm
+        2 => 1.05,     // Destello Lunar (+5%)
+        3 => 1.10,     // Fulgor Estelar (+10%)
+        4 => 1.15,     // Resplandor Solar (+15%)
+        5 => 1.20,     // Radiancia Cósmica (+20%)
+        _ => 1.0,      // Nivel inválido, usar base
+    };
+    
+    // Calcular Lumis finales
+    let final_lumis = (base_lumis as f64 * level_multiplier * event_multiplier).floor() as i32;
+    
+    info!(
+        "💎 Lumis calculation: base={}, level={} ({}x), event={}x, final={}",
+        base_lumis, user_level, level_multiplier, event_multiplier, final_lumis
+    );
+    
+    final_lumis
+}
+
+/// Obtiene el nivel actual del usuario desde gamification.fact_user_progression
+pub async fn get_user_level(pool: &PgPool, user_id: i64) -> Result<i32> {
+    let result = sqlx::query!(
+        r#"
+        SELECT 
+            COALESCE(p.current_level, 1) as "level!"
+        FROM public.dim_users u
+        LEFT JOIN gamification.fact_user_progression p ON u.id = p.user_id
+        WHERE u.id = $1
+        "#,
+        user_id as i32
+    )
+    .fetch_optional(pool)
+    .await?;
+    
+    match result {
+        Some(record) => Ok(record.level),
+        None => {
+            warn!("User {} not found in dim_users, defaulting to level 1", user_id);
+            Ok(1)
+        }
+    }
+}
+
+/// Obtiene el multiplicador de eventos activos para el usuario
+/// Busca eventos activos en gamification.dim_events y calcula el multiplicador acumulado
+pub async fn get_active_events_multiplier(pool: &PgPool, _user_id: i64) -> Result<f64> {
+    // Simplificado: solo buscar eventos activos sin filtro de segmento
+    let result = sqlx::query!(
+        r#"
+        SELECT 
+            COALESCE(SUM(e.multiplier), 1.0) as "total_multiplier!"
+        FROM gamification.dim_events e
+        WHERE e.is_active = true
+          AND e.start_date <= NOW()
+          AND (e.end_date IS NULL OR e.end_date >= NOW())
+        "#
+    )
+    .fetch_one(pool)
+    .await?;
+    
+    // Convertir Decimal a f64
+    let multiplier = result.total_multiplier.to_string().parse::<f64>().unwrap_or(1.0);
+    
+    if multiplier > 1.0 {
+        info!("🎉 Active event multiplier: {}x", multiplier);
+    }
+    
+    Ok(multiplier)
+}
+
+/// Acredita Lumis al usuario por procesar una factura
+/// 
+/// Realiza las siguientes operaciones en una transacción:
+/// 1. Actualiza balance en rewards.fact_balance_points
+/// 2. Registra transacción en gamification.fact_engagement_transactions
+/// 3. Actualiza progresión de nivel en gamification.fact_user_progression
+/// 
+/// # Parámetros
+/// - `pool`: Pool de conexiones PostgreSQL
+/// - `user_id`: ID del usuario
+/// - `lumis_amount`: Cantidad de Lumis a acreditar
+/// - `cufe`: CUFE de la factura (para trazabilidad)
+/// - `tot_amount`: Monto total de la factura (para metadata)
+pub async fn credit_lumis_for_invoice(
+    pool: &PgPool,
+    user_id: i64,
+    lumis_amount: i32,
+    _cufe: &str,
+    _tot_amount: f64,
+) -> Result<()> {
+    if lumis_amount <= 0 {
+        info!("⚠️ Skipping Lumis credit for user {} - amount is 0", user_id);
+        return Ok(());
+    }
+    
+    let mut tx = pool.begin().await?;
+    
+    info!("💰 Starting Lumis credit transaction for user {}: {} Lumis", user_id, lumis_amount);
+    
+    // 1. Actualizar balance en rewards.fact_balance_points
+    sqlx::query!(
+        r#"
+        INSERT INTO rewards.fact_balance_points (user_id, balance, latest_update)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (user_id) 
+        DO UPDATE SET 
+            balance = rewards.fact_balance_points.balance + $2,
+            latest_update = NOW()
+        "#,
+        user_id as i32,
+        Decimal::from(lumis_amount)
+    )
+    .execute(&mut *tx)
+    .await?;
+    
+    info!("✅ Updated balance in rewards.fact_balance_points for user {}", user_id);
+    
+    // 2. Registrar transacción en gamification.fact_engagement_transactions
+    let transaction_result = sqlx::query!(
+        r#"
+        INSERT INTO gamification.fact_engagement_transactions (
+            user_id, 
+            action_type, 
+            lumis_amount, 
+            source_type,
+            created_at
+        ) VALUES ($1, 'invoice_processed', $2, 'api', NOW())
+        RETURNING transaction_id
+        "#,
+        user_id as i32,
+        lumis_amount
+    )
+    .fetch_one(&mut *tx)
+    .await?;
+    
+    info!(
+        "✅ Recorded engagement transaction {} for user {}",
+        transaction_result.transaction_id, user_id
+    );
+    
+    // 3. Actualizar progresión de usuario en gamification.fact_user_progression
+    // Esto incrementa total_xp y current_xp, y puede subir de nivel automáticamente
+    sqlx::query!(
+        r#"
+        INSERT INTO gamification.fact_user_progression (user_id, current_level, current_xp, total_xp, updated_at)
+        VALUES ($1, 1, $2, $2, NOW())
+        ON CONFLICT (user_id)
+        DO UPDATE SET
+            total_xp = gamification.fact_user_progression.total_xp + $2,
+            current_xp = gamification.fact_user_progression.current_xp + $2,
+            updated_at = NOW()
+        "#,
+        user_id as i32,
+        lumis_amount
+    )
+    .execute(&mut *tx)
+    .await?;
+    
+    info!("✅ Updated user progression for user {}", user_id);
+    
+    // 4. Verificar si el usuario subió de nivel
+    let level_check = sqlx::query!(
+        r#"
+        SELECT 
+            p.current_level,
+            p.total_xp,
+            l.max_xp,
+            nl.level_number as next_level
+        FROM gamification.fact_user_progression p
+        INNER JOIN gamification.dim_user_levels l ON p.current_level = l.level_number
+        LEFT JOIN gamification.dim_user_levels nl ON nl.level_number = l.level_number + 1
+        WHERE p.user_id = $1
+        "#,
+        user_id as i32
+    )
+    .fetch_optional(&mut *tx)
+    .await?;
+    
+    if let Some(check) = level_check {
+        if let Some(total_xp) = check.total_xp {
+            if total_xp > check.max_xp {
+                // Usuario subió de nivel!
+                let new_level = check.next_level;
+            
+            sqlx::query!(
+                r#"
+                UPDATE gamification.fact_user_progression
+                SET current_level = $1,
+                    last_level_up = NOW()
+                WHERE user_id = $2
+                "#,
+                new_level,
+                user_id as i32
+            )
+            .execute(&mut *tx)
+            .await?;
+            
+                info!("🎊 User {} leveled up to level {}!", user_id, new_level);
+            }
+        }
+    }
+    
+    tx.commit().await?;
+    
+    info!("🎉 Successfully credited {} Lumis to user {}", lumis_amount, user_id);
+    
+    Ok(())
+}
+
+/// Obtiene el balance actual de Lumis del usuario
+pub async fn get_user_lumis_balance(pool: &PgPool, user_id: i64) -> Result<i32> {
+    let result = sqlx::query!(
+        r#"
+        SELECT COALESCE(balance, 0) as "balance!"
+        FROM rewards.fact_balance_points
+        WHERE user_id = $1
+        "#,
+        user_id as i32
+    )
+    .fetch_optional(pool)
+    .await?;
+    
+    match result {
+        Some(record) => {
+            // Convertir Decimal a i32
+            let balance = record.balance.to_string().parse::<i32>().unwrap_or(0);
+            Ok(balance)
+        },
+        None => Ok(0), // Usuario sin balance inicial
+    }
+}
+
+/// Obtiene información de progresión de nivel del usuario
+#[derive(Debug, Clone)]
+pub struct LevelProgress {
+    pub current_level: i32,
+    pub level_name: String,
+    pub current_xp: i32,
+    pub total_xp: i32,
+    pub xp_to_next_level: i32,
+    pub progress_percentage: f64,
+}
+
+pub async fn get_user_level_progress(pool: &PgPool, user_id: i64) -> Result<Option<LevelProgress>> {
+    let result = sqlx::query!(
+        r#"
+        SELECT 
+            p.current_level,
+            l.level_name,
+            p.current_xp,
+            p.total_xp,
+            l.max_xp,
+            l.min_xp
+        FROM gamification.fact_user_progression p
+        INNER JOIN gamification.dim_user_levels l ON p.current_level = l.level_number
+        WHERE p.user_id = $1
+        "#,
+        user_id as i32
+    )
+    .fetch_optional(pool)
+    .await?;
+    
+    match result {
+        Some(record) => {
+            let current_xp = record.current_xp.unwrap_or(0);
+            let total_xp = record.total_xp.unwrap_or(0);
+            let min_xp = record.min_xp;
+            let max_xp = record.max_xp;
+            
+            let xp_in_level = current_xp - min_xp;
+            let xp_needed = max_xp - min_xp;
+            let xp_to_next = max_xp - current_xp;
+            let progress_pct = if xp_needed > 0 {
+                (xp_in_level as f64 / xp_needed as f64) * 100.0
+            } else {
+                100.0
+            };
+            
+            Ok(Some(LevelProgress {
+                current_level: record.current_level,
+                level_name: record.level_name,
+                current_xp,
+                total_xp,
+                xp_to_next_level: xp_to_next,
+                progress_percentage: progress_pct,
+            }))
+        }
+        None => Ok(None),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_calculate_lumis_basic() {
+        // Factura de $100, nivel 1, sin eventos
+        let lumis = calculate_lumis_for_invoice(100.0, 1, 1.0);
+        assert_eq!(lumis, 100);
+    }
+    
+    #[test]
+    fn test_calculate_lumis_with_level() {
+        // Factura de $100, nivel 2 (+5%), sin eventos
+        let lumis = calculate_lumis_for_invoice(100.0, 2, 1.0);
+        assert_eq!(lumis, 105);
+    }
+    
+    #[test]
+    fn test_calculate_lumis_with_event() {
+        // Factura de $100, nivel 1, evento 2x
+        let lumis = calculate_lumis_for_invoice(100.0, 1, 2.0);
+        assert_eq!(lumis, 200);
+    }
+    
+    #[test]
+    fn test_calculate_lumis_combined() {
+        // Factura de $100, nivel 5 (+20%), evento 1.5x
+        let lumis = calculate_lumis_for_invoice(100.0, 5, 1.5);
+        assert_eq!(lumis, 180); // 100 * 1.20 * 1.5 = 180
+    }
+    
+    #[test]
+    fn test_calculate_lumis_fractional() {
+        // Factura de $4.98, nivel 1, sin eventos
+        let lumis = calculate_lumis_for_invoice(4.98, 1, 1.0);
+        assert_eq!(lumis, 4); // floor(4.98) = 4
+    }
+    
+    #[test]
+    fn test_calculate_lumis_zero() {
+        // Factura de $0.50, no debe dar Lumis
+        let lumis = calculate_lumis_for_invoice(0.50, 1, 1.0);
+        assert_eq!(lumis, 0);
+    }
+}

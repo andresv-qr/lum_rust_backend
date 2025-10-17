@@ -150,6 +150,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
 
 [[package]]
+name = "arrow-buffer"
+version = "52.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c975484888fc95ec4a632cdc98be39c085b1bb518531b0c80c5d462063e5daa1"
+dependencies = [
+ "bytes",
+ "half",
+ "num",
+]
+
+[[package]]
 name = "assert-json-diff"
 version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -740,6 +751,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cron"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f8c3e73077b4b4a6ab1ea5047c37c57aee77657bc8ecd6f29b0af082d0b0c07"
+dependencies = [
+ "chrono",
+ "nom 7.1.3",
+ "once_cell",
+]
+
+[[package]]
 name = "crossbeam-deque"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1222,6 +1244,17 @@ dependencies = [
  "bit-set 0.8.0",
  "regex-automata",
  "regex-syntax",
+]
+
+[[package]]
+name = "fast_image_resize"
+version = "3.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9d450fac8a334ad72825596173f0f7767ff04dd6e3d59c49c894c4bc2957e8b"
+dependencies = [
+ "cfg-if",
+ "num-traits",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2285,6 +2318,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "kornia-rs"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a53968317b3497fe63d6fc7d45e2d25cf1367c5e72b91171f101f46ed092e48"
+dependencies = [
+ "anyhow",
+ "arrow-buffer",
+ "fast_image_resize",
+ "image",
+ "memmap2",
+ "ndarray 0.15.6",
+ "num-traits",
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2437,16 +2487,18 @@ dependencies = [
  "dashmap",
  "deadpool-redis",
  "dotenvy",
+ "flate2",
  "futures",
  "hex",
  "image",
  "imageproc",
  "ipnetwork",
  "jsonwebtoken",
+ "kornia-rs",
  "lettre",
  "lru",
  "mime",
- "ndarray",
+ "ndarray 0.16.1",
  "ort",
  "percent-encoding",
  "quircs",
@@ -2466,6 +2518,7 @@ dependencies = [
  "sxd-xpath",
  "thiserror 1.0.69",
  "tokio",
+ "tokio-cron-scheduler",
  "tower 0.4.13",
  "tower-http 0.5.2",
  "tracing",
@@ -2574,6 +2627,15 @@ name = "memchr"
 version = "2.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a282da65faaf38286cf3be983213fcf1d2e2a58700e808f83f4ea9a4804bc0"
+
+[[package]]
+name = "memmap2"
+version = "0.9.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "843a98750cd611cc2965a8213b53b43e715f13c37a9e096c6408e69990961db7"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "mime"
@@ -2688,6 +2750,20 @@ dependencies = [
 
 [[package]]
 name = "ndarray"
+version = "0.15.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "adb12d4e967ec485a5f71c6311fe28158e9d6f4bc4a447b474184d0f91a8fa32"
+dependencies = [
+ "matrixmultiply",
+ "num-complex",
+ "num-integer",
+ "num-traits",
+ "rawpointer",
+ "rayon",
+]
+
+[[package]]
+name = "ndarray"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "882ed72dce9365842bf196bdeedf5055305f11fc8c03dee7bb0194a6cad34841"
@@ -2797,6 +2873,17 @@ name = "num-conv"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51d515d32fb182ee37cda2ccdcb92950d6a3c2893aa280e540671c2cd0f3b1d9"
+
+[[package]]
+name = "num-derive"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "876a53fff98e03a936a674b29568b0e605f06b29372c2489ff4de23f1949743d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
 
 [[package]]
 name = "num-derive"
@@ -2925,7 +3012,7 @@ version = "2.0.0-rc.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fa7e49bd669d32d7bc2a15ec540a527e7764aec722a45467814005725bcd721"
 dependencies = [
- "ndarray",
+ "ndarray 0.16.1",
  "ort-sys",
  "smallvec 2.0.0-alpha.10",
  "tracing",
@@ -3395,7 +3482,7 @@ version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec3fec90fc7a119692a6244ed4404d152878a47f0bf3f90f34dc79bb7a339d24"
 dependencies = [
- "num-derive",
+ "num-derive 0.4.2",
  "num-traits",
  "thiserror 1.0.69",
 ]
@@ -3529,7 +3616,7 @@ dependencies = [
  "maybe-rayon",
  "new_debug_unreachable",
  "noop_proc_macro",
- "num-derive",
+ "num-derive 0.4.2",
  "num-traits",
  "once_cell",
  "paste",
@@ -4868,6 +4955,21 @@ dependencies = [
  "socket2 0.6.0",
  "tokio-macros",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "tokio-cron-scheduler"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4c2e3a88f827f597799cf70a6f673074e62f3fc5ba5993b2873345c618a29af"
+dependencies = [
+ "chrono",
+ "cron",
+ "num-derive 0.3.3",
+ "num-traits",
+ "tokio",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]

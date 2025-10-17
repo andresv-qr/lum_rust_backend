@@ -15,6 +15,8 @@ pub mod cache;
 pub mod cache_key;
 pub mod cache_ttl;
 pub mod utils;
+pub mod db;
+pub mod tasks;
 
 // New domain-driven architecture
 pub mod domains;
@@ -61,3 +63,4 @@ pub fn create_app_router(app_state: Arc<AppState>) -> Router {
         .layer(get_cors_layer())
         .layer(axum_middleware::from_fn(security_headers_middleware))
 }
+

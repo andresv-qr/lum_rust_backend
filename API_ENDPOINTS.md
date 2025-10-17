@@ -3,9 +3,10 @@
 
 **🎉 IMPLEMENTACIÓN COMPLETA FINALIZADA - SISTEMA PRODUCTIVO**
 
-**Servidor:** Puerto 8000  
-**Arquitectura:** Aplicación Monolítica Rust v4 con Pipeline QR Híbrido + Sistema de Encuestas + **NUEVO: Unified Authentication**
-**Estado:** Production Ready - Sistema Robusto con 7 Detectores QR + ONNX + Encuestas Auto-asignadas + Google OAuth2
+**Servidor Principal:** Puerto 8000 (Rust)
+**Servidor Fallback QR:** Puerto 8008 (Python QReader API)  
+**Arquitectura:** Sistema Híbrido Rust + Python con Pipeline QR Completo + Encuestas + Unified Authentication
+**Estado:** Production Ready - Sistema Multi-Capa: 3 Detectores Rust + **2 Modelos ONNX ML** + **Python QReader Optimizado** + Encuestas + OAuth2
 **Fecha:** 2025-09-19
 
 ---
@@ -213,9 +214,12 @@ La API ahora retorna todos los campos disponibles del usuario desde la base de d
 ## 🚀 **CARACTERÍSTICAS IMPLEMENTADAS**
 
 ### **🔍 Pipeline QR Híbrido Avanzado:**
-- ✅ **7 Detectores Rust Nativos** - rqrr, bardecoder, zbar, quircs, rxing
-- ✅ **ONNX YOLOv8 QReader** - 4 modelos (nano/small/medium/large)
-- ✅ **Python Fallback** - Integración con API externa como último recurso
+- ✅ **3 Detectores Rust Nativos** - rqrr, quircs, rxing optimizados (~5-15ms)
+- ✅ **2 Modelos ONNX ML Activos** - Small (94% precisión), Medium (96% precisión) (~100-150ms) 
+- ✅ **Python QReader Fallback** - API optimizada puerto 8008 (~255ms, 3.9 RPS, 100% éxito)
+  - **Hybrid Detection Engine**: CV2 + PYZBAR + QReader Small + Medium
+  - **PyTorch Optimizado**: inference_mode(), singleton pattern, memoria eficiente
+  - **Validado**: 400+ requests, concurrencia 100 usuarios, 91% menos memoria
 - ✅ **Detección Cascada** - Optimizado por velocidad (5ms - 500ms)
 
 ### **📊 Observabilidad & Monitoreo:**
@@ -814,6 +818,229 @@ Cache-Control: private, max-age=300, must-revalidate
   - Manejo de usuarios sin datos (respuesta vacía)
   - Logging de accesos y métricas de performance
   - Datos seguros sin información sensible
+
+#### Actualizar Datos de Usuario ✅ NUEVO + JWT PROTEGIDO
+- **Endpoint:** `PUT /api/v4/userdata`
+- **Descripción:** Actualizar datos demográficos del usuario en public.dim_users
+- **Headers:** `Authorization: Bearer <jwt_token>` **REQUERIDO**
+- **Método:** `PUT`
+- **Content-Type:** `application/json`
+
+- **Body (JSON):** Todos los campos son opcionales. Solo los campos enviados serán actualizados.
+```json
+{
+  "name": "Juan Carlos Pérez",
+  "date_of_birth": "1985-03-15",
+  "country_origin": "Panama",
+  "country_residence": "Panama",
+  "segment_activity": "Retail",
+  "genre": "M",
+  "ws_id": "507-1234-5678"
+}
+```
+
+- **Campos actualizables:**
+  - `name` (`string` | `null`) - Nombre completo
+  - `date_of_birth` (`string` | `null`) - Fecha de nacimiento (formato libre)
+  - `country_origin` (`string` | `null`) - País de origen
+  - `country_residence` (`string` | `null`) - País de residencia
+  - `segment_activity` (`string` | `null`) - Segmento de actividad
+  - `genre` (`string` | `null`) - Género (M/F/Otro)
+  - `ws_id` (`string` | `null`) - ID de WhatsApp
+
+**NOTA:** El campo `email` NO es actualizable desde este endpoint por seguridad.
+
+- **Ejemplo de Request:**
+```bash
+curl -X PUT "https://api.example.com/api/v4/userdata" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "María Rodríguez",
+    "country_residence": "Colombia",
+    "segment_activity": "Technology"
+  }'
+```
+
+- **Ejemplo de Respuesta Exitosa (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "name": "María Rodríguez",
+    "email": "maria@example.com",
+    "date_of_birth": "1990-05-20",
+    "country_origin": "Panama",
+    "country_residence": "Colombia",
+    "segment_activity": "Technology",
+    "genre": "F",
+    "ws_id": "507-9876-5432",
+    "updated_at": "2025-10-04T10:30:45-05:00"
+  },
+  "error": null,
+  "request_id": "d5e8f9a1-23bc-4def-8901-234567890abc",
+  "timestamp": "2025-10-04T15:30:45Z",
+  "execution_time_ms": 23,
+  "cached": false
+}
+```
+
+- **Códigos de Error:**
+  - `400 BAD REQUEST` - No se proporcionaron campos para actualizar
+  - `401 UNAUTHORIZED` - Token JWT inválido o ausente
+  - `404 NOT FOUND` - Usuario no existe en la base de datos
+  - `500 INTERNAL SERVER ERROR` - Error de base de datos
+
+- **Características:**
+  - ✅ Autenticación JWT obligatoria
+  - ✅ Actualización parcial (solo campos enviados se actualizan)
+  - ✅ Campo `updated_at` se actualiza automáticamente con timezone GMT-5
+  - ✅ Retorna datos actualizados completos después del UPDATE
+  - ✅ Validación de usuario existente
+  - ✅ Query dinámico construido solo con campos proporcionados
+  - ✅ Logging detallado de operaciones
+  - ✅ Métricas de performance incluidas
+  - ⚠️ El campo `email` no es actualizable por seguridad
+
+- **Comportamiento del Timestamp:**
+  - El campo `updated_at` se actualiza automáticamente en cada operación PUT
+  - Formato: `timestamp with time zone` en PostgreSQL
+  - Timezone: GMT-5 (Panama/Colombia)
+  - Se retorna en formato ISO 8601 en la respuesta
+
+#### Cambiar Contraseña (Directo) ✅ NUEVO + JWT PROTEGIDO
+- **Endpoint:** `PUT /api/v4/userdata/password`
+- **Descripción:** Cambiar contraseña del usuario autenticado con verificación de contraseña actual
+- **Headers:** `Authorization: Bearer <jwt_token>` **REQUERIDO**
+- **Método:** `PUT`
+- **Content-Type:** `application/json`
+
+**🎯 Ventajas vs Flujo de Email:**
+- ✅ Un solo request (más rápido)
+- ✅ No requiere acceso al email
+- ✅ Doble verificación: JWT + contraseña actual
+- ✅ Mejor UX para usuarios que conocen su contraseña
+
+**Body (JSON):**
+```json
+{
+  "current_password": "ContraseñaActual123!",
+  "new_password": "NuevaContraseña456!",
+  "confirmation_password": "NuevaContraseña456!"
+}
+```
+
+**Validaciones de Contraseña:**
+- ✅ **Longitud:** 8-128 caracteres
+- ✅ **Mayúsculas:** Al menos 1 letra mayúscula
+- ✅ **Minúsculas:** Al menos 1 letra minúscula
+- ✅ **Números:** Al menos 1 dígito
+- ✅ **Caracteres Especiales:** Al menos 1 de `!@#$%^&*()_+-=[]{}|;:,.<>?`
+- ✅ **Confirmación:** Las contraseñas deben coincidir exactamente
+- ✅ **Diferente:** Nueva contraseña debe ser diferente de la actual
+
+**Ejemplo de Request:**
+```bash
+curl -X PUT "https://api.example.com/api/v4/userdata/password" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "current_password": "MiPassword123!",
+    "new_password": "MiNuevoPassword456!",
+    "confirmation_password": "MiNuevoPassword456!"
+  }'
+```
+
+**Ejemplo de Respuesta Exitosa (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "user_id": 42,
+    "email": "usuario@ejemplo.com",
+    "password_updated_at": "2025-10-04T10:45:30-05:00",
+    "message": "Contraseña actualizada exitosamente"
+  },
+  "error": null,
+  "request_id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+  "timestamp": "2025-10-04T15:45:30Z",
+  "execution_time_ms": 234,
+  "cached": false
+}
+```
+
+**Códigos de Error:**
+
+| Código | Descripción | Causa |
+|--------|-------------|-------|
+| **200** | ✅ Contraseña actualizada | Operación exitosa |
+| **400** | ❌ Bad Request | Contraseñas no coinciden, no cumple requisitos, o nueva contraseña igual a actual |
+| **401** | ❌ Unauthorized | Token JWT inválido o contraseña actual incorrecta |
+| **404** | ❌ Not Found | Usuario no existe en la base de datos |
+| **500** | ❌ Internal Server Error | Error de base de datos o servidor |
+
+**Casos Especiales:**
+- **Usuario OAuth (sin contraseña):** Retorna `400 BAD REQUEST` - El usuario debe usar el flujo de email para establecer una contraseña primero
+- **Contraseña nueva = contraseña actual:** Retorna `400 BAD REQUEST`
+- **Contraseña actual incorrecta:** Retorna `401 UNAUTHORIZED`
+
+**Características de Seguridad:**
+- ✅ **Doble Factor:** Requiere JWT válido + contraseña actual correcta
+- ✅ **Hash Bcrypt:** Contraseña hasheada con bcrypt (cost=12)
+- ✅ **Timestamp GMT-5:** Campo `updated_at` actualizado automáticamente
+- ✅ **Validación Robusta:** Verifica fortaleza de contraseña antes de actualizar
+- ✅ **Logging Completo:** Todos los intentos registrados con request_id
+- ✅ **No Expone Hash:** Nunca retorna el hash de la contraseña
+- ✅ **Audit Trail:** Cambios registrados en audit_logs
+
+**Logging de Eventos:**
+```
+✅ SUCCESS: Password changed successfully - user_id: 42, execution_time: 234ms
+⚠️  WARNING: Password confirmation mismatch - user_id: 42
+⚠️  WARNING: Current password incorrect - user_id: 42
+⚠️  WARNING: New password same as current - user_id: 42
+❌ ERROR: User does not have password set (OAuth user) - user_id: 42
+```
+
+**Comparación de Métodos de Cambio de Contraseña:**
+
+| Aspecto | PUT /userdata/password (Directo) | POST /passwords/request-code + set-with-code (Email) |
+|---------|----------------------------------|-----------------------------------------------------|
+| **Requests** | 1 | 2 |
+| **Autenticación** | JWT + Contraseña actual | Email verification code |
+| **Requiere Email** | ❌ No | ✅ Sí |
+| **Velocidad** | ⚡ Rápido (1 request) | 🐢 Más lento (2 requests) |
+| **Seguridad** | ⭐⭐⭐⭐ Alta | ⭐⭐⭐⭐⭐ Muy Alta |
+| **UX** | ⭐⭐⭐⭐⭐ Excelente | ⭐⭐⭐ Buena |
+| **Uso Recomendado** | Usuario conoce contraseña | Usuario olvidó contraseña |
+| **Notificación** | Opcional (configurable) | Automática (email) |
+
+**Flujos Recomendados:**
+
+```
+┌──────────────────────────────────────────┐
+│ ¿Usuario conoce su contraseña actual?   │
+└─────────────┬────────────────────────────┘
+              │
+     ┌────────┴────────┐
+     │                 │
+    SÍ                NO
+     │                 │
+     ▼                 ▼
+┌─────────────┐   ┌──────────────────────┐
+│ Método 1    │   │ Método 2             │
+│ PUT         │   │ POST request-code    │
+│ /password   │   │ + set-with-code      │
+│ (Directo)   │   │ (Email recovery)     │
+└─────────────┘   └──────────────────────┘
+```
+
+**Mejores Prácticas:**
+1. **Para cambios rutinarios:** Usar endpoint directo (`PUT /userdata/password`)
+2. **Para recuperación:** Usar flujo de email (`POST /passwords/request-code`)
+3. **Para nuevos usuarios OAuth:** Usar flujo de email para establecer primera contraseña
+4. **Rate Limiting:** Considerar límite de 5 intentos por hora por usuario
+5. **Notificaciones:** Enviar email de confirmación después del cambio (opcional)
 
 #### Obtener Emisores del Usuario ✅ NUEVO + JWT PROTEGIDO
 - **Endpoint:** `GET /api/v4/invoices/issuers`
@@ -1647,89 +1874,89 @@ Los endpoints antiguos siguen funcionando pero **redirigen internamente** al sis
 ```
 - **Optimizaciones:** Respuesta rápida, cache, datos en tiempo real
 
-#### Historial de Recompensas ✅ IMPLEMENTADO + JWT PROTEGIDO
-- **Endpoint:** `GET /api/v4/rewards/history`
-- **Descripción:** Obtener historial de acumulaciones y redenciones del usuario desde `rewards.vw_hist_accum_redem`
-- **Headers:** `Authorization: Bearer <jwt_token>` **REQUERIDO**
-- **Estado:** ✅ **COMPLETAMENTE FUNCIONAL** - Endpoint implementado y probado exitosamente
-- **Query Parameters:**
-  - `limit`: Límite de resultados (default: 50, max: 500)
-  - `offset`: Posición inicial para paginación (default: 0)
-  - `date_from`: Fecha desde (formato: YYYY-MM-DD)
-  - `date_to`: Fecha hasta (formato: YYYY-MM-DD)
-  - `source_type_filter`: Filtro por tipo de fuente (búsqueda parcial)
+    #### Historial de Recompensas ✅ IMPLEMENTADO + JWT PROTEGIDO
+    - **Endpoint:** `GET /api/v4/rewards/history`
+    - **Descripción:** Obtener historial de acumulaciones y redenciones del usuario desde `rewards.vw_hist_accum_redem`
+    - **Headers:** `Authorization: Bearer <jwt_token>` **REQUERIDO**
+    - **Estado:** ✅ **COMPLETAMENTE FUNCIONAL** - Endpoint implementado y probado exitosamente
+    - **Query Parameters:**
+      - `limit`: Límite de resultados (default: 50, max: 500)
+      - `offset`: Posición inicial para paginación (default: 0)
+      - `date_from`: Fecha desde (formato: YYYY-MM-DD)
+      - `date_to`: Fecha hasta (formato: YYYY-MM-DD)
+      - `source_type_filter`: Filtro por tipo de fuente (búsqueda parcial)
 
-- **Ejemplo de Uso:**
-```bash
-# Consulta básica
-GET /api/v4/rewards/history?limit=20
+    - **Ejemplo de Uso:**
+    ```bash
+    # Consulta básica
+    GET /api/v4/rewards/history?limit=20
 
-# Con filtros de fecha
-GET /api/v4/rewards/history?date_from=2024-01-01&date_to=2024-12-31&limit=100
+    # Con filtros de fecha
+    GET /api/v4/rewards/history?date_from=2024-01-01&date_to=2024-12-31&limit=100
 
-# Con filtro por tipo
-GET /api/v4/rewards/history?source_type_filter=Acumulación&limit=50
-```
+    # Con filtro por tipo
+    GET /api/v4/rewards/history?source_type_filter=Acumulación&limit=50
+    ```
 
-- **Respuesta:**
-```json
-{
-  "success": true,
-  "data": {
-    "items": [
-      {
-        "source_type": "Acumulación",
-        "user_id": 1,
-        "name_friendly": "Compra en Supermercado Rey",
-        "description_friendly": "Acumulación por compra de productos",
-        "quantity": 150,
-        "date": "2024-08-15",
-        "img": "https://example.com/images/accumulation.png"
+    - **Respuesta:**
+    ```json
+    {
+      "success": true,
+      "data": {
+        "items": [
+          {
+            "source_type": "Acumulación",
+            "user_id": 1,
+            "name_friendly": "Compra en Supermercado Rey",
+            "description_friendly": "Acumulación por compra de productos",
+            "quantity": 150,
+            "date": "2024-08-15",
+            "img": "https://example.com/images/accumulation.png"
+          },
+          {
+            "source_type": "Redención",
+            "user_id": 1,
+            "name_friendly": "Canje de productos",
+            "description_friendly": "Redención de 100 Lümis por descuento",
+            "quantity": -100,
+            "date": "2024-08-10",
+            "img": "https://example.com/images/redemption.png"
+          }
+        ],
+        "pagination": {
+          "total": 245,
+          "limit": 20,
+          "offset": 0,
+          "has_next": true,
+          "has_previous": false
+        },
+        "summary": {
+          "total_items": 245,
+          "total_acumulaciones": 180,
+          "total_redenciones": 65,
+          "sum_quantity": 2150
+        }
       },
-      {
-        "source_type": "Redención",
-        "user_id": 1,
-        "name_friendly": "Canje de productos",
-        "description_friendly": "Redención de 100 Lümis por descuento",
-        "quantity": -100,
-        "date": "2024-08-10",
-        "img": "https://example.com/images/redemption.png"
-      }
-    ],
-    "pagination": {
-      "total": 245,
-      "limit": 20,
-      "offset": 0,
-      "has_next": true,
-      "has_previous": false
-    },
-    "summary": {
-      "total_items": 245,
-      "total_acumulaciones": 180,
-      "total_redenciones": 65,
-      "sum_quantity": 2150
+      "error": null,
+      "request_id": "b8f3c9e2-4f5a-4b6c-9d8e-1f2a3b4c5d6e",
+      "timestamp": "2024-08-18T16:45:00Z",
+      "execution_time_ms": 23,
+      "cached": false
     }
-  },
-  "error": null,
-  "request_id": "b8f3c9e2-4f5a-4b6c-9d8e-1f2a3b4c5d6e",
-  "timestamp": "2024-08-18T16:45:00Z",
-  "execution_time_ms": 23,
-  "cached": false
-}
-```
+    ```
 
-- **Características:**
-  - Autenticación JWT obligatoria
-  - Filtrado automático por usuario del token
-  - Paginación eficiente con limit/offset
-  - Filtros avanzados por fechas y tipo de fuente
-  - Estadísticas de resumen incluidas
-  - Ordenamiento por fecha descendente
-  - Queries optimizadas ejecutadas en paralelo
-  - Logging de performance y métricas
-  - Estructura ApiResponse estándar v4
+    - **Características:**
+      - Autenticación JWT obligatoria
+      - Filtrado automático por usuario del token
+      - Paginación eficiente con limit/offset
+      - Filtros avanzados por fechas y tipo de fuente
+      - Estadísticas de resumen incluidas
+      - Ordenamiento por fecha descendente
+      - Queries optimizadas ejecutadas en paralelo
+      - Logging de performance y métricas
+      - Estructura ApiResponse estándar v4
 
----
+    ---
 
 ### 📄 Facturas v4
 
@@ -2118,34 +2345,448 @@ GET /api/v4/invoices/details?cursor=ZGF0ZToyMDI0LTA4LTE1VDEwOjAwOjAwWnxhbW91bnQ6
 - **Endpoint:** `GET /api/v4/invoices/headers`
 - **Descripción:** Consultar headers de facturas con filtros avanzados y paginación eficiente
 - **Headers:** `Authorization: Bearer <jwt_token>` **REQUERIDO**
-- **Query Parameters:**
-  - `from_date`: Fecha desde (YYYY-MM-DD)
-  - `to_date`: Fecha hasta (YYYY-MM-DD)
-  - `min_amount`: Monto mínimo de filtro
-  - `max_amount`: Monto máximo de filtro
-  - `issuer_name`: Nombre del emisor (búsqueda parcial con LIKE)
-  - `limit`: Límite de resultados (default: 100, max: 1000)
-  - `offset`: Posición inicial para paginación (default: 0)
 
-- **Ejemplo de Uso:**
+##### Query Parameters
+| Parámetro | Tipo | Requerido | Descripción | Ejemplo |
+|-----------|------|-----------|-------------|---------|
+| `from_date` | `DateTime` | No | Fecha desde (YYYY-MM-DD) | `2024-01-01` |
+| `to_date` | `DateTime` | No | Fecha hasta (YYYY-MM-DD) | `2024-12-31` |
+| `min_amount` | `f64` | No | Monto mínimo de filtro | `100.00` |
+| `max_amount` | `f64` | No | Monto máximo de filtro | `5000.00` |
+| `issuer_name` | `String` | No | Nombre del emisor (búsqueda parcial con ILIKE) | `Empresa` |
+| `limit` | `i32` | No | Límite de resultados (default: 100, max: 1000) | `50` |
+| `offset` | `i32` | No | Posición inicial para paginación (default: 0) | `0` |
+| `cursor` | `String` | No | Cursor para keyset pagination (alternativa a offset) | `base64_encoded` |
+| `direction` | `String` | No | Dirección de navegación: `next` o `prev` (con cursor) | `next` |
+| `order_by` | `String` | No | Campo para ordenar (default: `reception_date`) | `tot_amount` |
+| `order_direction` | `String` | No | Dirección de orden: `ASC` o `DESC` (default: `DESC`) | `DESC` |
+
+##### Ejemplo de Uso
 ```bash
-# Filtros básicos
+# Filtros básicos con paginación offset
 GET /api/v4/invoices/headers?from_date=2024-01-01&limit=50
 
-# Con filtros avanzados
+# Con filtros avanzados múltiples
 GET /api/v4/invoices/headers?from_date=2024-01-01&to_date=2024-12-31&min_amount=100&issuer_name=Empresa&limit=100
+
+# Con keyset pagination (recomendado para datasets grandes)
+GET /api/v4/invoices/headers?cursor=eyJyZWNlcHRpb25fZGF0ZSI6IjIwMjQtMDEtMTVUMTI6MzA6MDAiLCJpZCI6MTIzfQ&direction=next&limit=50
+
+# Búsqueda por emisor con orden personalizado
+GET /api/v4/invoices/headers?issuer_name=Panama&order_by=tot_amount&order_direction=DESC&limit=20
 ```
 
-- **Respuesta:** Lista de headers de facturas con summary y pagination
-- **Características:**
-  - ✅ **Autenticación JWT obligatoria** con filtrado por usuario
-  - ⚡ **Filtros múltiples** combinables (fechas, montos, emisor)
-  - 🎯 **Búsqueda por emisor** con LIKE pattern matching
-  - 📊 **Summary automático** con estadísticas de invoices
-  - 🚀 **Performance optimizada** con queries eficientes
-  - 📈 **Paginación básica** con limit/offset
-  - 🔍 **Tipos de dato correctos** (DateTime vs timestamp)
-  - 🧩 **Unificación Completa:** Eliminado endpoint interno `invoice_headers/search`; toda la funcionalidad vive aquí.
+##### Respuesta Exitosa (200 OK)
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "no": "FE01-00012345",
+      "date": "2024-01-15T10:30:00",
+      "tot_itbms": 12.50,
+      "cufe": "FE01200000000434-15-9379...",
+      "issuer_name": "Empresa Ejemplo S.A.",
+      "tot_amount": 112.50,
+      "url": "https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR?chFE=...",
+      "process_date": "2024-01-15T10:35:00Z",
+      "reception_date": "2024-01-15T10:30:00Z",
+      "type": "01",
+      "issuer_ruc": "1234567890",
+      "issuer_dv": "12",
+      "issuer_address": "Calle 50, Ciudad de Panamá",
+      "issuer_phone": "+507 123-4567",
+      "time": "",
+      "auth_date": "",
+      "receptor_name": "",
+      "details_count": 5,
+      "payments_count": 1
+    }
+  ],
+  "total": 150,
+  "page_info": {
+    "current_page": 1,
+    "page_size": 50,
+    "total_pages": 3,
+    "has_next": true,
+    "has_previous": false,
+    "cursor_pagination": {
+      "next_cursor": "eyJyZWNlcHRpb25fZGF0ZSI6IjIwMjQtMDEtMTBUMDk6MDA6MDBaIiwiaWQiOjUwfQ",
+      "prev_cursor": null,
+      "has_more": true
+    }
+  },
+  "summary": {
+    "total_invoices": 150,
+    "total_amount": 15750.80,
+    "unique_issuers": 12,
+    "date_range": {
+      "earliest": "2024-01-01T08:00:00Z",
+      "latest": "2024-12-31T18:30:00Z"
+    },
+    "amount_range": {
+      "minimum": 25.00,
+      "maximum": 2500.00,
+      "average": 105.01
+    }
+  }
+}
+```
+
+##### Estructura de Campos (`InvoiceHeaderItem`)
+
+| Campo | Tipo | Nullable | Descripción |
+|-------|------|----------|-------------|
+| `id` | `i64` | No | ID secuencial generado por ROW_NUMBER() |
+| `no` | `String` | Sí | Número de factura (ej: "FE01-00012345") |
+| `date` | `NaiveDateTime` | Sí | Fecha de emisión de la factura |
+| `tot_itbms` | `f64` | Sí | Total de ITBMS (impuesto) |
+| `cufe` | `String` | Sí | Código Único de Factura Electrónica |
+| `issuer_name` | `String` | Sí | Nombre del emisor/proveedor |
+| `tot_amount` | `f64` | Sí | Monto total de la factura |
+| `url` | `String` | Sí | URL del QR de consulta DGI |
+| `process_date` | `DateTime<Utc>` | Sí | Fecha de procesamiento del sistema |
+| `reception_date` | `DateTime<Utc>` | Sí | Fecha de recepción (usado para ordenar) |
+| `type` | `String` | Sí | Tipo de factura ("01" = Factura, etc.) |
+| `details_count` | `i64` | No | Cantidad de líneas de detalle (JOIN con `invoice_detail`) |
+| `payments_count` | `i64` | No | Cantidad de pagos asociados (JOIN con `invoice_payment`) |
+| `issuer_ruc` | `String` | Sí | RUC (Registro Único de Contribuyente) del emisor |
+| `issuer_dv` | `String` | Sí | Dígito verificador del RUC del emisor |
+| `issuer_address` | `String` | Sí | Dirección física del emisor/comercio |
+| `issuer_phone` | `String` | Sí | Teléfono de contacto del emisor |
+| `time` | `String` | Sí | **Campo legacy** (vacío, mantener por compatibilidad) |
+| `auth_date` | `String` | Sí | **Campo legacy** (vacío, mantener por compatibilidad) |
+| `receptor_name` | `String` | Sí | **Campo legacy** (vacío, mantener por compatibilidad) |
+
+##### Estructura del Summary
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `total_invoices` | `i64` | Total de facturas en el resultado |
+| `total_amount` | `f64` | Suma de todos los montos |
+| `unique_issuers` | `i64` | Cantidad de emisores únicos |
+| `date_range.earliest` | `DateTime<Utc>` | Fecha de factura más antigua |
+| `date_range.latest` | `DateTime<Utc>` | Fecha de factura más reciente |
+| `amount_range.minimum` | `f64` | Monto mínimo encontrado |
+| `amount_range.maximum` | `f64` | Monto máximo encontrado |
+| `amount_range.average` | `f64` | Promedio de montos |
+
+##### Características
+- ✅ **Autenticación JWT obligatoria** con filtrado automático por `user_id`
+- ⚡ **Filtros múltiples** combinables (fechas AND montos AND emisor)
+- 🎯 **Búsqueda por emisor** con ILIKE pattern matching (case-insensitive, búsqueda parcial)
+- 📊 **Summary automático** con estadísticas agregadas (totales, promedios, rangos)
+- 🚀 **Performance optimizada** con queries eficientes y LEFT JOINs para conteos
+- 📈 **Doble paginación** soportada: 
+  - **Offset/Limit** (simple, compatible con APIs tradicionales)
+  - **Keyset/Cursor** (recomendado para datasets grandes, más eficiente)
+- 🔍 **Tipos de dato correctos** (`DateTime<Utc>` vs `NaiveDateTime` vs `String`)
+- 🧩 **Unificación Completa:** Eliminado endpoint interno `invoice_headers/search`; toda la funcionalidad vive aquí
+- 📋 **Contadores automáticos:** `details_count` y `payments_count` calculados con LEFT JOIN
+- 🔗 **Link headers** para navegación con cursor (siguiendo estándar RFC 8288)
+
+##### Notas Técnicas
+- Los **campos de emisor** (`issuer_ruc`, `issuer_dv`, `issuer_address`, `issuer_phone`) traen datos reales de la base de datos cuando están disponibles
+- Los **campos legacy** (`time`, `auth_date`, `receptor_name`) retornan strings vacíos para mantener compatibilidad con versiones anteriores
+- El campo `id` es generado por `ROW_NUMBER()` y **NO es persistente** (cambia con filtros/orden)
+- Para identificación única usar `cufe` (Código Único de Factura Electrónica)
+- `reception_date` es el campo por defecto para ordenamiento (más reciente primero)
+- Los filtros de fecha usan `reception_date` (no `date`) para consistencia
+- La búsqueda de `issuer_name` usa `ILIKE` con patrón `%texto%` (búsqueda parcial case-insensitive)
+- Los conteos (`details_count`, `payments_count`) usan `COALESCE(..., 0)` para evitar NULLs
+- `issuer_ruc` y `issuer_dv` pueden ser NULL si la factura no tiene estos datos (facturas antiguas o incompletas)
+
+---
+
+#### Procesar Factura desde URL ✅ JWT PROTEGIDO + WEB SCRAPING
+- **Endpoint:** `POST /api/v4/invoices/process-from-url`
+- **Descripción:** Extrae y procesa datos de factura desde URL de DGI Panamá mediante web scraping
+- **Headers:** `Authorization: Bearer <jwt_token>` **REQUERIDO**
+- **Content-Type:** `application/json`
+
+##### Request Body
+```json
+{
+  "url": "string",                    // ✅ REQUERIDO - URL de la factura DGI
+  "type": "string",                   // ⚪ OPCIONAL - Tipo: "QR" o "CUFE" (default: auto-detect)
+  "origin": "string",                 // ⚪ OPCIONAL - Origen: "app", "whatsapp", "telegram"
+  "user_email": "string",             // ⚪ OPCIONAL - Email del usuario
+  "user_phone_number": "string",      // ⚪ OPCIONAL - Número de teléfono
+  "user_telegram_id": "string",       // ⚪ OPCIONAL - ID de Telegram
+  "user_ws": "string"                 // ⚪ OPCIONAL - ID de WhatsApp
+}
+```
+
+##### Campos del Request
+
+| Campo | Tipo | Requerido | Descripción | Ejemplo |
+|-------|------|-----------|-------------|---------|
+| `url` | `String` | ✅ Sí | URL completa de la factura electrónica de DGI Panamá | `https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR?chFE=...` |
+| `type` | `String` | ⚪ No | Tipo de URL: `"QR"` o `"CUFE"` (auto-detectado si no se provee) | `"QR"` |
+| `origin` | `String` | ⚪ No | Canal de origen de la solicitud | `"app"`, `"whatsapp"`, `"telegram"` |
+| `user_email` | `String` | ⚪ No | Email del usuario que registra la factura | `"user@example.com"` |
+| `user_phone_number` | `String` | ⚪ No | Teléfono del usuario | `"+507-1234-5678"` |
+| `user_telegram_id` | `String` | ⚪ No | ID de usuario de Telegram | `"123456789"` |
+| `user_ws` | `String` | ⚪ No | ID de WhatsApp | `"507-6123-4567"` |
+
+##### Validaciones
+- ✅ URL debe comenzar con `http://` o `https://`
+- ✅ URL no debe exceder 2048 caracteres
+- ✅ URL debe ser de dominio permitido (DGI Panamá)
+- ✅ Usuario autenticado mediante JWT (user_id extraído del token)
+
+##### Ejemplo de Uso
+```bash
+# Procesar factura desde URL de QR
+POST /api/v4/invoices/process-from-url
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "url": "https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR?chFE=FE01200000000434-15-9379...",
+  "type": "QR",
+  "origin": "app"
+}
+```
+
+```bash
+# Procesar factura desde URL con metadatos completos
+POST /api/v4/invoices/process-from-url
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "url": "https://dgi-fep.mef.gob.pa/Consultas/FacturasPorCUFE?cufe=FE012024...",
+  "type": "CUFE",
+  "origin": "whatsapp",
+  "user_email": "user@example.com",
+  "user_phone_number": "+507-6123-4567"
+}
+```
+
+##### Respuesta Exitosa (200 OK)
+```json
+{
+  "success": true,
+  "data": {
+    "success": true,
+    "message": "Tu factura de Super 99 por valor de $45.80 fue procesada exitosamente. Tu historial de compras está tomando forma... ¡Vamos por más!",
+    "process_type": "QR",
+    "invoice_id": null,
+    "cufe": "FE01200000000434-15-9379-001-000-20240115-12345-67890",
+    "processing_time_ms": 1250,
+    "issuer_name": "Super 99",
+    "tot_amount": 45.80
+  },
+  "error": null,
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "execution_time_ms": 1250,
+  "cached": false
+}
+```
+
+##### Respuesta - Factura Duplicada (200 OK)
+```json
+{
+  "success": true,
+  "data": {
+    "success": true,
+    "message": "Esta factura ya fue procesada recientemente (CUFE: FE01200000000434...)",
+    "process_type": "DUPLICATE",
+    "invoice_id": null,
+    "cufe": "FE01200000000434-15-9379-001-000-20240115-12345-67890",
+    "processing_time_ms": 45,
+    "issuer_name": null,
+    "tot_amount": null
+  },
+  "error": null,
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "execution_time_ms": 45,
+  "cached": false
+}
+```
+
+##### Respuesta - Error de Validación (400 Bad Request)
+```json
+{
+  "error": "VALIDATION_ERROR",
+  "message": "URL must start with http:// or https://",
+  "details": {
+    "field": "url",
+    "provided_value": "dgi-fep.mef.gob.pa/..."
+  }
+}
+```
+
+##### Respuesta - Error de Scraping (200 OK con fallback a mef_pending)
+```json
+{
+  "success": false,
+  "data": {
+    "success": false,
+    "message": "No pudimos procesar la factura automáticamente. Nuestro equipo la revisará manualmente y te notificaremos cuando esté lista.",
+    "process_type": null,
+    "invoice_id": null,
+    "cufe": null,
+    "processing_time_ms": 3500,
+    "issuer_name": null,
+    "tot_amount": null
+  },
+  "error": null,
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "execution_time_ms": 3500,
+  "cached": false
+}
+```
+
+**Nota:** Cuando ocurre error de scraping o guardado, la factura se guarda automáticamente en `public.mef_pending` para procesamiento manual posterior.
+
+##### Estructura de Respuesta (`ProcessUrlResponse`)
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `success` | `boolean` | Indica si el procesamiento fue exitoso |
+| `message` | `String` | Mensaje descriptivo del resultado en español |
+| `process_type` | `String` (nullable) | Tipo de procesamiento: `"QR"`, `"CUFE"`, o `"DUPLICATE"` |
+| `invoice_id` | `i32` (nullable) | ID de la factura en la base de datos (si fue guardada) |
+| `cufe` | `String` (nullable) | Código Único de Factura Electrónica extraído |
+| `processing_time_ms` | `u64` (nullable) | Tiempo total de procesamiento en milisegundos |
+| `issuer_name` | `String` (nullable) | Nombre del emisor de la factura |
+| `tot_amount` | `f64` (nullable) | Monto total de la factura |
+
+##### Proceso de Web Scraping
+
+El endpoint realiza las siguientes operaciones:
+
+1. **Validación de URL**
+   - Verifica formato válido (http/https)
+   - Valida dominio permitido (DGI Panamá)
+   - Normaliza la URL
+
+2. **Web Scraping**
+   - Descarga el HTML de la factura
+   - Extrae datos del header (emisor, receptor, totales)
+   - Extrae líneas de detalle de la factura
+   - Extrae información de pagos
+
+3. **Persistencia en Base de Datos**
+   - Verifica duplicados (mismo CUFE en última hora)
+   - Inserta en `invoice_header`
+   - Inserta detalles en `invoice_detail`
+   - Inserta pagos en `invoice_payment`
+   - Transacción atómica (rollback si falla)
+
+4. **Logging**
+   - Registra intento en `url_processing_logs`
+   - Incluye tiempo de ejecución
+   - Registra errores si ocurren
+
+##### Datos Extraídos de la Factura
+
+**Header (`invoice_header`):**
+- `no` - Número de factura
+- `date` - Fecha de emisión
+- `cufe` - Código Único de Factura Electrónica
+- `issuer_name` - Nombre del emisor
+- `issuer_ruc` - RUC del emisor
+- `issuer_dv` - Dígito verificador
+- `issuer_address` - Dirección del emisor
+- `issuer_phone` - Teléfono del emisor
+- `tot_amount` - Monto total
+- `tot_itbms` - Total de impuestos ITBMS
+- `url` - URL de la factura
+- `type` - Tipo de factura
+- `user_id` - ID del usuario (del JWT)
+- `origin` - Canal de origen
+- `process_date` - Fecha de procesamiento
+- `reception_date` - Fecha de recepción
+
+**Detalles (`invoice_detail`):**
+- `cufe` - Referencia a la factura
+- `quantity` - Cantidad
+- `code` - Código del producto/servicio
+- `description` - Descripción
+- `unit_price` - Precio unitario
+- `unit_discount` - Descuento unitario
+- `itbms` - ITBMS del ítem
+- `amount` - Subtotal
+- `information_of_interest` - Información adicional
+
+**Pagos (`invoice_payment`):**
+- `cufe` - Referencia a la factura
+- `forma_de_pago` - Forma de pago
+- `forma_de_pago_otro` - Otra forma de pago
+- `valor_pago` - Valor del pago
+- `efectivo` - Monto en efectivo
+- `tarjeta_debito` - Monto con tarjeta débito
+- `tarjeta_credito` - Monto con tarjeta crédito
+
+##### Características
+- ✅ **Autenticación JWT obligatoria** con extracción de `user_id`
+- 🌐 **Web scraping robusto** con manejo de errores
+- 🔄 **Detección de duplicados** (previene reprocesar misma factura en 1 hora)
+- 💾 **Transacciones atómicas** (todo o nada en DB)
+- ⚡ **Rate limiting** configurable por usuario
+- 📊 **Logging completo** de intentos y errores
+- 🔍 **Auto-detección** de tipo de URL (QR vs CUFE)
+- 🎯 **Validación de dominio** (solo URLs oficiales de DGI)
+- 📱 **Soporte multi-canal** (app, WhatsApp, Telegram)
+- 🔐 **Idempotencia** con header `x-request-id`
+- 🛡️ **Fallback a `mef_pending`** cuando falla procesamiento (permite revisión manual)
+
+##### Rate Limiting
+- **Máximo por hora:** 50 solicitudes
+- **Máximo por minuto:** 10 solicitudes
+- Configurable por usuario según trust score
+
+##### Notas Técnicas
+- El `user_id` se extrae **automáticamente del JWT**, no del request body (seguridad)
+- Las URLs deben ser del dominio oficial de DGI Panamá (`dgi-fep.mef.gob.pa`)
+- Los campos opcionales (`type`, `origin`, etc.) se almacenan como metadatos adicionales
+- Si la factura ya fue procesada en la última hora, retorna `process_type: "DUPLICATE"`
+- El web scraping usa selectores CSS robustos con fallbacks
+- Tiempo típico de procesamiento: 1-3 segundos (incluye HTTP request + parsing + DB)
+- Maneja diferentes formatos de facturas DGI (FE, FEE, NC, etc.)
+- **Fallback automático:** Si falla el procesamiento (scraping o guardado), la factura se guarda en `public.mef_pending` para revisión manual del equipo
+- Las facturas en `mef_pending` se procesan posteriormente y el usuario es notificado
+
+##### Sistema de Fallback a `mef_pending`
+
+Cuando el procesamiento de la factura falla (scraping o guardado en DB), el sistema automáticamente guarda la información en la tabla `public.mef_pending` para procesamiento manual posterior.
+
+**Campos guardados en `mef_pending`:**
+- `url` - URL de la factura
+- `user_id` - ID del usuario (del JWT)
+- `user_email` - Email del usuario (si se proporcionó)
+- `user_ws` / `chat_id` - WhatsApp ID (si se proporcionó)
+- `origin` - Canal de origen ("API", "app", "whatsapp", etc.)
+- `type_document` - Tipo de documento ("QR", "CUFE", "URL")
+- `error_message` - Descripción detallada del error
+- `reception_date` - Timestamp del intento
+
+**Beneficios:**
+- ✅ **Trazabilidad completa** de todos los intentos de procesamiento
+- ✅ **Recuperación automática** posterior por el equipo de soporte
+- ✅ **Notificación al usuario** cuando la factura es procesada manualmente
+- ✅ **Análisis de errores** para mejorar el sistema
+- ✅ **Sin pérdida de datos** incluso en casos de fallo
+
+##### Errores Comunes
+
+| Código | Error | Solución | Fallback |
+|--------|-------|----------|----------|
+| `400` | `URL is required` | Proporcionar campo `url` en el request | ❌ No |
+| `400` | `URL must start with http:// or https://` | Usar protocolo válido | ❌ No |
+| `400` | `URL is too long` | URL no debe exceder 2048 caracteres | ❌ No |
+| `401` | `Missing Authorization header` | Incluir JWT token válido | ❌ No |
+| `403` | `Rate limit exceeded` | Esperar antes de reintentar | ❌ No |
+| `409` | Factura duplicada | La factura ya fue procesada recientemente | ❌ No |
+| `200` | `SCRAPING_ERROR` | Error al extraer datos del HTML | ✅ Sí → mef_pending |
+| `200` | `Database error` | Error al guardar en base de datos | ✅ Sí → mef_pending |
 
 ---
 
@@ -2202,14 +2843,19 @@ timeout_ms: 5000
 }
 ```
 
-**Pipeline de Detección (Cascada):**
+**Pipeline de Detección (Cascada Mejorada):**
 1. **rqrr** (~5ms) - Rust nativo, más rápido
-2. **bardecoder** (~10ms) - Múltiples formatos
-3. **zbar** (~15ms) - Robusto, equivalente PYZBAR
-4. **quircs** (~20ms) - Alta precisión QR
-5. **rxing** (~25ms) - Port ZXing, muy preciso
-6. **RustQReader ONNX** (~150ms) - YOLOv8 ML (4 modelos)
-7. **Python Fallback** (~500ms) - API externa
+2. **quircs** (~10ms) - Alta precisión QR
+3. **rxing** (~15ms) - Port ZXing, muy preciso
+4. **🤖 ONNX Small** (~100ms) - YOLOv8 ML model (12MB, 94% precisión)
+5. **🤖 ONNX Medium** (~150ms) - YOLOv8 ML model (25MB, 96% precisión)
+6. **Rotation Correction** (~50ms) - 90°/180°/270° con detectores Rust
+7. **Python Fallback** (~255ms) - QReader API optimizada en puerto 8008
+   - **Hybrid Detection Engine**: CV2 → PYZBAR → QReader Small → QReader Medium
+   - **PyTorch Optimizations**: inference_mode(), torch.set_grad_enabled(False)
+   - **Performance**: 3.9 req/s, 255ms avg, 100% success rate
+   - **Concurrency**: Supports up to 100 concurrent requests
+   - **Memory**: 708MB total (91% reduction vs baseline)
 
 **Modelos ONNX Disponibles:**
 - `qreader_detector_nano.onnx` - 5MB, ~50ms, precisión 90%
@@ -2324,9 +2970,25 @@ timeout_ms: 5000
     },
     "python_fallback": {
       "status": "healthy",
-      "endpoint": "http://localhost:8001/qr/hybrid-fallback",
-      "last_ping": "2025-08-11T10:30:00Z",
-      "response_time_ms": 45
+      "endpoint": "http://localhost:8008/qr/hybrid-fallback",
+      "last_ping": "2025-10-05T21:05:00Z",
+      "response_time_ms": 255,
+      "implementation": "QReader PyTorch Optimized",
+      "features": [
+        "QReader Small + Medium models",
+        "PyTorch optimizations (inference_mode, threads=4)",
+        "Singleton pattern (91% memory reduction)",
+        "Multi-strategy preprocessing (3 approaches)",
+        "CV2 + PYZBAR + QReader hybrid engine",
+        "Real-time metrics and monitoring"
+      ],
+      "performance": {
+        "avg_latency_ms": 255,
+        "throughput_rps": 3.9,
+        "success_rate": 100.0,
+        "memory_usage_mb": 708,
+        "supported_concurrency": 100
+      }
     }
   },
   "performance": {
@@ -2336,6 +2998,237 @@ timeout_ms: 5000
   }
 }
 ```
+
+---
+
+## 🐍 Python QReader Fallback API (Puerto 8008)
+
+### Arquitectura del Sistema Híbrido
+La aplicación Rust utiliza una **API Python optimizada como fallback** cuando los detectores Rust nativos no logran detectar códigos QR. Esta API implementa un **Hybrid Detection Engine** con QReader + optimizaciones PyTorch.
+
+### 🚀 Rendimiento Comprobado
+- **✅ Latencia**: 255ms promedio
+- **✅ Throughput**: 3.9 req/s
+- **✅ Concurrencia**: Hasta 100 usuarios simultáneos  
+- **✅ Tasa de éxito**: 100% con las 5 imágenes de test
+- **✅ Memoria**: 708MB total (91% reducción vs baseline)
+
+---
+
+#### GET /health
+**Descripción**: Health check para verificar el estado de la API Python
+**Puerto**: 8008
+**Usado por**: Sistema Rust para verificar disponibilidad del fallback
+
+**Response**:
+```json
+{
+  "status": "ok",
+  "service": "qreader_api"
+}
+```
+
+#### GET /qr-hybrid-metrics
+**Descripción**: Métricas detalladas del Hybrid Detection Engine
+**Puerto**: 8008
+**Usado por**: Sistema Rust para monitoreo y debugging
+
+**Response**:
+```json
+{
+  "total_requests": 1250,
+  "successful_detections": 1238,
+  "success_rate": 99.04,
+  "avg_latency_ms": 255.3,
+  "current_concurrent": 0,
+  "peak_concurrent": 45,
+  "detector_stats": {
+    "qreader_small_success": 892,
+    "qreader_medium_success": 346,
+    "cv2_success": 0,
+    "pyzbar_success": 0
+  },
+  "performance": {
+    "p95_latency_ms": 460.4,
+    "p99_latency_ms": 521.1,
+    "throughput_rps": 3.9,
+    "memory_usage_mb": 708
+  },
+  "engine_type": "hybrid_optimized"
+}
+```
+
+#### POST /qr/hybrid-fallback
+**Descripción**: Endpoint principal para detección QR como fallback del sistema Rust
+**Puerto**: 8008
+**Content-Type**: `multipart/form-data`
+**Usado por**: Sistema Rust cuando detectores nativos fallan
+
+**Request**:
+```http
+POST /qr/hybrid-fallback HTTP/1.1
+Host: localhost:8008
+Content-Type: multipart/form-data
+
+file: [binary_image_data]
+```
+
+**Response (Éxito)**:
+```json
+{
+  "success": true,
+  "qr_data": "https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR?chFE=FE01...",
+  "detector_model": "QREADER_S_PRIORITY",
+  "pipeline": "Python Hybrid Fallback",
+  "methods_tried": [
+    "QREADER_S_PRIORITY",
+    "QREADER_M_PRIORITY"
+  ],
+  "processing_time_ms": 255,
+  "confidence": 0.98
+}
+```
+
+**Response (No QR detectado)**:
+```json
+{
+  "success": false,
+  "qr_data": null,
+  "detector_model": "NONE",
+  "pipeline": "Python Hybrid Fallback", 
+  "methods_tried": [
+    "CV2",
+    "CV2_CURVED", 
+    "PYZBAR",
+    "PYZBAR_ENHANCED",
+    "QREADER_S_PRIORITY",
+    "QREADER_M_PRIORITY"
+  ],
+  "processing_time_ms": 890,
+  "error": "No QR code detected by any method"
+}
+```
+
+### 🔧 Hybrid Detection Engine
+La API implementa un **motor de detección híbrido** que ejecuta múltiples estrategias en orden de prioridad:
+
+#### Fase 1: QReader Prioritario (Para máximo rendimiento)
+1. **QREADER_S_PRIORITY**: QReader Small model (100MB, ~200ms)
+2. **QREADER_M_PRIORITY**: QReader Medium model (250MB, ~300ms)
+
+#### Fase 2: Detectores Tradicionales (Fallback)
+3. **CV2**: OpenCV QR detector nativo
+4. **CV2_CURVED**: OpenCV con corrección de curvatura
+5. **PYZBAR**: Librería PYZBAR estándar
+6. **PYZBAR_ENHANCED**: PYZBAR con preprocessing mejorado
+
+### 🎯 Optimizaciones Implementadas
+
+#### PyTorch Optimizations
+- `torch.set_grad_enabled(False)` - Deshabilita gradientes innecesarios
+- `torch.inference_mode()` - Modo inferencia puro para máximo rendimiento  
+- `torch.set_num_threads(4)` - Optimización de threads CPU
+- **Singleton Pattern** - Evita recargar modelos (91% menos memoria)
+
+#### Preprocessing Inteligente
+- **3 estrategias de preprocessing** por cada detector
+
+### 🚀 Inicialización del Servidor Python
+
+#### Código de Arranque (api_main.py)
+El servidor Python QReader se ejecuta en puerto 8008 con el siguiente código:
+
+```python
+if __name__ == "__main__":
+    # Este bloque es para pruebas locales y no se ejecutará en producción con uvicorn
+    # Para ejecutar: python api_main.py
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8008)
+```
+
+#### Comandos de Ejecución
+
+**Desarrollo/Testing Local:**
+```bash
+cd /home/client_1099_1/scripts/qreader_server
+python api_main.py
+```
+
+**Producción (Recomendado):**
+```bash
+cd /home/client_1099_1/scripts/qreader_server
+uvicorn api_main:app --host 0.0.0.0 --port 8008 --workers 1
+```
+
+**Con Logging Detallado:**
+```bash
+uvicorn api_main:app --host 0.0.0.0 --port 8008 --log-level debug --workers 1
+```
+
+**Background Process:**
+```bash
+nohup uvicorn api_main:app --host 0.0.0.0 --port 8008 --workers 1 > qreader_api.log 2>&1 &
+```
+
+#### Verificación de Estado
+Una vez iniciado, verifica que el servidor esté funcionando:
+
+```bash
+# Health Check
+curl http://localhost:8008/health
+
+# Métricas del Engine
+curl http://localhost:8008/qr-hybrid-metrics
+
+# Verificar proceso
+ps aux | grep "api_main.py" | grep -v grep
+```
+
+#### Dependencias del Proyecto
+Asegúrate de que estén instaladas las dependencias necesarias:
+
+```bash
+pip install fastapi uvicorn qreader torch torchvision opencv-python pyzbar pillow
+```
+
+#### Configuración de Memoria
+Para optimizar el uso de memoria en producción:
+
+```bash
+# Variables de entorno para PyTorch
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+export OMP_NUM_THREADS=4
+export MKL_NUM_THREADS=4
+
+# Ejecutar servidor con configuración optimizada
+uvicorn api_main:app --host 0.0.0.0 --port 8008 --workers 1
+```
+- **Corrección automática de orientación** 
+- **Ajuste de contraste y brillo** adaptativo
+- **Detección de bordes mejorada** para QRs dañados
+
+#### Concurrencia y Escalabilidad
+- **Thread-safe** - Soporta hasta 100 usuarios simultáneos
+- **Memory management** - GC optimizado y cleanup automático
+- **Metrics collection** - Monitoreo en tiempo real de rendimiento
+- **Singleton models** - Un solo modelo en memoria para todas las requests
+
+### 📊 Integración con Sistema Rust
+El sistema Rust utiliza esta API como **última línea de defensa**:
+
+1. **Rust intenta 5 detectores nativos** (rqrr, bardecoder, zbar, quircs, rxing)
+2. **Si fallan, usa ONNX** (4 modelos YOLOv8)
+3. **Como último recurso, llama a la API Python** en puerto 8008
+4. **La API Python ejecuta el Hybrid Engine** con QReader optimizado
+5. **Retorna el resultado al sistema Rust** para respuesta al cliente
+
+### ✅ Validación de Rendimiento
+Probado exitosamente con:
+- **400 requests** bajo diferentes cargas de concurrencia
+- **5 imágenes específicas** de facturas panameñas 
+- **100% tasa de éxito** en detección
+- **Latencia consistente** ~255ms promedio
+- **Sin memory leaks** después de 400+ requests
 
 ---
 

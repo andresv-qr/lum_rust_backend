@@ -2,74 +2,87 @@ use reqwest::Client;
 use scraper::{Html, Selector};
 use tracing::{info, warn, error};
 use serde::{Deserialize, Serialize};
-use crate::processing::web_scraping::ocr_extractor::extract_main_info;
+use crate::processing::web_scraping::ocr_extractor::{extract_main_info, ExtractedData};
 
 // ============================================================================
-// DATA STRUCTURES matching invoice_headers table schema
+// DATA STRUCTURES matching REAL invoice_header table schema
+// CORRECTED: 2024-10-01 - Fixed field names and types to match PostgreSQL
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InvoiceHeader {
-    // Core invoice fields
+    // Core invoice fields (campos extraídos del HTML DGI)
     pub cufe: String, // CUFE del invoice
-    pub no: Option<String>, // numero_factura
-    pub date: Option<String>, // fecha_emision (as string: DD/MM/YYYY HH:MM:SS)
+    pub no: Option<String>, // número de factura (NOT numero_factura)
+    pub date: Option<String>, // fecha emisión como String DD/MM/YYYY HH:MM:SS (NOT fecha_emision)
     pub auth_date: Option<String>, // protocolo de autorización
-    pub tot_amount: Option<rust_decimal::Decimal>, // total
-    pub tot_itbms: Option<rust_decimal::Decimal>, // impuestos
+    pub tot_amount: Option<f64>, // CHANGED: f64 instead of Decimal (matches DOUBLE PRECISION)
+    pub tot_itbms: Option<f64>, // CHANGED: f64 instead of Decimal (matches DOUBLE PRECISION)
     
-    // Issuer (Emisor/Proveedor) fields  
-    pub issuer_name: Option<String>, // proveedor_nombre
-    pub issuer_ruc: Option<String>, // proveedor_ruc
-    pub issuer_dv: Option<String>, // dígito verificador
-    pub issuer_address: Option<String>, // dirección del proveedor
-    pub issuer_phone: Option<String>, // teléfono del proveedor
+    // Issuer (Emisor/Proveedor) fields - ALL THESE ARE CORRECT
+    pub issuer_name: Option<String>, // nombre del emisor (NOT proveedor_nombre)
+    pub issuer_ruc: Option<String>, // RUC del emisor
+    pub issuer_dv: Option<String>, // dígito verificador del emisor
+    pub issuer_address: Option<String>, // dirección del emisor
+    pub issuer_phone: Option<String>, // teléfono del emisor
     
-    // Receptor (Cliente) fields
-    pub receptor_name: Option<String>, // cliente_nombre
-    pub receptor_id: Option<String>, // cliente_ruc
-    pub receptor_dv: Option<String>, // dígito verificador del cliente
-    pub receptor_address: Option<String>, // dirección del cliente
-    pub receptor_phone: Option<String>, // teléfono del cliente
+    // Receptor (Cliente) fields - ALL THESE ARE CORRECT
+    pub receptor_name: Option<String>, // nombre del receptor (NOT cliente_nombre)
+    pub receptor_id: Option<String>, // ID/RUC del receptor (NOT cliente_ruc)
+    pub receptor_dv: Option<String>, // dígito verificador del receptor
+    pub receptor_address: Option<String>, // dirección del receptor
+    pub receptor_phone: Option<String>, // teléfono del receptor
     
-    // User and processing fields
-    pub user_id: i32,
+    // User and processing fields (campos del usuario y sistema)
+    pub user_id: i64, // CHANGED: i64 to match BIGINT in PostgreSQL
     pub user_email: Option<String>, // email del usuario
     pub user_phone_number: Option<String>, // teléfono del usuario
     pub user_telegram_id: Option<String>, // telegram del usuario
     pub user_ws: Option<String>, // workspace del usuario
     
-    // Processing metadata
-    pub origin: String, // "app", "whatsapp", etc.
-    pub type_field: String, // "QR", "CUFE", etc. (usando type_field porque type es palabra reservada)
-    pub url: String, // URL de la factura
+    // Processing metadata (metadatos de procesamiento)
+    pub origin: String, // "app", "whatsapp", "telegram", etc.
+    pub type_field: String, // "QR" o "CUFE" (usando type_field porque type es palabra reservada)
+    pub url: String, // URL de la factura (NOT source_url)
     pub process_date: chrono::DateTime<chrono::Utc>, // fecha de procesamiento
     pub reception_date: chrono::DateTime<chrono::Utc>, // fecha de recepción
-    pub time: Option<String>, // campo time adicional
+    pub time: Option<String>, // campo time adicional (HH:MM:SS)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InvoiceDetail {
-    pub invoice_header_id: Option<i32>,
-    pub cufe: String, // CUFE del invoice
-    pub item_numero: Option<i32>,
-    pub descripcion: Option<String>,
-    pub cantidad: Option<rust_decimal::Decimal>,
-    pub precio_unitario: Option<rust_decimal::Decimal>,
-    pub subtotal: Option<rust_decimal::Decimal>,
-    pub impuesto_porcentaje: Option<rust_decimal::Decimal>,
-    pub impuesto_monto: Option<rust_decimal::Decimal>,
-    pub total: Option<rust_decimal::Decimal>,
-    pub user_id: i32,
+    // CORRECTED: Removed invoice_header_id (doesn't exist, relation is by CUFE)
+    // CORRECTED: Changed all Decimal to String to match TEXT fields in PostgreSQL
+    pub cufe: String, // CUFE del invoice (FK)
+    pub partkey: Option<String>, // ADDED: llave de partición (cufe|linea)
+    pub date: Option<String>, // ADDED: fecha de emisión
+    pub quantity: Option<String>, // CHANGED: String instead of Decimal (NOT cantidad)
+    pub code: Option<String>, // ADDED: código del producto
+    pub description: Option<String>, // descripción del ítem (NOT descripcion)
+    pub unit_discount: Option<String>, // ADDED: descuento unitario
+    pub unit_price: Option<String>, // CHANGED: String instead of Decimal (NOT precio_unitario)
+    pub itbms: Option<String>, // CHANGED: String instead of Decimal (NOT impuesto_monto)
+    pub amount: Option<String>, // CHANGED: String instead of Decimal (NOT subtotal)
+    pub total: Option<String>, // CHANGED: String instead of Decimal
+    pub information_of_interest: Option<String>, // ADDED: información adicional
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InvoicePayment {
-    pub invoice_header_id: Option<i32>,
-    pub cufe: String, // CUFE del invoice
-    pub metodo_pago: Option<String>,
-    pub monto: Option<rust_decimal::Decimal>,
-    pub referencia: Option<String>,
+    // CORRECTED: Removed invoice_header_id (doesn't exist, relation is by CUFE)
+    // CORRECTED: Changed all Decimal to String to match TEXT fields in PostgreSQL
+    pub cufe: String, // CUFE del invoice (FK)
+    pub forma_de_pago: Option<String>, // CHANGED: forma_de_pago instead of metodo_pago
+    pub forma_de_pago_otro: Option<String>, // ADDED: otra forma de pago
+    pub valor_pago: Option<String>, // CHANGED: String instead of Decimal (NOT monto)
+    pub efectivo: Option<String>, // ADDED: monto en efectivo
+    pub tarjeta_debito: Option<String>, // ADDED: monto en tarjeta débito
+    pub tarjeta_credito: Option<String>, // ADDED: monto en tarjeta crédito
+    pub tarjeta_clave_banistmo: Option<String>, // ADDED: tarjeta clave Banistmo
+    pub vuelto: Option<String>, // ADDED: vuelto dado
+    pub total_pagado: Option<String>, // ADDED: total pagado
+    pub descuentos: Option<String>, // ADDED: descuentos aplicados
+    pub merged: Option<serde_json::Value>, // ADDED: datos JSON adicionales
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -85,7 +98,11 @@ pub struct ScrapingResult {
 // SCRAPING FUNCTIONS
 // ============================================================================
 
-pub async fn scrape_invoice(client: &Client, url: &str) -> Result<ScrapingResult, String> {
+pub async fn scrape_invoice(
+    client: &reqwest::Client,
+    url: &str,
+    user_id: i64,
+) -> Result<ScrapingResult, String> {
     info!("Starting to scrape invoice from URL: {}", url);
     
     // Fetch the HTML content and get final URL after redirections
@@ -111,19 +128,29 @@ pub async fn scrape_invoice(client: &Client, url: &str) -> Result<ScrapingResult
     // Parse HTML and extract data
     let document = Html::parse_document(&html_content);
     
+    info!("🔍 DEBUG - HTML content length: {} bytes", html_content.len());
+    info!("🔍 DEBUG - HTML first 500 chars: {}", &html_content.chars().take(500).collect::<String>());
+    
+    // 🔍 DEBUG: Guardar HTML en archivo para inspección
+    if let Err(e) = std::fs::write("/tmp/scraped_invoice.html", &html_content) {
+        warn!("Failed to save HTML debug file: {}", e);
+    } else {
+        info!("🔍 DEBUG - HTML saved to /tmp/scraped_invoice.html");
+    }
+    
     // Extract CUFE from final URL or page
     let cufe = extract_cufe_from_url(&final_url).unwrap_or_else(|| "UNKNOWN".to_string());
     
     // Try to extract basic invoice information
-    let mut header = extract_invoice_header(&document, &cufe, 1);
+    let mut header = extract_invoice_header(&document, &cufe, user_id);
     
     // Set the FINAL URL in the header if extraction was successful
     if let Some(ref mut h) = header {
         h.url = final_url;  // Use final URL instead of original URL
     }
     
-    let details = extract_invoice_details(&document, &cufe, 1);
-    let payments = extract_invoice_payments(&document, &cufe, 1);
+    let details = extract_invoice_details(&document, &cufe, user_id);
+    let payments = extract_invoice_payments(&document, &cufe, user_id);
 
     Ok(ScrapingResult {
         success: true, // Always successful since we always return a header with at least CUFE
@@ -179,7 +206,8 @@ fn extract_cufe_from_url(url: &str) -> Option<String> {
 
 
 
-fn parse_amount_from_text(text: &str) -> Option<rust_decimal::Decimal> {
+// CORRECTED: Changed to return f64 instead of Decimal to match DOUBLE PRECISION in PostgreSQL
+fn parse_amount_from_text(text: &str) -> Option<f64> {
     // Remove common currency symbols and formatting
     let binding = text
         .replace("B/.", "")
@@ -188,16 +216,13 @@ fn parse_amount_from_text(text: &str) -> Option<rust_decimal::Decimal> {
         .replace(" ", "");
     let cleaned = binding.trim();
     
-    // Try to parse as decimal
-    if let Ok(amount) = cleaned.parse::<f64>() {
-        return rust_decimal::Decimal::from_f64_retain(amount);
-    }
-    None
+    // Try to parse as f64
+    cleaned.parse::<f64>().ok()
 }
 
 
 
-fn extract_invoice_header(document: &Html, cufe: &str, user_id: i32) -> Option<InvoiceHeader> {
+fn extract_invoice_header(document: &Html, cufe: &str, user_id: i64) -> Option<InvoiceHeader> {
     info!("Extracting invoice header from document using ocr_extractor");
 
     // The new ocr_extractor is the single source of truth.
@@ -207,7 +232,18 @@ fn extract_invoice_header(document: &Html, cufe: &str, user_id: i32) -> Option<I
     
     // Extract invoice data using our unified extractor
     let html_str = document.html();
-    let extracted_data = extract_main_info(&html_str).unwrap_or_default();
+    
+    info!("🔍 DEBUG - Calling extract_main_info with HTML length: {}", html_str.len());
+    let extracted_data = match extract_main_info(&html_str) {
+        Ok(data) => {
+            info!("🔍 DEBUG - extract_main_info SUCCESS, header keys: {:?}", data.header.keys().collect::<Vec<_>>());
+            data
+        },
+        Err(e) => {
+            error!("🔍 DEBUG - extract_main_info ERROR: {}", e);
+            ExtractedData::default()
+        }
+    };
     
     // Map extracted header data
     let header_data = extracted_data.header;
@@ -218,10 +254,14 @@ fn extract_invoice_header(document: &Html, cufe: &str, user_id: i32) -> Option<I
     let tot_amount_str = header_data.get("tot_amount").cloned();
     let tot_itbms_str = header_data.get("tot_itbms").cloned();
 
+    info!("🔍 DEBUG - Raw header_data keys: {:?}", header_data.keys().collect::<Vec<_>>());
+    info!("🔍 DEBUG - emisor_name value: {:?}", header_data.get("emisor_name"));
+    info!("🔍 DEBUG - tot_amount_str value: {:?}", &tot_amount_str);
+    
     let tot_amount = tot_amount_str.and_then(|s| parse_amount_from_text(&s));
     let tot_itbms = tot_itbms_str.and_then(|s| parse_amount_from_text(&s));
     
-    info!("Extracted data - RUC: {:?}, Nombre: {:?}, Total: {:?}, ITBMS: {:?}", 
+    info!("🔍 DEBUG - Extracted data - RUC: {:?}, Nombre: {:?}, Total: {:?}, ITBMS: {:?}", 
           issuer_ruc, issuer_name, tot_amount, tot_itbms);
 
     // Return a header if we found at least something meaningful
@@ -297,8 +337,9 @@ fn extract_invoice_header(document: &Html, cufe: &str, user_id: i32) -> Option<I
     }
 }
 
-fn extract_invoice_details(document: &Html, cufe: &str, user_id: i32) -> Vec<InvoiceDetail> {
+fn extract_invoice_details(document: &Html, cufe: &str, _user_id: i64) -> Vec<InvoiceDetail> {
     // Try to find table rows or detail sections
+    // TODO: Implement real extraction from HTML table
     let selectors = ["tr", ".detail-row", ".item-row", "tbody tr"];
     
     for selector_str in &selectors {
@@ -307,19 +348,20 @@ fn extract_invoice_details(document: &Html, cufe: &str, user_id: i32) -> Vec<Inv
             if elements.len() > 1 {
                 info!("Found {} potential detail rows", elements.len());
                 
-                // Return a sample detail
+                // CORRECTED: Return mock detail with correct field names and types (TEXT)
                 return vec![InvoiceDetail {
-                    invoice_header_id: None,
                     cufe: cufe.to_string(),
-                    item_numero: Some(1),
-                    descripcion: Some("Extracted item".to_string()),
-                    cantidad: Some(rust_decimal::Decimal::new(1, 0)),
-                    precio_unitario: Some(rust_decimal::Decimal::new(10000, 2)),
-                    subtotal: Some(rust_decimal::Decimal::new(10000, 2)),
-                    impuesto_porcentaje: Some(rust_decimal::Decimal::new(7, 0)),
-                    impuesto_monto: Some(rust_decimal::Decimal::new(700, 2)),
-                    total: Some(rust_decimal::Decimal::new(10700, 2)),
-                    user_id,
+                    partkey: Some(format!("{}|1", cufe)), // cufe|linea
+                    date: Some(chrono::Utc::now().format("%d/%m/%Y").to_string()),
+                    quantity: Some("1.00".to_string()), // TEXT not Decimal
+                    code: Some("PROD-001".to_string()),
+                    description: Some("Extracted item".to_string()),
+                    unit_discount: Some("0.00".to_string()),
+                    unit_price: Some("100.00".to_string()), // TEXT not Decimal
+                    itbms: Some("7.00".to_string()), // TEXT not Decimal
+                    amount: Some("100.00".to_string()), // TEXT not Decimal
+                    total: Some("107.00".to_string()), // TEXT not Decimal
+                    information_of_interest: None,
                 }];
             }
         }
@@ -329,26 +371,118 @@ fn extract_invoice_details(document: &Html, cufe: &str, user_id: i32) -> Vec<Inv
     Vec::new()
 }
 
-fn extract_invoice_payments(document: &Html, cufe: &str, _user_id: i32) -> Vec<InvoicePayment> {
-    // Look for payment information
-    let selectors = [".payment", ".pago", "#payment-info"];
-    
-    for selector_str in &selectors {
-        if let Ok(selector) = Selector::parse(selector_str) {
-            if document.select(&selector).next().is_some() {
-                info!("Found potential payment information");
+fn extract_invoice_payments(document: &Html, cufe: &str, _user_id: i64) -> Vec<InvoicePayment> {
+    // Extract payment information from tfoot using text-relative strategy
+    let tfoot_selector = match Selector::parse("tfoot") {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let tr_selector = match Selector::parse("tr") {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let td_selector = match Selector::parse("td") {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    let div_selector = match Selector::parse("div") {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut forma_de_pago: Option<String> = None;
+    let mut valor_pago: Option<String> = None;
+    let mut efectivo: Option<String> = None;
+    let mut tarjeta_credito: Option<String> = None;
+    let mut tarjeta_debito: Option<String> = None;
+    let mut tarjeta_clave_banistmo: Option<String> = None;
+    let mut forma_de_pago_otro: Option<String> = None;
+    let mut vuelto: Option<String> = None;
+    let mut total_pagado: Option<String> = None;
+
+    for tfoot in document.select(&tfoot_selector) {
+        for tr in tfoot.select(&tr_selector) {
+            if let Some(td) = tr.select(&td_selector).next() {
+                let td_text = td.text().collect::<String>();
+                let td_upper = td_text.to_uppercase();
                 
-                return vec![InvoicePayment {
-                    invoice_header_id: None,
-                    cufe: cufe.to_string(),
-                    metodo_pago: Some("EFECTIVO".to_string()),
-                    monto: Some(rust_decimal::Decimal::new(10700, 2)),
-                    referencia: None,
-                }];
+                // Extract div value
+                let value = if let Some(div) = td.select(&div_selector).next() {
+                    div.text().collect::<String>().trim().to_string()
+                } else {
+                    String::new()
+                };
+                
+                // Skip if no value or value is empty
+                if value.is_empty() {
+                    continue;
+                }
+                
+                // Match payment types using text patterns
+                if td_upper.contains("EFECTIVO:") {
+                    efectivo = Some(value);
+                    if forma_de_pago.is_none() {
+                        forma_de_pago = Some("Efectivo".to_string());
+                    }
+                } else if (td_upper.contains("TARJETA") && td_upper.contains("CRÉDITO")) || td_upper.contains("CREDITO") {
+                    tarjeta_credito = Some(value);
+                    if forma_de_pago.is_none() {
+                        forma_de_pago = Some("Tarjeta Crédito".to_string());
+                    }
+                } else if (td_upper.contains("TARJETA") && td_upper.contains("DÉBITO")) || td_upper.contains("DEBITO") {
+                    tarjeta_debito = Some(value);
+                    if forma_de_pago.is_none() {
+                        forma_de_pago = Some("Tarjeta Débito".to_string());
+                    }
+                } else if td_upper.contains("TARJETA CLAVE") && td_upper.contains("BANISTMO") {
+                    tarjeta_clave_banistmo = Some(value);
+                    if forma_de_pago.is_none() {
+                        forma_de_pago = Some("Tarjeta Clave Banistmo".to_string());
+                    }
+                } else if td_upper.contains("CHEQUE:") {
+                    forma_de_pago_otro = Some(value);
+                    if forma_de_pago.is_none() {
+                        forma_de_pago = Some("Cheque".to_string());
+                    }
+                } else if td_upper.contains("TRANSFERENCIA:") {
+                    forma_de_pago_otro = Some(value);
+                    if forma_de_pago.is_none() {
+                        forma_de_pago = Some("Transferencia".to_string());
+                    }
+                } else if td_upper.contains("ACH:") {
+                    forma_de_pago_otro = Some(value);
+                    if forma_de_pago.is_none() {
+                        forma_de_pago = Some("ACH".to_string());
+                    }
+                } else if td_upper.contains("TOTAL PAGADO:") {
+                    total_pagado = Some(value.clone());
+                    valor_pago = Some(value);
+                } else if td_upper.contains("VUELTO:") {
+                    vuelto = Some(value);
+                }
             }
         }
     }
 
-    warn!("Could not extract payment information");
-    Vec::new()
+    // Return payment record if any payment data was found
+    if forma_de_pago.is_some() || total_pagado.is_some() {
+        info!("Payment information extracted: forma_de_pago={:?}, total_pagado={:?}", forma_de_pago, total_pagado);
+        vec![InvoicePayment {
+            cufe: cufe.to_string(),
+            forma_de_pago,
+            forma_de_pago_otro,
+            valor_pago,
+            efectivo,
+            tarjeta_debito,
+            tarjeta_credito,
+            tarjeta_clave_banistmo,
+            vuelto,
+            total_pagado,
+            descuentos: None,
+            merged: None,
+        }]
+    } else {
+        warn!("Could not extract payment information from tfoot");
+        Vec::new()
+    }
 }

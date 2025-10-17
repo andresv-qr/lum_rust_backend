@@ -29,6 +29,7 @@ pub struct AppState {
     pub user_cache: UserCache,
     pub processed_messages: Arc<DashMap<String, ProcessedMessage>>,
     pub db_pool: PgPool,
+    pub ws_pool: Option<PgPool>, // WS database pool for ofertas (optional)
     pub whatsapp_token: String,
     pub phone_number_id: String,
     pub whatsapp_api_base_url: String,
@@ -89,6 +90,23 @@ impl AppState {
             tracing::warn!("⚠️ Performance warm-up failed: {}", e);
         }
 
+        // Create WS database pool if WS_DATABASE_URL is set
+        let ws_pool = if let Ok(ws_url) = env::var("WS_DATABASE_URL") {
+            match crate::db::create_ws_pool().await {
+                Ok(pool) => {
+                    tracing::info!("✅ WS database pool initialized for ofertas");
+                    Some(pool)
+                }
+                Err(e) => {
+                    tracing::warn!("⚠️ Failed to create WS pool: {}. Ofertas API will not be available.", e);
+                    None
+                }
+            }
+        } else {
+            tracing::info!("ℹ️ WS_DATABASE_URL not set. Ofertas API will not be available.");
+            None
+        };
+
         Ok(AppState {
             db_pool,
             redis_client,
@@ -102,6 +120,7 @@ impl AppState {
             processed_messages: Arc::new(DashMap::new()),
             whatsapp_token,
             phone_number_id,
+            ws_pool,
         })
     }
 }

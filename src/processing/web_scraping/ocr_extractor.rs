@@ -70,12 +70,13 @@ fn check_for_mef_errors(document: &Html) -> Option<String> {
     
     // Check for generic error words only if they appear in error contexts
     let generic_error_patterns = vec![
-        ("error", vec!["script", "var ", "function", "javascript"]), // Skip if in JS context
+        ("error", vec!["script", "var ", "function", "javascript", "console.error"]), // Skip if in JS context
         ("not found", vec!["script", "var ", "function"]),
         ("no encontrado", vec!["script", "var ", "function"]),
         ("invalid", vec!["script", "var ", "function", "validation"]),
         ("inválido", vec!["script", "var ", "function"]),
-        ("timeout", vec!["var timeout", "var timeout", "settimeout", "script"]), // Skip JS timeouts
+        // Skip timeout if it's in JavaScript contexts - be more lenient
+        ("timeout", vec!["var ", "settimeout", "script", "timeout =", "timeout=", ".timeout"]), 
         ("expired", vec!["script", "var ", "function"]),
         ("expirado", vec!["script", "var ", "function"])
     ];
@@ -83,9 +84,22 @@ fn check_for_mef_errors(document: &Html) -> Option<String> {
     for (pattern, skip_contexts) in generic_error_patterns {
         if all_text.contains(pattern) {
             // Check if this error word appears in a context we should skip
+            // Use case-insensitive matching for better detection
             let should_skip = skip_contexts.iter().any(|context| {
-                all_text.contains(&format!("{} {}", context, pattern)) ||
-                all_text.contains(&format!("{}{}", context, pattern))
+                // Check both with space and without space, case-insensitive
+                let context_lower = context.to_lowercase();
+                all_text.contains(&format!("{} {}", context_lower, pattern)) ||
+                all_text.contains(&format!("{}{}", context_lower, pattern)) ||
+                // Also check if the pattern appears near the context (within 10 chars)
+                {
+                    if let Some(pos) = all_text.find(pattern) {
+                        let start = pos.saturating_sub(20);
+                        let context_slice = &all_text[start..pos];
+                        context_slice.contains(&context_lower)
+                    } else {
+                        false
+                    }
+                }
             });
             
             if !should_skip {
@@ -145,12 +159,48 @@ pub fn extract_main_info(html_content: &str) -> Result<ExtractedData> {
 /// Implements the strategy: Find h4 with "FACTURA" and navigate to h5 sibling with "No."
 /// XPath equivalent: //h4[contains(text(), 'FACTURA')]/../../div[contains(@class, 'text-left')]//h5
 fn extract_invoice_number(document: &Html) -> Option<String> {
+    let h4_selector = Selector::parse("h4").ok()?;
     let h5_selector = Selector::parse("h5").ok()?;
     
-    for element in document.select(&h5_selector) {
-        let text = element.text().collect::<String>();
-        if text.contains("No.") {
-            return Some(text.replace("No.", "").trim().to_string());
+    // Find h4 containing "FACTURA" and navigate to row container
+    for h4 in document.select(&h4_selector) {
+        let h4_text = h4.text().collect::<String>().to_uppercase();
+        if h4_text.contains("FACTURA") {
+            // Navigate up to find the row container
+            let mut row_container = h4.parent();
+            for _ in 0..3 {
+                if let Some(parent) = row_container {
+                    if let Some(parent_elem) = ElementRef::wrap(parent) {
+                        let has_row_class = parent_elem.value().attr("class")
+                            .map(|c| c.contains("row"))
+                            .unwrap_or(false);
+                        
+                        if has_row_class {
+                            // Look for h5 with invoice number in this row
+                            for h5 in parent_elem.select(&h5_selector) {
+                                let h5_text = h5.text().collect::<String>().trim().to_string();
+                                
+                                // Extract invoice number: "No. 0000181356" or just "0000181356"
+                                if h5_text.to_uppercase().contains("NO.") {
+                                    if let Some(no_idx) = h5_text.to_uppercase().find("NO.") {
+                                        let after_no = &h5_text[no_idx + 3..].trim();
+                                        if after_no.chars().all(|c| c.is_ascii_digit() || c.is_whitespace()) {
+                                            return Some(after_no.trim().to_string());
+                                        }
+                                    }
+                                } else if h5_text.chars().all(|c| c.is_ascii_digit()) && h5_text.len() == 10 {
+                                    return Some(h5_text);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    row_container = parent.parent();
+                } else {
+                    break;
+                }
+            }
+            break;
         }
     }
     None
@@ -160,49 +210,71 @@ fn extract_invoice_number(document: &Html) -> Option<String> {
 /// Implements the strategy: Find h4 with "FACTURA" and navigate to h5 sibling in div.text-right
 /// XPath equivalent: //h4[contains(text(), 'FACTURA')]/../../div[contains(@class, 'text-right')]//h5/text()
 fn extract_invoice_date(document: &Html) -> Option<String> {
-    // Selector corregido para coincidir exactamente con la documentación
-    let selector = Selector::parse("div.col-sm-4.text-right h5").ok()?;
-    
-    for element in document.select(&selector) {
-        let text = element.text().collect::<String>().trim().to_string();
-        
-        // Caso 1: Formato completo DD/MM/YYYY HH:MM:SS
-        if text.matches('/').count() == 2 && text.matches(':').count() == 2 {
-            return Some(text);
-        }
-        
-        // Caso 2: Solo fecha DD/MM/YYYY (agregar hora por defecto)
-        if text.matches('/').count() == 2 && text.matches(':').count() == 0 {
-            return Some(format!("{} 00:00:00", text));
-        }
-    }
-    
-    // Fallback: buscar por estructura exacta como en documentación
-    // //h4[contains(text(), 'FACTURA')]/../../div[contains(@class, 'text-right')]//h5/text()
     let h4_selector = Selector::parse("h4").ok()?;
+    let h5_selector = Selector::parse("h5").ok()?;
+    
+    // Find h4 containing "FACTURA" and navigate to row container
     for h4 in document.select(&h4_selector) {
         let h4_text = h4.text().collect::<String>().to_uppercase();
         if h4_text.contains("FACTURA") {
-            // Navegar dos niveles hacia arriba (../../) y buscar div.col-sm-4.text-right
-            if let Some(grandparent) = h4.parent().and_then(|p| p.parent()) {
-                if let Some(grandparent_element) = ElementRef::wrap(grandparent) {
-                    let text_right_selector = Selector::parse("div.col-sm-4.text-right h5").unwrap();
-                    for date_element in grandparent_element.select(&text_right_selector) {
-                        let text = date_element.text().collect::<String>().trim().to_string();
+            // Navigate up to find the row container
+            let mut row_container = h4.parent();
+            for _ in 0..3 {
+                if let Some(parent) = row_container {
+                    if let Some(parent_elem) = ElementRef::wrap(parent) {
+                        let has_row_class = parent_elem.value().attr("class")
+                            .map(|c| c.contains("row"))
+                            .unwrap_or(false);
                         
-                        if text.matches('/').count() == 2 && (text.matches(':').count() == 2 || text.matches(':').count() == 0) {
-                            if text.matches(':').count() == 2 {
-                                return Some(text);
-                            } else {
-                                return Some(format!("{} 00:00:00", text));
+                        if has_row_class {
+                            // Look for h5 with date pattern in this row
+                            for h5 in parent_elem.select(&h5_selector) {
+                                let h5_text = h5.text().collect::<String>().trim().to_string();
+                                
+                                // Match pattern: DD/MM/YYYY or DD/MM/YYYY HH:MM:SS
+                                let parts: Vec<&str> = h5_text.split_whitespace().collect();
+                                if parts.len() >= 1 {
+                                    let date_part = parts[0];
+                                    let date_segments: Vec<&str> = date_part.split('/').collect();
+                                    
+                                    // Validate DD/MM/YYYY format
+                                    if date_segments.len() == 3 
+                                        && date_segments[0].len() == 2 
+                                        && date_segments[1].len() == 2 
+                                        && date_segments[2].len() == 4
+                                        && date_segments[0].chars().all(|c| c.is_ascii_digit())
+                                        && date_segments[1].chars().all(|c| c.is_ascii_digit())
+                                        && date_segments[2].chars().all(|c| c.is_ascii_digit()) {
+                                        
+                                        // Validate time part if present
+                                        if parts.len() == 2 {
+                                            let time_part = parts[1];
+                                            let time_segments: Vec<&str> = time_part.split(':').collect();
+                                            if time_segments.len() == 3
+                                                && time_segments[0].len() == 2
+                                                && time_segments[1].len() == 2
+                                                && time_segments[2].len() == 2
+                                                && time_segments.iter().all(|s| s.chars().all(|c| c.is_ascii_digit())) {
+                                                return Some(h5_text);
+                                            }
+                                        } else {
+                                            // Date only, add default time
+                                            return Some(format!("{} 00:00:00", h5_text));
+                                        }
+                                    }
+                                }
                             }
+                            break;
                         }
                     }
+                    row_container = parent.parent();
+                } else {
+                    break;
                 }
             }
+            break;
         }
     }
-    
     None
 }
 

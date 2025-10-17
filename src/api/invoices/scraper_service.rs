@@ -189,7 +189,8 @@ impl ScraperService {
         url: &str,
     ) -> Result<ScrapingResult, InvoiceProcessingError> {
         // Use the existing scraping function from webscraping module
-        match scrape_invoice(&self.client, url).await {
+        // TODO: Pass real user_id when available in this context
+        match scrape_invoice(&self.client, url, 1).await {
             Ok(scraping_result) => {
                 // Validate that essential fields are present
                 if let Some(ref header) = scraping_result.header {
@@ -271,13 +272,13 @@ impl ScraperService {
         let details = scraping_result.details.into_iter().map(|detail| {
             InvoiceDetailItem {
                 cufe: header.cufe.clone(),
-                quantity: detail.cantidad.map(|d| d.to_string()).unwrap_or_default(),
-                code: detail.item_numero.map(|n| n.to_string()).unwrap_or_default(),
-                description: detail.descripcion.unwrap_or_default(),
-                unit_discount: "0.00".to_string(), // Default since not in original model
-                unit_price: detail.precio_unitario.map(|d| d.to_string()).unwrap_or_default(),
-                itbms: detail.impuesto_monto.map(|d| d.to_string()).unwrap_or_default(),
-                information_of_interest: "".to_string(), // Default since not in original model
+                quantity: detail.quantity.clone().unwrap_or_default(),
+                code: detail.code.clone().unwrap_or_default(),
+                description: detail.description.clone().unwrap_or_default(),
+                unit_discount: detail.unit_discount.clone().unwrap_or_default(),
+                unit_price: detail.unit_price.clone().unwrap_or_default(),
+                itbms: detail.itbms.clone().unwrap_or_default(),
+                information_of_interest: detail.information_of_interest.clone().unwrap_or_default()
             }
         }).collect();
         
@@ -285,8 +286,8 @@ impl ScraperService {
         let payment = if let Some(first_payment) = scraping_result.payments.first() {
             InvoicePayment {
                 cufe: header.cufe.clone(),
-                vuelto: "0.00".to_string(), // Default - would need to add to original model
-                total_pagado: first_payment.monto.map(|d| d.to_string()).unwrap_or_default(),
+                vuelto: first_payment.vuelto.clone().unwrap_or_default(),
+                total_pagado: first_payment.valor_pago.clone().unwrap_or_default(),
             }
         } else {
             // Default payment data if no payment info found

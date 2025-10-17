@@ -20,6 +20,7 @@ pub mod users_v4;
 pub mod register_v4;
 pub mod auth_v4;
 pub mod unified_auth_v4;  // New unified authentication endpoint
+pub mod daily_game;       // Daily constellation game
 
 // Re-export models from main models module
 pub use crate::models::{
@@ -48,9 +49,11 @@ pub mod surveys_v4; // Nuevo módulo para encuestas y surveys
 pub mod gamification_v4; // Nuevo módulo para gamificación completa
 pub mod ocr_iterative_v4; // Nuevo módulo para OCR iterativo
 pub mod upload_ocr_v4; // Nuevo módulo para upload OCR endpoint
+pub mod gamification_service; // Servicio de gamificación (cálculo y acreditación de Lumis)
 pub mod user_issuers_v4; // Nuevo módulo para obtener issuers de un usuario
 pub mod user_products_v4; // Nuevo módulo para obtener productos de un usuario
 pub mod unified_password; // Nuevo módulo para gestión unificada de contraseñas
+pub mod ofertasws_v4; // Nuevo módulo para ofertas WS con cache Redis
 
 // NEW: Invoice processing module
 pub mod invoice_processor; // New robust invoice processing API
@@ -97,8 +100,6 @@ fn create_public_v4_router() -> Router<Arc<AppState>> {
         .nest("/api/v4/auth", auth_v4::create_auth_v4_router())
         .nest("/api/v4/auth", unified_auth_v4::create_unified_auth_router())  // New unified auth
         .merge(register_v4::create_register_v4_router())
-        // Temporalmente agregar el endpoint de web scraping aquí para testing
-        .route("/api/v4/invoices/process-from-url", post(url_processing_v4::process_url_handler))
         .merge(user_registration_v4::create_user_registration_v4_public_router())
         .merge(email_check_v4::create_email_check_v4_router())
         .nest("/api/v4/users", unified_password::create_unified_verification_v4_router())  // Unified verification system
@@ -127,6 +128,14 @@ fn create_protected_v4_router() -> Router<Arc<AppState>> {
         .merge(gamification_v4::create_gamification_v4_router())
         .merge(create_invoices_v4_router())  // ADD: Invoices router con issuers y products
         .nest("/api/v4/rewards", rewards_v4::create_rewards_v4_router())
+        // ADD: Protected URL processing endpoint with JWT authentication
+        .route("/api/v4/invoices/process-from-url", post(url_processing_v4::process_url_handler))
+        // Daily Game endpoints (protected)
+        .route("/api/v4/daily-game/claim", post(daily_game::handle_claim))
+        .route("/api/v4/daily-game/status", get(daily_game::handle_status))
+        // Ofertas WS endpoints
+        .route("/api/v4/ofertasws", get(ofertasws_v4::get_ofertasws))
+        .route("/api/v4/ofertasws/refresh", post(ofertasws_v4::refresh_ofertasws_cache))
         .layer(from_fn(extract_current_user))
 }
 

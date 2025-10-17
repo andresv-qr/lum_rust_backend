@@ -1,6 +1,6 @@
 use sqlx::PgPool;
 use tracing::{info, warn, error as log_error};
-use chrono::NaiveDate;
+use chrono::NaiveDateTime;
 
 use crate::api::webscraping::{InvoiceHeader, InvoiceDetail, InvoicePayment, ScrapingResult};
 use crate::api::templates::url_processing_templates::ProcessUrlResponse;
@@ -9,19 +9,21 @@ use crate::api::templates::url_processing_templates::ProcessUrlResponse;
 // DATE UTILITIES
 // ============================================================================
 
-/// Parse date string (DD/MM/YYYY HH:MM:SS or DD/MM/YYYY) to NaiveDate
-fn parse_date_string(date_opt: &Option<String>) -> Option<NaiveDate> {
-    if let Some(date_str) = date_opt {
-        // Try parsing with time first
-        if let Ok(parsed_datetime) = chrono::NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S") {
-            return Some(parsed_datetime.date());
-        }
-        // Try parsing date only
-        if let Ok(parsed_date) = chrono::NaiveDate::parse_from_str(date_str, "%d/%m/%Y") {
-            return Some(parsed_date);
-        }
-        warn!("Could not parse date string: {}", date_str);
+/// Convierte fecha en formato DD/MM/YYYY HH:MM:SS (formato latinoamericano)
+/// a formato ISO YYYY-MM-DD HH:MM:SS para PostgreSQL
+fn convert_latin_date_to_iso(date_str: &str) -> Option<String> {
+    // Intentar parsear formato: DD/MM/YYYY HH:MM:SS
+    if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S") {
+        return Some(dt.format("%Y-%m-%d %H:%M:%S").to_string());
     }
+    
+    // Intentar parsear formato: DD/MM/YYYY (sin hora)
+    if let Ok(dt) = chrono::NaiveDate::parse_from_str(date_str, "%d/%m/%Y") {
+        return Some(format!("{} 00:00:00", dt.format("%Y-%m-%d")));
+    }
+    
+    // Si ya está en formato ISO o no se puede parsear, devolver original
+    warn!("⚠️ Could not convert date format: {}", date_str);
     None
 }
 
@@ -37,7 +39,7 @@ pub async fn persist_scraped_data(
     if !scraping_result.success {
         let error_msg = scraping_result
             .error_message
-            .unwrap_or_else(|| "Unknown scraping error".to_string());
+            .unwrap_or_else(|| "Error desconocido al extraer datos".to_string());
         warn!(
             "Scraping failed for URL '{}', not persisting: {}",
             source_url, error_msg
@@ -48,7 +50,7 @@ pub async fn persist_scraped_data(
     let header = match scraping_result.header {
         Some(h) => h,
         None => {
-            return Err(ProcessUrlResponse::error("Scraping result missing header"));
+            return Err(ProcessUrlResponse::error("Faltan datos de la factura"));
         }
     };
 
@@ -56,120 +58,155 @@ pub async fn persist_scraped_data(
         Ok(tx) => tx,
         Err(e) => {
             log_error!("Failed to begin transaction: {}", e);
-            return Err(ProcessUrlResponse::error("Database transaction error"));
+            return Err(ProcessUrlResponse::error("Error de transacción en base de datos"));
         }
     };
 
-    // Check if invoice already exists
-    match sqlx::query!("SELECT id, cufe FROM invoice_headers WHERE cufe = $1", &header.cufe)
+    // CORRECTED: Check if invoice already exists (fixed table name)
+    match sqlx::query!("SELECT cufe FROM invoice_header WHERE cufe = $1", &header.cufe)
         .fetch_optional(&mut *tx)
         .await
     {
         Ok(Some(_record)) => {
-            return Err(ProcessUrlResponse::error("Duplicate invoice detected"));
+            return Err(ProcessUrlResponse::error("Factura duplicada detectada"));
         }
         Ok(None) => (),
         Err(e) => {
             log_error!("Failed to check for duplicate CUFE: {}", e);
-            return Err(ProcessUrlResponse::error("Database error"));
+            return Err(ProcessUrlResponse::error("Error de base de datos"));
         }
     }
 
-    let invoice_id = match save_invoice_header(&mut tx, &header).await {
+    let cufe = match save_invoice_header(&mut tx, &header).await {
         Ok(id) => id,
         Err(e) => {
-            log_error!("Failed to save invoice header: {}", e);
-            return Err(ProcessUrlResponse::error("Failed to save invoice header"));
+            log_error!("❌ Failed to save invoice header: {:?}", e);
+            log_error!("❌ Error details - CUFE: {}, RUC: {:?}, Name: {:?}", 
+                      header.cufe, header.issuer_ruc, header.issuer_name);
+            return Err(ProcessUrlResponse::error(&format!("Error al guardar encabezado: {}", e)));
         }
     };
 
-    if let Err(e) = save_invoice_details(&mut tx, &scraping_result.details, invoice_id).await {
+    // CORRECTED: No need to pass invoice_header_id (doesn't exist), relation is by CUFE
+    if let Err(e) = save_invoice_details(&mut tx, &scraping_result.details).await {
         log_error!("Failed to save invoice details: {}", e);
-        return Err(ProcessUrlResponse::error("Failed to save invoice details"));
+        return Err(ProcessUrlResponse::error("Error al guardar detalles de factura"));
     }
 
-    if let Err(e) = save_invoice_payments(&mut tx, &scraping_result.payments, invoice_id).await {
+    if let Err(e) = save_invoice_payments(&mut tx, &scraping_result.payments).await {
         log_error!("Failed to save invoice payments: {}", e);
-        return Err(ProcessUrlResponse::error("Failed to save invoice payments"));
+        return Err(ProcessUrlResponse::error("Error al guardar pagos de factura"));
     }
 
     if let Err(e) = tx.commit().await {
         log_error!("Failed to commit transaction: {}", e);
-        return Err(ProcessUrlResponse::error("Database transaction commit error"));
+        return Err(ProcessUrlResponse::error("Error al confirmar transacción"));
     }
+
+    // 🔍 DEBUG: Log los valores antes de crear la respuesta
+    info!("🔍 DEBUG - Creando respuesta con issuer_name: {:?}, tot_amount: {:?}", 
+          header.issuer_name, header.tot_amount);
 
     Ok(ProcessUrlResponse::success(
         "API",
-        Some(invoice_id),
-        Some(header.cufe),
+        None, // No invoice_id to return (doesn't exist)
+        Some(cufe),
         0,
+        header.issuer_name.clone(),
+        header.tot_amount,
     ))
 }
 
 async fn save_invoice_header(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     header: &InvoiceHeader,
-) -> Result<i32, sqlx::Error> {
+) -> Result<String, sqlx::Error> {
     info!("Saving invoice header with CUFE: {}", header.cufe);
-    let rec = sqlx::query!(
+    
+    // Convertir fecha de formato DD/MM/YYYY HH:MM:SS a formato ISO YYYY-MM-DD HH:MM:SS
+    let converted_date = header.date.as_ref().and_then(|d| convert_latin_date_to_iso(d));
+    
+    // CORRECTED: Fixed table name (singular) and all field names to match PostgreSQL schema
+    // Changed return type from i32 to String (returns CUFE instead of ID)
+    // Using sqlx::query instead of sqlx::query! to allow String->TIMESTAMP conversion
+    sqlx::query(
         r#"
-        INSERT INTO invoice_headers (
-            cufe, numero_factura, fecha_emision, proveedor_nombre, proveedor_ruc,
-            cliente_nombre, cliente_ruc, subtotal, impuestos, total, moneda,
-            estado, user_id, source_url
+        INSERT INTO invoice_header (
+            cufe, no, date, issuer_name, issuer_ruc, issuer_dv,
+            issuer_address, issuer_phone, receptor_name, receptor_id,
+            receptor_dv, receptor_address, receptor_phone, tot_amount,
+            tot_itbms, auth_date, url, type, origin, process_date,
+            reception_date, time, user_id, user_email, user_phone_number,
+            user_telegram_id, user_ws
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-        RETURNING id
-        "#,
-        header.cufe,
-        header.no, // numero_factura
-        parse_date_string(&header.date), // fecha_emision - convert string to NaiveDate
-        header.issuer_name, // proveedor_nombre
-        header.issuer_ruc, // proveedor_ruc
-        header.receptor_name, // cliente_nombre
-        header.receptor_id, // cliente_ruc
-        None::<rust_decimal::Decimal>, // subtotal (calculado)
-        header.tot_itbms, // impuestos
-        header.tot_amount, // total
-        Some("PAB".to_string()), // moneda (Balboa panameño)
-        Some("ACTIVO".to_string()), // estado
-        header.user_id,
-        Some(header.url.clone()), // source_url
+        VALUES ($1, $2, CAST($3 AS TIMESTAMP), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 
+                $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
+        "#
     )
-    .fetch_one(&mut **tx)
+    .bind(&header.cufe)
+    .bind(&header.no)
+    .bind(&converted_date) // Option<String> - Convertida de DD/MM/YYYY a YYYY-MM-DD
+    .bind(&header.issuer_name)
+    .bind(&header.issuer_ruc)
+    .bind(&header.issuer_dv)
+    .bind(&header.issuer_address)
+    .bind(&header.issuer_phone)
+    .bind(&header.receptor_name)
+    .bind(&header.receptor_id)
+    .bind(&header.receptor_dv)
+    .bind(&header.receptor_address)
+    .bind(&header.receptor_phone)
+    .bind(&header.tot_amount) // Option<f64> - matches DOUBLE PRECISION
+    .bind(&header.tot_itbms) // Option<f64> - matches DOUBLE PRECISION
+    .bind(&header.auth_date)
+    .bind(&header.url)
+    .bind(&header.type_field)
+    .bind(&header.origin)
+    .bind(&header.process_date)
+    .bind(&header.reception_date)
+    .bind(&header.time)
+    .bind(header.user_id) // i64 - matches BIGINT
+    .bind(&header.user_email)
+    .bind(&header.user_phone_number)
+    .bind(&header.user_telegram_id)
+    .bind(&header.user_ws)
+    .execute(&mut **tx)
     .await?;
     
-    Ok(rec.id as i32)
+    Ok(header.cufe.clone())
 }
 
+// CORRECTED: Fixed table name, field names, and removed invoice_header_id (doesn't exist)
 async fn save_invoice_details(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     details: &[InvoiceDetail],
-    invoice_header_id: i32,
 ) -> Result<(), sqlx::Error> {
     if details.is_empty() {
         return Ok(());
     }
-    info!("Saving {} invoice details for invoice_id: {}", details.len(), invoice_header_id);
+    info!("Saving {} invoice details", details.len());
     for detail in details {
         sqlx::query!(
             r#"
-            INSERT INTO invoice_details (
-                invoice_header_id, cufe, item_numero, descripcion, cantidad,
-                precio_unitario, subtotal, impuesto_porcentaje, impuesto_monto, total
+            INSERT INTO invoice_detail (
+                cufe, partkey, date, quantity, code, description,
+                unit_discount, unit_price, itbms, amount, total,
+                information_of_interest
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
-            invoice_header_id,
             detail.cufe,
-            detail.item_numero,
-            detail.descripcion,
-            detail.cantidad,
-            detail.precio_unitario,
-            detail.subtotal,
-            detail.impuesto_porcentaje,
-            detail.impuesto_monto,
+            detail.partkey,
+            detail.date,
+            detail.quantity,
+            detail.code,
+            detail.description,
+            detail.unit_discount,
+            detail.unit_price,
+            detail.itbms,
+            detail.amount,
             detail.total,
+            detail.information_of_interest,
         )
         .execute(&mut **tx)
         .await?;
@@ -177,28 +214,37 @@ async fn save_invoice_details(
     Ok(())
 }
 
+// CORRECTED: Fixed table name, field names, and removed invoice_header_id (doesn't exist)
 async fn save_invoice_payments(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     payments: &[InvoicePayment],
-    invoice_header_id: i32,
 ) -> Result<(), sqlx::Error> {
     if payments.is_empty() {
         return Ok(());
     }
-    info!("Saving {} invoice payments for invoice_id: {}", payments.len(), invoice_header_id);
+    info!("Saving {} invoice payments", payments.len());
     for payment in payments {
         sqlx::query!(
             r#"
-            INSERT INTO invoice_payments (
-                invoice_header_id, cufe, metodo_pago, monto, referencia
+            INSERT INTO invoice_payment (
+                cufe, forma_de_pago, forma_de_pago_otro, valor_pago,
+                efectivo, tarjeta_débito, tarjeta_crédito, tarjeta_clave__banistmo_,
+                vuelto, total_pagado, descuentos, merged
             )
-            VALUES ($1, $2, $3, $4, $5)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
-            invoice_header_id,
             payment.cufe,
-            payment.metodo_pago,
-            payment.monto,
-            payment.referencia,
+            payment.forma_de_pago,
+            payment.forma_de_pago_otro,
+            payment.valor_pago,
+            payment.efectivo,
+            payment.tarjeta_debito,
+            payment.tarjeta_credito,
+            payment.tarjeta_clave_banistmo,
+            payment.vuelto,
+            payment.total_pagado,
+            payment.descuentos,
+            payment.merged,
         )
         .execute(&mut **tx)
         .await?;

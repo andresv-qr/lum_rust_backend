@@ -174,6 +174,8 @@ impl QrCacheManager {
                         decoder: cached.decoder.clone(),
                         processing_time_ms: 0, // Not stored in this cache version
                         level_used: 0, // Not stored
+                        preprocessing_applied: false, // Not stored in cache
+                        rotation_angle: None, // Not stored in cache
                     };
                     let cache_len = cache.len();
                     drop(cache); // Release the lock before async call
@@ -211,6 +213,8 @@ impl QrCacheManager {
                         decoder: cached.decoder,
                         processing_time_ms: 0, // Not stored
                         level_used: 0, // Not stored
+                        preprocessing_applied: false, // Not stored in cache
+                        rotation_angle: None, // Not stored in cache
                     });
                 }
             }

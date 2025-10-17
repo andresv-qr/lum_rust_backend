@@ -90,20 +90,27 @@ pub async fn save_to_mef_pending(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     entry: &MefPending,
 ) -> Result<()> {
+    // CORRECTED: Column names to match actual PostgreSQL table
+    // Table has: type, error, date (not type_document, error_message, reception_date)
+    // Using ON CONFLICT DO UPDATE to handle duplicate URLs (url is UNIQUE)
     sqlx::query(
         r#"
-        INSERT INTO public.mef_pending (url, chat_id, reception_date, message_id, type_document, user_email, user_id, error_message, origin, ws_id)
+        INSERT INTO public.mef_pending (url, chat_id, date, message_id, type, user_email, user_id, error, origin, ws_id)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ON CONFLICT (url) DO UPDATE SET
+            date = EXCLUDED.date,
+            error = EXCLUDED.error,
+            user_id = EXCLUDED.user_id
         "#
     )
     .bind(&entry.url)
     .bind(&entry.chat_id)
-    .bind(entry.reception_date) // Assuming reception_timestamp was a typo and it should be reception_date from the model
+    .bind(entry.reception_date) // Maps to 'date' column
     .bind(&entry.message_id)
-    .bind(&entry.type_document)
+    .bind(&entry.type_document) // Maps to 'type' column
     .bind(&entry.user_email)
     .bind(entry.user_id)
-    .bind(&entry.error_message)
+    .bind(&entry.error_message) // Maps to 'error' column
     .bind(&entry.origin)
     .bind(&entry.ws_id)
     .execute(&mut **tx)

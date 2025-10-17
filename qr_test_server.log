@@ -1,0 +1,385 @@
+nohup: ignoring input
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.37s
+     Running `target/debug/lum_rust_ws`
+[2m2025-10-04T21:49:05.685600Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-10-04T21:49:05.685995Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-10-04T21:49:05.687301Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
+[2m2025-10-04T21:49:06.252966Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
+[2m2025-10-04T21:49:06.253420Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
+[2m2025-10-04T21:49:06.253563Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
+[2m2025-10-04T21:49:06.317132Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
+[2m2025-10-04T21:49:06.317196Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
+[2m2025-10-04T21:49:06.317951Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
+[2m2025-10-04T21:49:06.317980Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
+[2m2025-10-04T21:49:06.317995Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
+[2m2025-10-04T21:49:06.318008Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
+[2m2025-10-04T21:49:06.318024Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
+[2m2025-10-04T21:49:06.319196Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
+[2m2025-10-04T21:49:06.319237Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
+[2m2025-10-04T21:49:06.321947Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
+[2m2025-10-04T21:49:06.322619Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
+[2m2025-10-04T21:49:06.322679Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
+[2m2025-10-04T21:49:06.322718Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
+[2m2025-10-04T21:49:06.333527Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
+[2m2025-10-04T21:51:12.732041Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-10-04T21:51:39.204312Z[0m [31mERROR[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m JWT validation failed: ExpiredSignature
+[2m2025-10-04T21:52:26.324826Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-04T21:52:26.325259Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-04T21:52:26.325874Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ Preprocessing failed: Format error decoding Jpeg: Error parsing SOF segment. Reason:Length of start of frame differs from expected 11,value is 17
+[2m2025-10-04T21:52:26.326331Z[0m [31mERROR[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ❌ QR detection failed [3mrequest_id[0m[2m=[0mtest-manual-002 [3merror[0m[2m=[0mQR detection failed: Format error decoding Jpeg: Error parsing SOF segment. Reason:Length of start of frame differs from expected 11,value is 17 [3mprocessing_time_ms[0m[2m=[0m1
+[2m2025-10-04T21:52:39.389765Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-04T21:52:39.390094Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-04T21:52:39.390877Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ Preprocessing failed: unexpected end of file
+[2m2025-10-04T21:52:39.390938Z[0m [31mERROR[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ❌ QR detection failed [3mrequest_id[0m[2m=[0mtest-manual-003 [3merror[0m[2m=[0mQR detection failed: unexpected end of file [3mprocessing_time_ms[0m[2m=[0m0
+[2m2025-10-04T22:01:53.394327Z[0m [32m INFO[0m [2mlum_rust_ws::api::root_v4[0m[2m:[0m Request c9e91b33-9f24-46f5-bdcd-9d218184604c: Root endpoint accessed
+[2m2025-10-04T22:16:26.381676Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-04T22:16:26.384563Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-04T22:16:27.407958Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 1280x1280
+[2m2025-10-04T22:16:29.894790Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - image optimized for QR detection
+[2m2025-10-04T22:16:29.895433Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-04T22:16:30.314125Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-04T22:16:30.378259Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-04T22:16:30.566137Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 1 FAILED: All decoders failed on preprocessed image
+[2m2025-10-04T22:16:30.566221Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔄 Attempting rotation correction (90°, 180°, 270°)
+[2m2025-10-04T22:16:33.288645Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 2 FAILED: Rotation correction did not help
+[2m2025-10-04T22:16:33.288709Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 LEVEL 3: Starting Python/OpenCV fallback...
+[2m2025-10-04T22:16:33.288723Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Fallback API - Input: 250524 bytes, format: JPEG
+[2m2025-10-04T22:16:33.333647Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 Fallback API - Sending request to http://localhost:8008/qr/hybrid-fallback
+[2m2025-10-04T22:16:33.335329Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ Fallback API - Connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-04T22:16:33.335377Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Fallback API - Check if Python/OpenCV service is running on port 8008
+[2m2025-10-04T22:16:33.335976Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ ALL LEVELS FAILED: No QR code found after 6951ms
+[2m2025-10-04T22:16:33.336007Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m Python fallback error: Fallback API connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-04T22:16:33.336026Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Suggestion: Ensure QR code is clearly visible, well-lit, and not damaged
+[2m2025-10-04T22:16:33.336313Z[0m [31mERROR[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ❌ QR detection failed [3mrequest_id[0m[2m=[0mtest-real-qr-001 [3merror[0m[2m=[0mQR detection failed: No QR code detected after trying all strategies (preprocessed decoders, rotation, Python fallback) [3mprocessing_time_ms[0m[2m=[0m6954
+[2m2025-10-05T00:30:15.938652Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:15.938845Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:15.939011Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m Fetching user data for user_id: 1
+[2m2025-10-05T00:30:15.942309Z[0m [32m INFO[0m [2mlum_rust_ws::api::userdata_v4[0m[2m:[0m User data retrieved in 3ms for user_id: 1 - email: Some("andresfelipevalenciag@gmail.com")
+[2m2025-10-05T00:30:16.871839Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:16.872024Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m Getting user balance for user_id: 1
+[2m2025-10-05T00:30:16.874129Z[0m [32m INFO[0m [2mlum_rust_ws::api::rewards_v4[0m[2m:[0m User balance retrieved successfully for user 1 in 2ms: 295 Lümis
+[2m2025-10-05T00:30:17.375213Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:17.375884Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m67611826-b69d-4c7f-ba63-2b7d95edcfaf
+[2m2025-10-05T00:30:17.375933Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 67611826-b69d-4c7f-ba63-2b7d95edcfaf: Processing headers for user 1 with limit 50 offset 0
+[2m2025-10-05T00:30:17.375960Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 67611826-b69d-4c7f-ba63-2b7d95edcfaf: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            '' as issuer_ruc,
+            '' as issuer_dv,
+            '' as issuer_address,
+            '' as issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:17.380822Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 67611826-b69d-4c7f-ba63-2b7d95edcfaf: Retrieved 0 invoice headers (total: 0) in 4ms with enhanced filtering
+[2m2025-10-05T00:30:17.668817Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:17.669069Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m1e6b21f4-63ab-4790-9e54-15737ceaf0e1
+[2m2025-10-05T00:30:17.669131Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 1e6b21f4-63ab-4790-9e54-15737ceaf0e1: Processing headers for user 1 with limit 50 offset 100
+[2m2025-10-05T00:30:17.669193Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 1e6b21f4-63ab-4790-9e54-15737ceaf0e1: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            '' as issuer_ruc,
+            '' as issuer_dv,
+            '' as issuer_address,
+            '' as issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:17.672407Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:17.672548Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0mfd87a5af-7af4-4a55-8476-202799bad18c
+[2m2025-10-05T00:30:17.672575Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request fd87a5af-7af4-4a55-8476-202799bad18c: Processing headers for user 1 with limit 50 offset 50
+[2m2025-10-05T00:30:17.672594Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request fd87a5af-7af4-4a55-8476-202799bad18c: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            '' as issuer_ruc,
+            '' as issuer_dv,
+            '' as issuer_address,
+            '' as issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:17.673508Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 1e6b21f4-63ab-4790-9e54-15737ceaf0e1: Retrieved 0 invoice headers (total: 0) in 4ms with enhanced filtering
+[2m2025-10-05T00:30:17.676248Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request fd87a5af-7af4-4a55-8476-202799bad18c: Retrieved 0 invoice headers (total: 0) in 3ms with enhanced filtering
+[2m2025-10-05T00:30:17.810949Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:17.811141Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m05e7d9c2-0b75-4925-8ec7-a7f48e6cab18
+[2m2025-10-05T00:30:17.811193Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 05e7d9c2-0b75-4925-8ec7-a7f48e6cab18: Processing for user 1 with limit 100 offset 100 order_by date direction DESC
+[2m2025-10-05T00:30:17.811211Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 05e7d9c2-0b75-4925-8ec7-a7f48e6cab18: Querying details for user 1 with enhanced filters
+[2m2025-10-05T00:30:17.811256Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 05e7d9c2-0b75-4925-8ec7-a7f48e6cab18: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:17.812453Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:17.812590Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m17da260f-2f7b-42f5-80ca-99de8829ac0b
+[2m2025-10-05T00:30:17.812614Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 17da260f-2f7b-42f5-80ca-99de8829ac0b: Processing for user 1 with limit 100 offset 0 order_by date direction DESC
+[2m2025-10-05T00:30:17.812636Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 17da260f-2f7b-42f5-80ca-99de8829ac0b: Querying details for user 1 with enhanced filters
+[2m2025-10-05T00:30:17.812661Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 17da260f-2f7b-42f5-80ca-99de8829ac0b: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:17.813424Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:17.813694Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m15789a37-d335-4558-ae48-c4ebc9b26f1e
+[2m2025-10-05T00:30:17.813772Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 15789a37-d335-4558-ae48-c4ebc9b26f1e: Processing for user 1 with limit 100 offset 200 order_by date direction DESC
+[2m2025-10-05T00:30:17.813829Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 15789a37-d335-4558-ae48-c4ebc9b26f1e: Querying details for user 1 with enhanced filters
+[2m2025-10-05T00:30:17.813907Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 15789a37-d335-4558-ae48-c4ebc9b26f1e: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:17.816482Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 05e7d9c2-0b75-4925-8ec7-a7f48e6cab18: Retrieved 0 invoice details (total: 0) in 5ms with enhanced pagination
+[2m2025-10-05T00:30:17.818086Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 17da260f-2f7b-42f5-80ca-99de8829ac0b: Retrieved 0 invoice details (total: 0) in 5ms with enhanced pagination
+[2m2025-10-05T00:30:17.819460Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 15789a37-d335-4558-ae48-c4ebc9b26f1e: Retrieved 0 invoice details (total: 0) in 5ms with enhanced pagination
+[2m2025-10-05T00:30:24.989449Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:25.077607Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:25.377612Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:25.381357Z[0m [31mERROR[0m [2mlum_rust_ws::api::gamification_v4[0m[2m:[0m Failed to track action: Database(PgDatabaseError { severity: Error, code: "23514", message: "no partition of relation \"fact_user_activity_log\" found for row", detail: Some("Partition key of the failing row contains (created_at) = (2025-10-05 00:30:25.379388+00)."), hint: None, position: None, where: Some("SQL statement \"INSERT INTO gamification.fact_user_activity_log (\n        user_id, activity_type, activity_data, created_at\n    ) VALUES (\n        p_user_id, p_action_type, \n        jsonb_build_object(\n            'channel', p_channel,\n            'metadata', p_metadata,\n            'timestamp', NOW()\n        ),\n        NOW()\n    )\"\nPL/pgSQL function gamification.track_user_action(integer,character varying,character varying,jsonb) line 13 at SQL statement"), schema: Some("gamification"), table: Some("fact_user_activity_log"), column: None, data_type: None, constraint: None, file: Some("execPartition.c"), line: Some(328), routine: Some("ExecFindPartition") })
+[2m2025-10-05T00:30:25.382064Z[0m [31mERROR[0m [2mtower_http::trace::on_failure[0m[2m:[0m response failed [3mclassification[0m[2m=[0mStatus code: 500 Internal Server Error [3mlatency[0m[2m=[0m4 ms
+[2m2025-10-05T00:30:26.298538Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:44.224341Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:45.782069Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:45.783976Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:45.926074Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:45.927279Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:46.060684Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:46.060911Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0mf219e25a-784c-45f8-828e-b84ecb614a29
+[2m2025-10-05T00:30:46.060941Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f219e25a-784c-45f8-828e-b84ecb614a29: Processing headers for user 1 with limit 50 offset 50
+[2m2025-10-05T00:30:46.060966Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f219e25a-784c-45f8-828e-b84ecb614a29: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            '' as issuer_ruc,
+            '' as issuer_dv,
+            '' as issuer_address,
+            '' as issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:46.061651Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:46.061812Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m45ea0f38-b9ec-4cc0-bec1-9c490832d3fd
+[2m2025-10-05T00:30:46.061841Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 45ea0f38-b9ec-4cc0-bec1-9c490832d3fd: Processing headers for user 1 with limit 50 offset 0
+[2m2025-10-05T00:30:46.061903Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 45ea0f38-b9ec-4cc0-bec1-9c490832d3fd: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            '' as issuer_ruc,
+            '' as issuer_dv,
+            '' as issuer_address,
+            '' as issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:46.063441Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f219e25a-784c-45f8-828e-b84ecb614a29: Retrieved 0 invoice headers (total: 0) in 2ms with enhanced filtering
+[2m2025-10-05T00:30:46.065680Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 45ea0f38-b9ec-4cc0-bec1-9c490832d3fd: Retrieved 0 invoice headers (total: 0) in 3ms with enhanced filtering
+[2m2025-10-05T00:30:46.371529Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:46.371740Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice headers with enhanced filtering [3mrequest_id[0m[2m=[0m34c06cc7-5828-4857-a82e-e47d54c415ff
+[2m2025-10-05T00:30:46.371773Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 34c06cc7-5828-4857-a82e-e47d54c415ff: Processing headers for user 1 with limit 50 offset 100
+[2m2025-10-05T00:30:46.371802Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 34c06cc7-5828-4857-a82e-e47d54c415ff: Executing header query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY h.reception_date DESC) as id,
+            h.no,
+            h.date,
+            h.tot_itbms,
+            h.cufe,
+            h.issuer_name,
+            h.tot_amount,
+            h.url,
+            h.process_date,
+            h.reception_date,
+            h.type,
+            '' as time,
+            '' as auth_date,
+            '' as issuer_ruc,
+            '' as issuer_dv,
+            '' as issuer_address,
+            '' as issuer_phone,
+            '' as receptor_name,
+            COALESCE(detail_counts.details_count, 0) as details_count,
+            COALESCE(payment_counts.payments_count, 0) as payments_count
+        FROM public.invoice_header h
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as details_count
+            FROM public.invoice_detail
+            GROUP BY cufe
+        ) detail_counts ON h.cufe = detail_counts.cufe
+        LEFT JOIN (
+            SELECT cufe, COUNT(*) as payments_count
+            FROM public.invoice_payment
+            GROUP BY cufe
+        ) payment_counts ON h.cufe = payment_counts.cufe
+        WHERE h.user_id = $1
+     AND h.reception_date >= $2 ORDER BY h.reception_date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:46.374832Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 34c06cc7-5828-4857-a82e-e47d54c415ff: Retrieved 0 invoice headers (total: 0) in 3ms with enhanced filtering
+[2m2025-10-05T00:30:46.588237Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:46.588420Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0mf2ccb60f-644b-4133-bf3e-c8d42ea06ced
+[2m2025-10-05T00:30:46.588456Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f2ccb60f-644b-4133-bf3e-c8d42ea06ced: Processing for user 1 with limit 100 offset 100 order_by date direction DESC
+[2m2025-10-05T00:30:46.588475Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f2ccb60f-644b-4133-bf3e-c8d42ea06ced: Querying details for user 1 with enhanced filters
+[2m2025-10-05T00:30:46.588498Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f2ccb60f-644b-4133-bf3e-c8d42ea06ced: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:46.589512Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:46.589706Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m643f7176-ab7f-4294-93c4-de917ea1e264
+[2m2025-10-05T00:30:46.589821Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 643f7176-ab7f-4294-93c4-de917ea1e264: Processing for user 1 with limit 100 offset 0 order_by date direction DESC
+[2m2025-10-05T00:30:46.589906Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 643f7176-ab7f-4294-93c4-de917ea1e264: Querying details for user 1 with enhanced filters
+[2m2025-10-05T00:30:46.589967Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 643f7176-ab7f-4294-93c4-de917ea1e264: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:46.590142Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0mandresfelipevalenciag@gmail.com
+[2m2025-10-05T00:30:46.590342Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request: Getting invoice details with enhanced pagination [3mrequest_id[0m[2m=[0m7ca6ba24-f21e-4877-a953-643dba4d157a
+[2m2025-10-05T00:30:46.590377Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 7ca6ba24-f21e-4877-a953-643dba4d157a: Processing for user 1 with limit 100 offset 200 order_by date direction DESC
+[2m2025-10-05T00:30:46.590391Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 7ca6ba24-f21e-4877-a953-643dba4d157a: Querying details for user 1 with enhanced filters
+[2m2025-10-05T00:30:46.590406Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 7ca6ba24-f21e-4877-a953-643dba4d157a: Executing optimized query: 
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY d.date DESC) as id,
+            d.cufe, d.quantity, d.code, d.description, d.unit_price, d.amount,
+            d.unit_discount, d.date, d.total, d.issuer_name, d.reception_date
+        FROM public.invoice_with_details d
+        WHERE d.user_id = $1
+     AND d.reception_date >= $2 ORDER BY d.date DESC LIMIT $3 OFFSET $4
+[2m2025-10-05T00:30:46.593624Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 643f7176-ab7f-4294-93c4-de917ea1e264: Retrieved 0 invoice details (total: 0) in 3ms with enhanced pagination
+[2m2025-10-05T00:30:46.594576Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request 7ca6ba24-f21e-4877-a953-643dba4d157a: Retrieved 0 invoice details (total: 0) in 4ms with enhanced pagination
+[2m2025-10-05T00:30:46.595338Z[0m [32m INFO[0m [2mlum_rust_ws::api::invoice_query_v4[0m[2m:[0m Request f2ccb60f-644b-4133-bf3e-c8d42ea06ced: Retrieved 0 invoice details (total: 0) in 6ms with enhanced pagination
+[2m2025-10-05T00:51:59.692576Z[0m [33m WARN[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m Missing Authorization header
+[2m2025-10-05T01:01:27.351369Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m signal received, starting graceful shutdown

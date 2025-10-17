@@ -1,0 +1,11 @@
+JWT generado:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ1c2VyMUBleGFtcGxlLmNvbSIsIm5hbWUiOiJVc2VyIDEiLCJpYXQiOjE3NTk2MjYyMzQsImV4cCI6MTc1OTYyOTgzNH0.vjQOpv2mT8KRr_RmGblyM2vET1f8G13BjOqVfpH8MHg
+
+Payload:
+{
+  "sub": "1",
+  "email": "user1@example.com",
+  "name": "User 1",
+  "iat": 1759626234,
+  "exp": 1759629834
+}

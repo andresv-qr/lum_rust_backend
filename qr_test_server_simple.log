@@ -1,0 +1,149 @@
+nohup: ignoring input
+[2m2025-10-05T01:01:40.065924Z[0m [32m INFO[0m [2mlum_rust_ws::monitoring[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-10-05T01:01:40.065956Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🔍 Monitoring system initialized
+[2m2025-10-05T01:01:40.065968Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized database pool with 50 max connections
+[2m2025-10-05T01:01:40.236290Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Database pool created successfully
+[2m2025-10-05T01:01:40.236343Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m 🔧 Creating optimized Redis client
+[2m2025-10-05T01:01:40.236385Z[0m [32m INFO[0m [2mlum_rust_ws::optimization[0m[2m:[0m ✅ Redis client created successfully
+[2m2025-10-05T01:01:40.289777Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 🚀 Initializing optimized hybrid QR service (2-level cascade)
+[2m2025-10-05T01:01:40.289822Z[0m [32m INFO[0m [2mlum_rust_ws::domains::qr::service[0m[2m:[0m 📊 Expected performance: 85% success with Rust (5-15ms), 12% with Python fallback (30-50ms)
+[2m2025-10-05T01:01:40.289833Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🚀 Initializing PerformanceManager with advanced configuration
+[2m2025-10-05T01:01:40.289837Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 QR Detection: 50 max concurrent
+[2m2025-10-05T01:01:40.289841Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 OCR Processing: 20 max concurrent
+[2m2025-10-05T01:01:40.289845Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 Webhook Processing: 100 max concurrent
+[2m2025-10-05T01:01:40.289849Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 📊 API Requests: 200 max concurrent
+[2m2025-10-05T01:01:40.289947Z[0m [32m INFO[0m [2mlum_rust_ws::webhook::deduplication[0m[2m:[0m 🔄 MessageDeduplicator initialized with TTL: 300s, max_entries: 10000
+[2m2025-10-05T01:01:40.289963Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Starting performance warm-up process...
+[2m2025-10-05T01:01:40.291028Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Database connection verified
+[2m2025-10-05T01:01:40.291379Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m ✅ Redis connection verified
+[2m2025-10-05T01:01:40.291457Z[0m [32m INFO[0m [2mlum_rust_ws::shared::performance[0m[2m:[0m 🔥 Performance warm-up completed
+[2m2025-10-05T01:01:40.291480Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m 🚀 Application state initialized with optimized configuration
+[2m2025-10-05T01:01:40.292539Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m listening on 0.0.0.0:8000
+[2m2025-10-05T01:02:06.889251Z[0m [31mERROR[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m JWT validation failed: ExpiredSignature
+[2m2025-10-05T01:02:23.334289Z[0m [31mERROR[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m JWT validation failed: ExpiredSignature
+[2m2025-10-05T01:04:03.263047Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-05T01:04:03.264561Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-05T01:04:03.310500Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 1280x1280
+[2m2025-10-05T01:04:03.314936Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - simple equalization + Otsu binarization
+[2m2025-10-05T01:04:03.315525Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-05T01:04:03.340407Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-05T01:04:03.349337Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-05T01:04:03.355442Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ rxing SUCCESS: QR detected in 90ms
+[2m2025-10-05T01:04:03.355474Z[0m [32m INFO[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ✅ QR detected: https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR in 90ms via Preprocessed decoders [3mrequest_id[0m[2m=[0m9e9528e2-115d-4362-9143-2024f77d83fc [3mdecoder[0m[2m=[0mrxing [3mlevel[0m[2m=[0m1 [3mtime_ms[0m[2m=[0m90
+[2m2025-10-05T01:04:03.355505Z[0m [32m INFO[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ✅ QR detection successful [3mrequest_id[0m[2m=[0m9e9528e2-115d-4362-9143-2024f77d83fc [3mlevel[0m[2m=[0mrxing [3mprocessing_time_ms[0m[2m=[0m92
+[2m2025-10-05T01:17:16.347307Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-05T01:17:16.348050Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-05T01:17:16.378448Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 1280x1280
+[2m2025-10-05T01:17:16.381329Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - simple equalization + Otsu binarization
+[2m2025-10-05T01:17:16.381351Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-05T01:17:16.404307Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-05T01:17:16.411969Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-05T01:17:16.417654Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ rxing SUCCESS: QR detected in 69ms
+[2m2025-10-05T01:17:16.417683Z[0m [32m INFO[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ✅ QR detected: https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR in 69ms via Preprocessed decoders [3mrequest_id[0m[2m=[0m000f7555-0d14-4a7d-95ad-4670ad3c35f4 [3mdecoder[0m[2m=[0mrxing [3mlevel[0m[2m=[0m1 [3mtime_ms[0m[2m=[0m69
+[2m2025-10-05T01:17:16.417695Z[0m [32m INFO[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ✅ QR detection successful [3mrequest_id[0m[2m=[0m000f7555-0d14-4a7d-95ad-4670ad3c35f4 [3mlevel[0m[2m=[0mrxing [3mprocessing_time_ms[0m[2m=[0m70
+[2m2025-10-05T01:17:16.520895Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-05T01:17:16.521068Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-05T01:17:16.535193Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 720x1280
+[2m2025-10-05T01:17:16.537067Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - simple equalization + Otsu binarization
+[2m2025-10-05T01:17:16.537093Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-05T01:17:16.549733Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-05T01:17:16.553894Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-05T01:17:16.561819Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 1 FAILED: All decoders failed on preprocessed image
+[2m2025-10-05T01:17:16.561845Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔄 Attempting rotation correction (90°, 180°, 270°)
+[2m2025-10-05T01:17:16.647065Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 2 FAILED: Rotation correction did not help
+[2m2025-10-05T01:17:16.647115Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 LEVEL 3: Starting Python/OpenCV fallback...
+[2m2025-10-05T01:17:16.647121Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Fallback API - Input: 110054 bytes, format: JPEG
+[2m2025-10-05T01:17:16.694240Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 Fallback API - Sending request to http://localhost:8008/qr/hybrid-fallback
+[2m2025-10-05T01:17:16.694972Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ Fallback API - Connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:17:16.694995Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Fallback API - Check if Python/OpenCV service is running on port 8008
+[2m2025-10-05T01:17:16.695584Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ ALL LEVELS FAILED: No QR code found after 174ms
+[2m2025-10-05T01:17:16.695613Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m Python fallback error: Fallback API connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:17:16.695622Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Suggestion: Ensure QR code is clearly visible, well-lit, and not damaged
+[2m2025-10-05T01:17:16.695821Z[0m [31mERROR[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ❌ QR detection failed [3mrequest_id[0m[2m=[0m43029eeb-3090-4a08-b1ce-68acdeb601d8 [3merror[0m[2m=[0mQR detection failed: No QR code detected after trying all strategies (preprocessed decoders, rotation, Python fallback) [3mprocessing_time_ms[0m[2m=[0m174
+[2m2025-10-05T01:17:16.757130Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-05T01:17:16.757520Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-05T01:17:16.773960Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 720x1280
+[2m2025-10-05T01:17:16.775809Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - simple equalization + Otsu binarization
+[2m2025-10-05T01:17:16.775833Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-05T01:17:16.804737Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-05T01:17:16.814116Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-05T01:17:16.817696Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ rxing SUCCESS: QR detected in 60ms
+[2m2025-10-05T01:17:16.817725Z[0m [32m INFO[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ✅ QR detected: https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR in 60ms via Preprocessed decoders [3mrequest_id[0m[2m=[0m423e0a93-15ac-4430-ad60-b9c3b98fea5e [3mdecoder[0m[2m=[0mrxing [3mlevel[0m[2m=[0m1 [3mtime_ms[0m[2m=[0m60
+[2m2025-10-05T01:17:16.817736Z[0m [32m INFO[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ✅ QR detection successful [3mrequest_id[0m[2m=[0m423e0a93-15ac-4430-ad60-b9c3b98fea5e [3mlevel[0m[2m=[0mrxing [3mprocessing_time_ms[0m[2m=[0m60
+[2m2025-10-05T01:17:16.926181Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-05T01:17:16.926354Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-05T01:17:16.942248Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 1280x720
+[2m2025-10-05T01:17:16.944378Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - simple equalization + Otsu binarization
+[2m2025-10-05T01:17:16.944402Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-05T01:17:16.956648Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-05T01:17:16.961034Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-05T01:17:16.970481Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 1 FAILED: All decoders failed on preprocessed image
+[2m2025-10-05T01:17:16.970513Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔄 Attempting rotation correction (90°, 180°, 270°)
+[2m2025-10-05T01:17:17.061703Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 2 FAILED: Rotation correction did not help
+[2m2025-10-05T01:17:17.061744Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 LEVEL 3: Starting Python/OpenCV fallback...
+[2m2025-10-05T01:17:17.061750Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Fallback API - Input: 112228 bytes, format: JPEG
+[2m2025-10-05T01:17:17.107341Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 Fallback API - Sending request to http://localhost:8008/qr/hybrid-fallback
+[2m2025-10-05T01:17:17.107883Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ Fallback API - Connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:17:17.107915Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Fallback API - Check if Python/OpenCV service is running on port 8008
+[2m2025-10-05T01:17:17.108591Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ ALL LEVELS FAILED: No QR code found after 182ms
+[2m2025-10-05T01:17:17.108615Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m Python fallback error: Fallback API connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:17:17.108624Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Suggestion: Ensure QR code is clearly visible, well-lit, and not damaged
+[2m2025-10-05T01:17:17.108924Z[0m [31mERROR[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ❌ QR detection failed [3mrequest_id[0m[2m=[0m0a6bd6a0-f45c-4adf-8c8f-c7e37c1b4416 [3merror[0m[2m=[0mQR detection failed: No QR code detected after trying all strategies (preprocessed decoders, rotation, Python fallback) [3mprocessing_time_ms[0m[2m=[0m182
+[2m2025-10-05T01:17:17.167669Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-05T01:17:17.167877Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-05T01:17:17.182791Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 720x1280
+[2m2025-10-05T01:17:17.184548Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - simple equalization + Otsu binarization
+[2m2025-10-05T01:17:17.184567Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-05T01:17:17.212233Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-05T01:17:17.221553Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-05T01:17:17.229716Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 1 FAILED: All decoders failed on preprocessed image
+[2m2025-10-05T01:17:17.229746Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔄 Attempting rotation correction (90°, 180°, 270°)
+[2m2025-10-05T01:17:17.316489Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 2 FAILED: Rotation correction did not help
+[2m2025-10-05T01:17:17.316532Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 LEVEL 3: Starting Python/OpenCV fallback...
+[2m2025-10-05T01:17:17.316538Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Fallback API - Input: 149287 bytes, format: JPEG
+[2m2025-10-05T01:17:17.364601Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 Fallback API - Sending request to http://localhost:8008/qr/hybrid-fallback
+[2m2025-10-05T01:17:17.365262Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ Fallback API - Connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:17:17.365290Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Fallback API - Check if Python/OpenCV service is running on port 8008
+[2m2025-10-05T01:17:17.366023Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ ALL LEVELS FAILED: No QR code found after 198ms
+[2m2025-10-05T01:17:17.366040Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m Python fallback error: Fallback API connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:17:17.366049Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Suggestion: Ensure QR code is clearly visible, well-lit, and not damaged
+[2m2025-10-05T01:17:17.366344Z[0m [31mERROR[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ❌ QR detection failed [3mrequest_id[0m[2m=[0m9f76d04b-b21d-4e82-8af8-287814f24131 [3merror[0m[2m=[0mQR detection failed: No QR code detected after trying all strategies (preprocessed decoders, rotation, Python fallback) [3mprocessing_time_ms[0m[2m=[0m198
+[2m2025-10-05T01:17:27.427917Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-05T01:17:27.428112Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-05T01:17:27.441720Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 720x1280
+[2m2025-10-05T01:17:27.444213Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - simple equalization + Otsu binarization
+[2m2025-10-05T01:17:27.444237Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-05T01:17:27.457018Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-05T01:17:27.461240Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-05T01:17:27.469212Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 1 FAILED: All decoders failed on preprocessed image
+[2m2025-10-05T01:17:27.469238Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔄 Attempting rotation correction (90°, 180°, 270°)
+[2m2025-10-05T01:17:27.557693Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 2 FAILED: Rotation correction did not help
+[2m2025-10-05T01:17:27.557737Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 LEVEL 3: Starting Python/OpenCV fallback...
+[2m2025-10-05T01:17:27.557744Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Fallback API - Input: 110054 bytes, format: JPEG
+[2m2025-10-05T01:17:27.602850Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 Fallback API - Sending request to http://localhost:8008/qr/hybrid-fallback
+[2m2025-10-05T01:17:27.603488Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ Fallback API - Connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:17:27.603518Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Fallback API - Check if Python/OpenCV service is running on port 8008
+[2m2025-10-05T01:17:27.604978Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ ALL LEVELS FAILED: No QR code found after 176ms
+[2m2025-10-05T01:17:27.605000Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m Python fallback error: Fallback API connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:17:27.605006Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Suggestion: Ensure QR code is clearly visible, well-lit, and not damaged
+[2m2025-10-05T01:17:27.605317Z[0m [31mERROR[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ❌ QR detection failed [3mrequest_id[0m[2m=[0m48e77e1a-7859-4f4b-b580-95d954a4435c [3merror[0m[2m=[0mQR detection failed: No QR code detected after trying all strategies (preprocessed decoders, rotation, Python fallback) [3mprocessing_time_ms[0m[2m=[0m177
+[2m2025-10-05T01:18:26.616675Z[0m [32m INFO[0m [2mlum_rust_ws::middleware::auth[0m[2m:[0m 🔐 JWT authentication successful [3muser_id[0m[2m=[0m1 [3memail[0m[2m=[0muser1@example.com
+[2m2025-10-05T01:18:26.616853Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔍 Starting OPTIMIZED QR detection (Phase 1 & 2)
+[2m2025-10-05T01:18:26.630660Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Preprocessing: Image size 1280x720
+[2m2025-10-05T01:18:26.633041Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ✅ Preprocessing complete - simple equalization + Otsu binarization
+[2m2025-10-05T01:18:26.633066Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rqrr...
+[2m2025-10-05T01:18:26.645717Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying quircs...
+[2m2025-10-05T01:18:26.649468Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Trying rxing...
+[2m2025-10-05T01:18:26.657654Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 1 FAILED: All decoders failed on preprocessed image
+[2m2025-10-05T01:18:26.657678Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🔄 Attempting rotation correction (90°, 180°, 270°)
+[2m2025-10-05T01:18:26.743729Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ⚠️ LEVEL 2 FAILED: Rotation correction did not help
+[2m2025-10-05T01:18:26.743757Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 LEVEL 3: Starting Python/OpenCV fallback...
+[2m2025-10-05T01:18:26.743765Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 📊 Fallback API - Input: 112228 bytes, format: JPEG
+[2m2025-10-05T01:18:26.792551Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 🌐 Fallback API - Sending request to http://localhost:8008/qr/hybrid-fallback
+[2m2025-10-05T01:18:26.793172Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ Fallback API - Connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:18:26.793198Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Fallback API - Check if Python/OpenCV service is running on port 8008
+[2m2025-10-05T01:18:26.793744Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m ❌ ALL LEVELS FAILED: No QR code found after 176ms
+[2m2025-10-05T01:18:26.793770Z[0m [33m WARN[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m Python fallback error: Fallback API connection error: error sending request for url (http://localhost:8008/qr/hybrid-fallback)
+[2m2025-10-05T01:18:26.793776Z[0m [32m INFO[0m [2mlum_rust_ws::processing::qr_detection[0m[2m:[0m 💡 Suggestion: Ensure QR code is clearly visible, well-lit, and not damaged
+[2m2025-10-05T01:18:26.794048Z[0m [31mERROR[0m [2mlum_rust_ws::api::qr_v4[0m[2m:[0m ❌ QR detection failed [3mrequest_id[0m[2m=[0mbf71d66b-bd86-4f12-afa4-9840128f3ce4 [3merror[0m[2m=[0mQR detection failed: No QR code detected after trying all strategies (preprocessed decoders, rotation, Python fallback) [3mprocessing_time_ms[0m[2m=[0m177
+[2m2025-10-05T01:26:52.709229Z[0m [32m INFO[0m [2mlum_rust_ws[0m[2m:[0m signal received, starting graceful shutdown

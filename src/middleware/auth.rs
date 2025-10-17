@@ -8,6 +8,7 @@ use axum::{
 use jsonwebtoken::{decode, DecodingKey, Validation, Algorithm};
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::sync::LazyLock;
 use tracing::{error, info, warn};
 
 use crate::{
@@ -38,10 +39,15 @@ pub struct CurrentUser {
 /// JWT configuration constants
 pub const JWT_ALGORITHM: Algorithm = Algorithm::HS256;
 
-/// Get JWT secret from environment variable with fallback
-fn get_jwt_secret() -> String {
+/// JWT secret initialized lazily once (optimización: evita env::var en cada request)
+static JWT_SECRET: LazyLock<String> = LazyLock::new(|| {
     env::var("JWT_SECRET")
         .unwrap_or_else(|_| "lumis_jwt_secret_super_seguro_production_2024_rust_server_key".to_string())
+});
+
+/// Get JWT secret (ahora retorna &'static str)
+fn get_jwt_secret() -> &'static str {
+    &JWT_SECRET
 }
 
 /// Extract and validate JWT token from Authorization header

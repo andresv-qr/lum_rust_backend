@@ -43,6 +43,7 @@ rxing = "0.6.2"
 zbar-rust = "0.0.24"
 ort = { version = "2.0.0-rc.10", features = ["copy-dylibs"] }
 ndarray = { version = "0.16", features = ["serde"] }
+kornia-rs = "0.1.5"
 
 # Web scraping and OCR
 scraper = "0.19.0"
@@ -120,7 +121,14 @@ hex = { workspace = true }
 async-trait = "0.1.88"
 regex.workspace = true
 select = "0.6"
+kornia-rs = "0.1.5"
+flate2 = "1.0"  # GZIP compression for ofertas
+tokio-cron-scheduler = "0.10"  # Scheduled tasks for ofertas refresh
 
 [dev-dependencies]
 wiremock = "0.5"
 mime = "0.3"
+
+[[bin]]
+name = "test_webscrappy"
+path = "test_webscrappy.rs"
