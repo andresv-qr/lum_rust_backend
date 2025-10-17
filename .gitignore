@@ -1,1 +1,40 @@
+# Rust
 /target
+*.lock
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Logs
+nohup.out
+nohup_*.out
+*.log
+
+# Datos sensibles
+*.txt
+jwt_token*.txt
+login_response.json
+
+# Imágenes de prueba
+*.jpg
+*.png
+*.jpeg
+
+# Temporal
+*.swp
+*.swo
+*~
+
+# Redis dumps
+dump.rdb
+
+# Database backups
+*.sql.backup
+
+# Environment
+.env
+.env.local
