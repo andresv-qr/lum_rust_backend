@@ -234,8 +234,9 @@ pub async fn get_user_trust_score(state: &Arc<AppState>, user_ws_id: &str) -> Re
     .fetch_one(&state.db_pool)
     .await
     {
+        // MIGRATED: fact_redemptions → user_redemptions
         let premium_count = sqlx::query_scalar!(
-            "SELECT COUNT(*) FROM rewards.fact_redemptions WHERE user_id = $1 AND expiration_date >= NOW()",
+            "SELECT COUNT(*) FROM rewards.user_redemptions WHERE user_id = $1 AND code_expires_at >= NOW() AND redemption_status = 'confirmed'",
             user_id as i32
         )
         .fetch_one(&state.db_pool)

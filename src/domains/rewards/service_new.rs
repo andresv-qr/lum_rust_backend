@@ -175,7 +175,7 @@ pub async fn redeem_reward(pool: &PgPool, user_id: i64, reward: &Reward) -> Resu
     .await?;
 
     sqlx::query!(
-        "INSERT INTO rewards.fact_redemptions (user_id, reward_id, points_used, created_at) VALUES ($1, $2, $3, NOW())",
+        "INSERT INTO rewards.fact_redemptions_legacy (user_id, reward_id, points_used, created_at) VALUES ($1, $2, $3, NOW())",
         user_id as i32,
         reward.id,
         required_points

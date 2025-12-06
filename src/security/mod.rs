@@ -245,12 +245,54 @@ pub mod validation {
             .to_string()
     }
     
+    /// Windows reserved filenames that should be blocked
+    const WINDOWS_RESERVED_NAMES: &[&str] = &[
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    ];
+    
+    /// Validate filename for security - prevents path traversal and dangerous filenames
     pub fn is_safe_filename(filename: &str) -> bool {
-        !filename.contains("..") && 
-        !filename.contains('/') && 
-        !filename.contains('\\') &&
-        filename.len() <= 255 &&
-        !filename.is_empty()
+        // Basic checks
+        if filename.is_empty() || filename.len() > 255 {
+            return false;
+        }
+        
+        // Path traversal prevention
+        if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
+            return false;
+        }
+        
+        // Null byte injection prevention
+        if filename.contains('\0') {
+            return false;
+        }
+        
+        // Check for hidden files (starting with .)
+        if filename.starts_with('.') {
+            return false;
+        }
+        
+        // Check for Windows reserved names (case-insensitive)
+        let name_upper = filename.to_uppercase();
+        let base_name = name_upper.split('.').next().unwrap_or(&name_upper);
+        if WINDOWS_RESERVED_NAMES.contains(&base_name) {
+            return false;
+        }
+        
+        // Check for dangerous characters
+        let dangerous_chars = ['<', '>', ':', '"', '|', '?', '*'];
+        if filename.chars().any(|c| dangerous_chars.contains(&c)) {
+            return false;
+        }
+        
+        // Check for control characters (ASCII 0-31)
+        if filename.chars().any(|c| c.is_control()) {
+            return false;
+        }
+        
+        true
     }
 }
 
@@ -289,27 +331,76 @@ pub mod jwt_security {
 }
 
 /// CORS configuration for production
+/// 
+/// Reads allowed origins from CORS_ALLOWED_ORIGINS environment variable.
+/// Format: comma-separated list of URLs (e.g., "https://app.lum.com,https://admin.lum.com")
+/// Defaults to permissive "*" for development if not set.
 pub fn get_cors_layer() -> tower_http::cors::CorsLayer {
-    use tower_http::cors::CorsLayer;
-    use axum::http::Method;
+    use tower_http::cors::{CorsLayer, Any};
+    use axum::http::{Method, HeaderValue};
+    use tracing::info;
     
-    CorsLayer::new()
-        .allow_origin([
-            "https://yourdomain.com".parse().unwrap(),
-            "https://app.yourdomain.com".parse().unwrap(),
-        ])
+    // Read origins from environment variable
+    let cors_origins = std::env::var("CORS_ALLOWED_ORIGINS")
+        .unwrap_or_else(|_| {
+            warn!("⚠️ CORS_ALLOWED_ORIGINS not set, using permissive mode for development");
+            "*".to_string()
+        });
+    
+    info!("🌐 CORS configured with origins: {}", cors_origins);
+    
+    let cors_layer = CorsLayer::new()
         .allow_methods([
             Method::GET,
             Method::POST,
             Method::PUT,
             Method::DELETE,
+            Method::PATCH,
             Method::OPTIONS,
         ])
         .allow_headers([
             axum::http::header::AUTHORIZATION,
             axum::http::header::CONTENT_TYPE,
             axum::http::header::ACCEPT,
+            axum::http::header::ORIGIN,
+            axum::http::HeaderName::from_static("x-requested-with"),
         ])
-        .allow_credentials(true)
-        .max_age(Duration::from_secs(3600))
+        .max_age(Duration::from_secs(3600));
+    
+    // Handle wildcard vs specific origins
+    if cors_origins.trim() == "*" {
+        cors_layer
+            .allow_origin(Any)
+            .allow_credentials(false) // Can't use credentials with wildcard
+    } else {
+        // Parse comma-separated origins
+        let origins: Vec<HeaderValue> = cors_origins
+            .split(',')
+            .filter_map(|s| {
+                let trimmed = s.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    match trimmed.parse::<HeaderValue>() {
+                        Ok(v) => Some(v),
+                        Err(e) => {
+                            warn!("⚠️ Invalid CORS origin '{}': {}", trimmed, e);
+                            None
+                        }
+                    }
+                }
+            })
+            .collect();
+        
+        if origins.is_empty() {
+            warn!("⚠️ No valid CORS origins found, defaulting to permissive mode");
+            cors_layer
+                .allow_origin(Any)
+                .allow_credentials(false)
+        } else {
+            cors_layer
+                .allow_origin(origins)
+                .allow_credentials(true)
+        }
+    }
 }

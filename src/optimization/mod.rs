@@ -26,13 +26,16 @@ impl Default for DatabaseConfig {
 }
 
 impl DatabaseConfig {
+    /// Production configuration optimized for 8 cores + SSD
+    /// Formula: connections = (core_count * 2) + effective_spindle_count
+    /// For SSD: spindle_count ≈ 0, so ~16-20 connections optimal per instance
     pub fn production() -> Self {
         Self {
-            max_connections: 50,
-            min_connections: 10,
-            acquire_timeout: Duration::from_secs(30),
-            idle_timeout: Duration::from_secs(300), // 5 minutes
-            max_lifetime: Duration::from_secs(3600), // 1 hour
+            max_connections: 25,      // Optimal for 8 cores + SSD
+            min_connections: 5,       // Keep warm connections ready
+            acquire_timeout: Duration::from_secs(5),  // Fail fast instead of blocking
+            idle_timeout: Duration::from_secs(300),   // 5 minutes - recycle idle connections
+            max_lifetime: Duration::from_secs(3600),  // 1 hour - prevent stale connections
         }
     }
 

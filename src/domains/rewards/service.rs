@@ -62,9 +62,11 @@ pub async fn redeem_reward(pool: &PgPool, user_id: i64, reward: &Reward) -> Resu
     .execute(&mut *tx)
     .await?;
 
+    // TODO: MIGRATED - Use new redemption system (user_redemptions table)
+    // This legacy code is kept for backward compatibility but should be migrated
     sqlx::query!(
         r#"
-        INSERT INTO rewards.fact_redemptions (user_id, redem_id, quantity, date, condition1)
+        INSERT INTO rewards.fact_redemptions_legacy (user_id, redem_id, quantity, date, condition1)
         VALUES ($1, $2, $3, NOW(), $4)
         "#,
         user_id as i32,
@@ -92,8 +94,9 @@ pub async fn get_user_balance(pool: &PgPool, user_id: i64) -> Result<i32> {
 }
 
 pub async fn get_user_redemption_history(pool: &PgPool, user_id: i64, limit: i64) -> Result<Vec<Redemption>> {
+    // TODO: MIGRATED - Use new redemption system
     let rows = sqlx::query_as::<_, Redemption>(
-        "SELECT redem_id, quantity::integer, date, condition1 FROM rewards.fact_redemptions WHERE user_id = $1 ORDER BY date DESC LIMIT $2",
+        "SELECT redem_id, quantity::integer, date, condition1 FROM rewards.fact_redemptions_legacy WHERE user_id = $1 ORDER BY date DESC LIMIT $2",
     )
     .bind(user_id as i32)
     .bind(limit)
@@ -105,9 +108,10 @@ pub async fn get_user_redemption_history(pool: &PgPool, user_id: i64, limit: i64
 
 pub async fn activate_radar_ofertas(pool: &PgPool, user_id: i64) -> Result<()> {
     let expiration_date = Utc::now() + Duration::days(365 * 10);
+    // TODO: MIGRATED - Use new redemption system
     sqlx::query!(
         r#"
-        INSERT INTO rewards.fact_redemptions (user_id, redem_id, date, expiration_date, quantity, condition1)
+        INSERT INTO rewards.fact_redemptions_legacy (user_id, redem_id, date, expiration_date, quantity, condition1)
         VALUES ($1, 'red_radarofertas', NOW(), $2, 1, 'active')
         ON CONFLICT (user_id, redem_id) DO UPDATE
         SET expiration_date = $2, date = NOW();
@@ -168,8 +172,9 @@ pub async fn start_radar_ofertas_flow(app_state: &Arc<AppState>, whatsapp_id: &s
 }
 
 pub async fn has_active_product_search_subscription(pool: &PgPool, user_id: i64) -> Result<bool> {
+    // TODO: MIGRATED - Use new redemption system
     let subscription = sqlx::query!(
-        "SELECT id FROM rewards.fact_redemptions WHERE user_id = $1 AND redem_id = '2' AND expiration_date >= NOW()",
+        "SELECT id FROM rewards.fact_redemptions_legacy WHERE user_id = $1 AND redem_id = '2' AND expiration_date >= NOW()",
         user_id as i32
     )
     .fetch_optional(pool)
@@ -184,8 +189,9 @@ pub async fn get_available_offer_categories(pool: &PgPool, user_id: i64) -> Resu
     
     info!("Searching for offer categories for user_id: {}", user_id);
     
+    // TODO: MIGRATED - Use new redemption system
     let categories = sqlx::query!(
-        "SELECT DISTINCT condition1 FROM rewards.fact_redemptions WHERE user_id = $1 AND redem_id = '0' AND expiration_date >= CURRENT_DATE",
+        "SELECT DISTINCT condition1 FROM rewards.fact_redemptions_legacy WHERE user_id = $1 AND redem_id = '0' AND expiration_date >= CURRENT_DATE",
         user_id as i32
     )
     .fetch_all(pool)
@@ -432,10 +438,11 @@ pub async fn deduct_lumis_for_ocr(pool: &PgPool, user_id: i64, cost: i32) -> Res
     .execute(&mut *tx)
     .await?;
 
-    // 4. Record the transaction in fact_redemptions with positive value
+    // 4. Record the transaction in fact_redemptions_legacy with positive value
+    // TODO: MIGRATED - Use new redemption system
     sqlx::query!(
         r#"
-        INSERT INTO rewards.fact_redemptions (user_id, redem_id, quantity, date, condition1)
+        INSERT INTO rewards.fact_redemptions_legacy (user_id, redem_id, quantity, date, condition1)
         VALUES ($1, 'ocr_service_cost', $2, NOW(), 'deducted')
         "#,
         user_id as i32,
@@ -471,10 +478,11 @@ pub async fn refund_lumis_for_ocr(pool: &PgPool, user_id: i64, cost: i32) -> Res
     .execute(&mut *tx)
     .await?;
 
-    // 3. Record the refund transaction in fact_redemptions
+    // 3. Record the refund transaction in fact_redemptions_legacy
+    // TODO: MIGRATED - Use new redemption system
     sqlx::query!(
         r#"
-        INSERT INTO rewards.fact_redemptions (user_id, redem_id, quantity, date, condition1)
+        INSERT INTO rewards.fact_redemptions_legacy (user_id, redem_id, quantity, date, condition1)
         VALUES ($1, 'ocr_service_refund', $2, NOW(), 'refunded')
         "#,
         user_id as i32,

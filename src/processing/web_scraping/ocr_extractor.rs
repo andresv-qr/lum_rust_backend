@@ -148,8 +148,34 @@ pub fn extract_main_info(html_content: &str) -> Result<ExtractedData> {
 
     let details = extract_line_items(&document);
 
-    if header.is_empty() && details.is_empty() {
-        return Err(anyhow::anyhow!("No se pudieron extraer datos de la factura"));
+    // ✅ VALIDACIÓN ESTRICTA: Verificar campos críticos obligatorios
+    let required_fields = vec![
+        ("cufe", "CUFE"),
+        ("no", "Número de factura"),
+        ("date", "Fecha de factura"),
+        ("emisor_name", "Nombre del emisor"),
+        ("emisor_ruc", "RUC del emisor"),
+    ];
+    
+    let mut missing_fields = Vec::new();
+    for (field_key, field_name) in required_fields {
+        if !header.contains_key(field_key) || header.get(field_key).map_or(true, |v| v.is_empty()) {
+            missing_fields.push(field_name);
+        }
+    }
+    
+    if !missing_fields.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Campos obligatorios faltantes o vacíos: {}. La factura puede no estar procesada en el MEF aún o los datos son incompletos.",
+            missing_fields.join(", ")
+        ));
+    }
+    
+    // Validar que el monto total exista y no sea vacío
+    if !header.contains_key("tot_amount") || header.get("tot_amount").map_or(true, |v| v.is_empty()) {
+        return Err(anyhow::anyhow!(
+            "Monto total no encontrado o vacío. La factura puede no estar procesada completamente en el MEF."
+        ));
     }
 
     Ok(ExtractedData { header, details })

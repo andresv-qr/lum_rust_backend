@@ -15,6 +15,23 @@ use crate::{
     api::models::ErrorResponse,
 };
 
+// ============================================================================
+// STATIC ERROR MESSAGES - PERFORMANCE: Avoid allocations per request
+// ============================================================================
+mod error_messages {
+    pub const ERR_MISSING_AUTH: &str = "Missing Authorization header";
+    pub const MSG_AUTH_REQUIRED: &str = "Authentication required. Please provide a valid Bearer token.";
+    pub const ERR_INVALID_AUTH_FORMAT: &str = "Invalid Authorization header format";
+    pub const MSG_BEARER_REQUIRED: &str = "Authorization header must start with 'Bearer '.";
+    pub const ERR_EMPTY_TOKEN: &str = "Empty JWT token";
+    pub const MSG_PROVIDE_TOKEN: &str = "Please provide a valid JWT token.";
+    pub const ERR_TOKEN_EXPIRED: &str = "Token expired";
+    pub const MSG_SESSION_EXPIRED: &str = "Your session has expired. Please log in again.";
+    pub const ERR_INVALID_TOKEN: &str = "Invalid token";
+    pub const MSG_INVALID_CREDENTIALS: &str = "Could not validate credentials. Please log in again.";
+}
+use error_messages::*;
+
 /// JWT Claims structure matching the token payload
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JwtClaims {
@@ -23,6 +40,31 @@ pub struct JwtClaims {
     pub exp: i64,
     pub iat: i64,
     pub jti: Option<String>, // JWT ID for revocation
+}
+
+/// Merchant JWT Claims structure
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MerchantClaims {
+    pub sub: String,     // merchant_id as string
+    pub merchant_name: String,
+    pub role: String,    // Should be "merchant"
+    pub exp: i64,
+    pub iat: i64,
+}
+
+impl JwtClaims {
+    /// Helper method to parse user_id from sub field
+    /// Returns i32 for compatibility with database schema
+    pub fn user_id(&self) -> Result<i32, String> {
+        self.sub.parse::<i32>()
+            .map_err(|_| format!("Invalid user_id in token: '{}'", self.sub))
+    }
+    
+    /// Helper method to get user_id as i64 if needed
+    pub fn user_id_i64(&self) -> Result<i64, String> {
+        self.sub.parse::<i64>()
+            .map_err(|_| format!("Invalid user_id in token: '{}'", self.sub))
+    }
 }
 
 /// Alias for compatibility
@@ -40,14 +82,25 @@ pub struct CurrentUser {
 pub const JWT_ALGORITHM: Algorithm = Algorithm::HS256;
 
 /// JWT secret initialized lazily once (optimización: evita env::var en cada request)
+/// SECURITY: Falla en startup si JWT_SECRET no está configurado - NO usar fallback
 static JWT_SECRET: LazyLock<String> = LazyLock::new(|| {
     env::var("JWT_SECRET")
-        .unwrap_or_else(|_| "lumis_jwt_secret_super_seguro_production_2024_rust_server_key".to_string())
+        .expect("CRITICAL: JWT_SECRET environment variable must be set. Server cannot start without a secure JWT secret.")
 });
 
 /// Get JWT secret (ahora retorna &'static str)
 fn get_jwt_secret() -> &'static str {
     &JWT_SECRET
+}
+
+/// Helper to create ErrorResponse with static strings (avoids allocation)
+#[inline]
+fn static_error(error: &'static str, message: &'static str) -> ErrorResponse {
+    ErrorResponse {
+        error: error.to_string(),
+        message: message.to_string(),
+        details: None,
+    }
 }
 
 /// Extract and validate JWT token from Authorization header
@@ -64,11 +117,7 @@ pub async fn extract_current_user(
             warn!("Missing Authorization header");
             (
                 StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse {
-                    error: "Missing Authorization header".to_string(),
-                    message: "Authentication required. Please provide a valid Bearer token.".to_string(),
-                    details: None,
-                }),
+                Json(static_error(ERR_MISSING_AUTH, MSG_AUTH_REQUIRED)),
             )
         })?;
 
@@ -77,11 +126,7 @@ pub async fn extract_current_user(
         warn!("Invalid Authorization header format");
         return Err((
             StatusCode::UNAUTHORIZED,
-            Json(ErrorResponse {
-                error: "Invalid Authorization header format".to_string(),
-                message: "Authorization header must start with 'Bearer '.".to_string(),
-                details: None,
-            }),
+            Json(static_error(ERR_INVALID_AUTH_FORMAT, MSG_BEARER_REQUIRED)),
         ));
     }
 
@@ -91,11 +136,7 @@ pub async fn extract_current_user(
         warn!("Empty JWT token");
         return Err((
             StatusCode::UNAUTHORIZED,
-            Json(ErrorResponse {
-                error: "Empty JWT token".to_string(),
-                message: "Please provide a valid JWT token.".to_string(),
-                details: None,
-            }),
+            Json(static_error(ERR_EMPTY_TOKEN, MSG_PROVIDE_TOKEN)),
         ));
     }
 
@@ -109,23 +150,17 @@ pub async fn extract_current_user(
 
     let token_data = decode::<JwtClaims>(token, &decoding_key, &validation)
         .map_err(|e| {
+            // Log detailed error internally for debugging
             error!("JWT validation failed: {}", e);
+            // Return generic message to client (no internal details exposed)
             match e.kind() {
                 jsonwebtoken::errors::ErrorKind::ExpiredSignature => (
                     StatusCode::UNAUTHORIZED,
-                    Json(ErrorResponse {
-                        error: "Token expired".to_string(),
-                        message: "Your session has expired. Please log in again.".to_string(),
-                        details: Some(format!("JWT error: {}", e)),
-                    }),
+                    Json(static_error(ERR_TOKEN_EXPIRED, MSG_SESSION_EXPIRED)),
                 ),
                 _ => (
                     StatusCode::UNAUTHORIZED,
-                    Json(ErrorResponse {
-                        error: "Invalid token".to_string(),
-                        message: "Could not validate credentials. Please log in again.".to_string(),
-                        details: Some(format!("JWT error: {}", e)),
-                    }),
+                    Json(static_error(ERR_INVALID_TOKEN, MSG_INVALID_CREDENTIALS)),
                 ),
             }
         })?;
@@ -138,11 +173,7 @@ pub async fn extract_current_user(
             error!("Invalid user_id in JWT sub field: {}", claims.sub);
             (
                 StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse {
-                    error: "Invalid token".to_string(),
-                    message: "Could not validate credentials. Please log in again.".to_string(),
-                    details: Some("Invalid user ID format".to_string()),
-                }),
+                Json(static_error(ERR_INVALID_TOKEN, MSG_INVALID_CREDENTIALS)),
             )
         })?;
     
@@ -182,11 +213,7 @@ pub fn extract_user_from_headers(headers: &HeaderMap) -> Result<CurrentUser, (St
             warn!("Missing Authorization header");
             (
                 StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse {
-                    error: "Missing Authorization header".to_string(),
-                    message: "Authentication required. Please provide a valid Bearer token.".to_string(),
-                    details: None,
-                }),
+                Json(static_error(ERR_MISSING_AUTH, MSG_AUTH_REQUIRED)),
             )
         })?;
 
@@ -195,11 +222,7 @@ pub fn extract_user_from_headers(headers: &HeaderMap) -> Result<CurrentUser, (St
         warn!("Invalid Authorization header format");
         return Err((
             StatusCode::UNAUTHORIZED,
-            Json(ErrorResponse {
-                error: "Invalid Authorization header format".to_string(),
-                message: "Authorization header must be in format: Bearer <token>".to_string(),
-                details: None,
-            }),
+            Json(static_error(ERR_INVALID_AUTH_FORMAT, MSG_BEARER_REQUIRED)),
         ));
     }
 
@@ -215,11 +238,7 @@ pub fn extract_user_from_headers(headers: &HeaderMap) -> Result<CurrentUser, (St
                     error!("Invalid user_id in JWT sub field: {}", claims.sub);
                     (
                         StatusCode::UNAUTHORIZED,
-                        Json(ErrorResponse {
-                            error: "Invalid token".to_string(),
-                            message: "Invalid user ID format in token".to_string(),
-                            details: None,
-                        }),
+                        Json(static_error(ERR_INVALID_TOKEN, MSG_INVALID_CREDENTIALS)),
                     )
                 })?;
                 
@@ -234,11 +253,7 @@ pub fn extract_user_from_headers(headers: &HeaderMap) -> Result<CurrentUser, (St
             warn!("JWT validation failed: {}", e);
             Err((
                 StatusCode::UNAUTHORIZED,
-                Json(ErrorResponse {
-                    error: "Invalid or expired token".to_string(),
-                    message: format!("JWT validation failed: {}", e),
-                    details: None,
-                }),
+                Json(static_error(ERR_INVALID_TOKEN, MSG_INVALID_CREDENTIALS)),
             ))
         }
     }
@@ -267,6 +282,108 @@ pub async fn require_auth(
     }
 }
 
+/// Merchant authentication middleware
+/// Extracts and validates merchant JWT tokens
+pub async fn extract_merchant(
+    headers: HeaderMap,
+    mut request: Request,
+    next: Next,
+) -> Result<Response, (StatusCode, Json<ErrorResponse>)> {
+    // Get Authorization header
+    let auth_header = headers
+        .get(AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .ok_or_else(|| {
+            warn!("Missing Authorization header");
+            (
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                    error: "Missing Authorization header".to_string(),
+                    message: "Authentication required. Please provide a valid Bearer token.".to_string(),
+                    details: None,
+                }),
+            )
+        })?;
+
+    // Check Bearer prefix
+    if !auth_header.starts_with("Bearer ") {
+        warn!("Invalid Authorization header format");
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            Json(ErrorResponse {
+                error: "Invalid Authorization header format".to_string(),
+                message: "Authorization header must start with 'Bearer '.".to_string(),
+                details: None,
+            }),
+        ));
+    }
+
+    // Extract token
+    let token = auth_header.trim_start_matches("Bearer ").trim();
+    if token.is_empty() {
+        warn!("Empty JWT token");
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            Json(ErrorResponse {
+                error: "Empty JWT token".to_string(),
+                message: "Please provide a valid JWT token.".to_string(),
+                details: None,
+            }),
+        ));
+    }
+
+    // Decode and validate JWT
+    let jwt_secret = get_jwt_secret();
+    let decoding_key = DecodingKey::from_secret(jwt_secret.as_bytes());
+    let validation = Validation::new(JWT_ALGORITHM);
+
+    let token_data = decode::<MerchantClaims>(token, &decoding_key, &validation)
+        .map_err(|e| {
+            error!("Merchant JWT validation failed: {}", e);
+            match e.kind() {
+                jsonwebtoken::errors::ErrorKind::ExpiredSignature => (
+                    StatusCode::UNAUTHORIZED,
+                    Json(ErrorResponse {
+                        error: "Token expired".to_string(),
+                        message: "Your session has expired. Please log in again.".to_string(),
+                        details: Some(format!("JWT error: {}", e)),
+                    }),
+                ),
+                _ => (
+                    StatusCode::UNAUTHORIZED,
+                    Json(ErrorResponse {
+                        error: "Invalid token".to_string(),
+                        message: "Could not validate credentials. Please log in again.".to_string(),
+                        details: Some(format!("JWT error: {}", e)),
+                    }),
+                ),
+            }
+        })?;
+
+    let claims = token_data.claims;
+    
+    // Verify role is "merchant"
+    if claims.role != "merchant" {
+        error!("Invalid role in merchant token: {}", claims.role);
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json(ErrorResponse {
+                error: "Invalid token role".to_string(),
+                message: "This endpoint requires a merchant token.".to_string(),
+                details: None,
+            }),
+        ));
+    }
+    
+    info!("🏪 Merchant authentication successful: {} ({})", 
+          claims.merchant_name, claims.sub);
+    
+    // Store merchant info in request extensions
+    request.extensions_mut().insert(claims.clone());
+    
+    Ok(next.run(request).await)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -277,6 +394,7 @@ mod tests {
         let claims = JwtClaims {
             sub: "1".to_string(),  // user_id as string
             email: "test@example.com".to_string(),
+            // Test token valid for 1 hour (access tokens typically short-lived)
             exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp(),
             iat: chrono::Utc::now().timestamp(),
             jti: Some("test-jti".to_string()),

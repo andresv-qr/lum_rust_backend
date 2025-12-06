@@ -28,11 +28,12 @@ pub fn get_request_id(request: &Request<Body>) -> String {
 
 // Utility function to create JWT token with proper signing
 pub fn create_jwt_token(user_id: i64, email: &str) -> Result<String, String> {
+    // SECURITY: Fail if JWT_SECRET is not configured - never use a fallback secret
     let jwt_secret = env::var("JWT_SECRET")
-        .unwrap_or_else(|_| "lumis_jwt_secret_super_seguro_production_2024_rust_server_key".to_string());
+        .map_err(|_| "CRITICAL: JWT_SECRET environment variable must be set")?;
     
     let now = Utc::now();
-    let expiration = now + chrono::Duration::hours(24); // 24 hours expiration
+    let expiration = now + chrono::Duration::days(90); // 90 days expiration
     
     let claims = JwtClaims {
         sub: user_id.to_string(),  // Convert user_id to string for standard JWT 'sub' field

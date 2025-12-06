@@ -12,7 +12,7 @@ JWT_SECRET = "lumis_jwt_secret_super_seguro_production_2024_rust_server_key"
 JWT_ALGORITHM = "HS256"
 
 def generate_jwt_token(user_id=1, email="test@example.com", hours=24):
-    """Generate a JWT token with specified expiration time"""
+    """Generate a JWT token with specified expiration time (for access tokens)"""
     
     now = datetime.datetime.utcnow()
     expiration = now + datetime.timedelta(hours=hours)
@@ -30,7 +30,7 @@ def generate_jwt_token(user_id=1, email="test@example.com", hours=24):
     return token
 
 if __name__ == "__main__":
-    # Generate token valid for 24 hours
+    # Generate token valid for 24 hours (access token for testing)
     token = generate_jwt_token()
     
     # Save to file

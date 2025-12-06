@@ -1,9 +1,11 @@
 use axum::{
     routing::{get, post},
     Router,
+    extract::DefaultBodyLimit,
 };
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
+use tower_http::compression::{CompressionLayer, predicate::SizeAbove};  // PERFORMANCE: gzip compression
 
 pub mod api;
 pub mod webhook;
@@ -27,6 +29,7 @@ pub mod monitoring;
 pub mod security;
 pub mod optimization;
 pub mod middleware;
+pub mod observability;
 
 // Tests module removed
 
@@ -35,6 +38,7 @@ use webhook::{get_webhook, post_webhook};
 use state::AppState;
 use security::{security_headers_middleware, rate_limiting_middleware, get_cors_layer};
 use monitoring::endpoints::monitoring_router;
+use observability::metrics_middleware;
 
 use axum::middleware as axum_middleware;
 
@@ -47,7 +51,7 @@ pub fn create_app_router(app_state: Arc<AppState>) -> Router {
         // Webhooks de WhatsApp
         .route("/webhookws", get(get_webhook))
         .route("/webhookws", post(post_webhook))
-        // Endpoints de monitoreo (sin autenticación)
+        // Endpoints de monitoreo (sin autenticación) - incluye /metrics de Prometheus
         .merge(monitoring_router())
         // API endpoints con estado
         .merge(api_router)
@@ -59,6 +63,15 @@ pub fn create_app_router(app_state: Arc<AppState>) -> Router {
             rate_limiting_middleware
         ))
         // Middlewares sin estado
+        .layer(axum_middleware::from_fn(metrics_middleware)) // 📊 Captura métricas automáticamente
+        .layer(DefaultBodyLimit::max(15 * 1024 * 1024))  // 📦 15MB body limit for image uploads
+        .layer(
+            CompressionLayer::new()
+                .gzip(true)
+                .br(false)      // Disable Brotli - Flutter/Dio compatibility issues
+                .deflate(true)
+                .compress_when(SizeAbove::new(1024))  // Only compress responses > 1KB
+        )
         .layer(TraceLayer::new_for_http())
         .layer(get_cors_layer())
         .layer(axum_middleware::from_fn(security_headers_middleware))

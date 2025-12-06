@@ -1,6 +1,6 @@
 use axum::{
     extract::State,
-    http::{StatusCode, HeaderMap, HeaderValue, header::CONTENT_TYPE},
+    http::StatusCode, // Removed unused HeaderMap, HeaderValue, CONTENT_TYPE
     response::IntoResponse,
     routing::get,
     Router,
@@ -87,42 +87,9 @@ async fn detailed_health_check(
 }
 
 /// Prometheus-format metrics endpoint
-async fn prometheus_metrics(
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
-    // In a real implementation, you'd extract MetricsCollector from state
-    // For now, we'll return basic metrics
-    
-    let metrics = format!(
-        "# HELP http_requests_total Total number of HTTP requests\n\
-         # TYPE http_requests_total counter\n\
-         http_requests_total{{method=\"GET\",status=\"200\"}} 1234\n\
-         http_requests_total{{method=\"POST\",status=\"200\"}} 567\n\
-         http_requests_total{{method=\"GET\",status=\"404\"}} 89\n\
-         \n\
-         # HELP http_request_duration_seconds HTTP request duration in seconds\n\
-         # TYPE http_request_duration_seconds histogram\n\
-         http_request_duration_seconds_sum 45.2\n\
-         http_request_duration_seconds_count 1890\n\
-         \n\
-         # HELP database_connections_active Active database connections\n\
-         # TYPE database_connections_active gauge\n\
-         database_connections_active {}\n\
-         \n\
-         # HELP redis_connections_active Active Redis connections\n\
-         # TYPE redis_connections_active gauge\n\
-         redis_connections_active 5\n\
-         \n\
-         # HELP memory_usage_bytes Memory usage in bytes\n\
-         # TYPE memory_usage_bytes gauge\n\
-         memory_usage_bytes 1048576\n",
-        state.db_pool.size()
-    );
-    
-    let mut headers = HeaderMap::new();
-    headers.insert(CONTENT_TYPE, HeaderValue::from_static("text/plain; version=0.0.4"));
-    
-    (StatusCode::OK, headers, metrics)
+async fn prometheus_metrics() -> impl IntoResponse {
+    // Usar el handler real de Prometheus con métricas completas
+    crate::observability::metrics_handler().await
 }
 
 /// JSON format metrics endpoint

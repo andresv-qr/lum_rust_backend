@@ -17,14 +17,15 @@ use crate::middleware::auth::extract_current_user;
 use crate::state::AppState;
 
 /// Create invoices v4 router
+/// NOTE: Routes are relative - this router is nested under /api/v4/invoices
 pub fn create_invoices_v4_router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/api/v4/invoices/:id", get(get_invoice_details))
+        .route("/:id", get(get_invoice_details))
         // OCR iterative endpoints (protected by auth)
-        .route("/api/v4/invoices/ocr-process", post(process_ocr_iterative))
-        .route("/api/v4/invoices/save-ocr", post(save_ocr_invoice))
+        .route("/ocr-process", post(process_ocr_iterative))
+        .route("/save-ocr", post(save_ocr_invoice))
         // Upload OCR endpoint (protected by auth)
-        .route("/api/v4/invoices/upload-ocr", post(upload_ocr_invoice))
+        .route("/upload-ocr", post(upload_ocr_invoice))
         // Apply auth middleware to protected routes
         .layer(axum::middleware::from_fn(extract_current_user))
 }

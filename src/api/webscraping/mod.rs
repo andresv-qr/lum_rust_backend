@@ -338,37 +338,102 @@ fn extract_invoice_header(document: &Html, cufe: &str, user_id: i64) -> Option<I
 }
 
 fn extract_invoice_details(document: &Html, cufe: &str, _user_id: i64) -> Vec<InvoiceDetail> {
-    // Try to find table rows or detail sections
-    // TODO: Implement real extraction from HTML table
-    let selectors = ["tr", ".detail-row", ".item-row", "tbody tr"];
+    info!("Extracting invoice details from document");
     
-    for selector_str in &selectors {
-        if let Ok(selector) = Selector::parse(selector_str) {
-            let elements: Vec<_> = document.select(&selector).collect();
-            if elements.len() > 1 {
-                info!("Found {} potential detail rows", elements.len());
+    let mut details = Vec::new();
+    
+    // Parse tbody rows - DGI-FEP structure
+    let tbody_selector = match Selector::parse("tbody") {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to parse tbody selector: {}", e);
+            return Vec::new();
+        }
+    };
+    
+    let tr_selector = match Selector::parse("tr") {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to parse tr selector: {}", e);
+            return Vec::new();
+        }
+    };
+    
+    let td_selector = match Selector::parse("td") {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to parse td selector: {}", e);
+            return Vec::new();
+        }
+    };
+
+    for tbody in document.select(&tbody_selector) {
+        for tr in tbody.select(&tr_selector) {
+            let cells: Vec<_> = tr.select(&td_selector).collect();
+            
+            // DGI-FEP table structure:
+            // 0: Linea, 1: Código, 2: Descripción, 3: Info interés, 4: Cantidad,
+            // 5: Precio, 6: Descuento, 7: Monto, 8: ITBMS, 9: ISC, 10: Acarreo, 11: Seguro, 12: Total
+            
+            if cells.len() >= 8 {
+                // Extract text from each cell
+                let line = cells[0].text().collect::<String>().trim().to_string();
+                let code = cells[1].text().collect::<String>().trim().to_string();
+                let description = cells[2].text().collect::<String>().trim().to_string();
+                let information_of_interest = cells[3].text().collect::<String>().trim().to_string();
+                let quantity = cells[4].text().collect::<String>().trim().to_string();
+                let unit_price = cells[5].text().collect::<String>().trim().to_string();
+                let unit_discount = cells[6].text().collect::<String>().trim().to_string();
+                let amount = cells[7].text().collect::<String>().trim().to_string();
+                let itbms = if cells.len() > 8 {
+                    cells[8].text().collect::<String>().trim().to_string()
+                } else {
+                    "0.00".to_string()
+                };
+                let total = if cells.len() > 12 {
+                    cells[12].text().collect::<String>().trim().to_string()
+                } else {
+                    amount.clone() // Fallback to amount if total not present
+                };
                 
-                // CORRECTED: Return mock detail with correct field names and types (TEXT)
-                return vec![InvoiceDetail {
+                // Skip if this row doesn't have actual data (header rows, etc.)
+                if code.is_empty() && description.is_empty() {
+                    continue;
+                }
+                
+                info!("✅ Extracted detail: code={}, desc={}, qty={}", code, description, quantity);
+                
+                let detail = InvoiceDetail {
                     cufe: cufe.to_string(),
-                    partkey: Some(format!("{}|1", cufe)), // cufe|linea
+                    partkey: Some(format!("{}|{}", cufe, line)),
                     date: Some(chrono::Utc::now().format("%d/%m/%Y").to_string()),
-                    quantity: Some("1.00".to_string()), // TEXT not Decimal
-                    code: Some("PROD-001".to_string()),
-                    description: Some("Extracted item".to_string()),
-                    unit_discount: Some("0.00".to_string()),
-                    unit_price: Some("100.00".to_string()), // TEXT not Decimal
-                    itbms: Some("7.00".to_string()), // TEXT not Decimal
-                    amount: Some("100.00".to_string()), // TEXT not Decimal
-                    total: Some("107.00".to_string()), // TEXT not Decimal
-                    information_of_interest: None,
-                }];
+                    quantity: Some(quantity),
+                    code: Some(code),
+                    description: Some(description),
+                    unit_discount: Some(unit_discount),
+                    unit_price: Some(unit_price),
+                    itbms: Some(itbms),
+                    amount: Some(amount),
+                    total: Some(total),
+                    information_of_interest: if information_of_interest.is_empty() {
+                        None
+                    } else {
+                        Some(information_of_interest)
+                    },
+                };
+                
+                details.push(detail);
             }
         }
     }
 
-    warn!("Could not extract invoice details");
-    Vec::new()
+    if details.is_empty() {
+        warn!("❌ Could not extract invoice details - no valid rows found");
+    } else {
+        info!("✅ Successfully extracted {} invoice details", details.len());
+    }
+
+    details
 }
 
 fn extract_invoice_payments(document: &Html, cufe: &str, _user_id: i64) -> Vec<InvoicePayment> {

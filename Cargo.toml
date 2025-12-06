@@ -17,7 +17,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 anyhow = "1.0.75"
 axum = { version = "0.7.4", features = ["macros", "multipart"] }
-sqlx = { version = "0.8", features = [ "runtime-tokio-rustls", "postgres", "macros", "chrono", "rust_decimal", "ipnetwork" ] }
+sqlx = { version = "0.8", features = [ "runtime-tokio-rustls", "postgres", "macros", "chrono", "rust_decimal", "ipnetwork", "uuid" ] }
 redis = { version = "0.32.5", features = ["aio", "tokio-comp"] }
 regex = "1.0"
 dashmap = "6.0"
@@ -25,7 +25,7 @@ dotenvy = "0.15"
 reqwest = { version = "0.12", features = ["json", "multipart", "cookies"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 tower = { version = "0.4", features = ["util"] }
-tower-http = { version = "0.5.2", features = ["trace", "cors"] }
+tower-http = { version = "0.5.2", features = ["trace", "cors", "compression-gzip", "compression-br", "compression-deflate"] }
 bcrypt = "0.15"
 validator = { version = "0.18", features = ["derive"] }
 thiserror = "1.0.69"
@@ -35,12 +35,13 @@ futures = "0.3"
 rand = "0.8"
 deadpool-redis = "0.22.0"
 
-# QR Detection specific
+# QR Detection and Generation
 image = { version = "0.25.1", features = ["png", "jpeg"] }
 rqrr = { version = "0.9.3", features = ["image"] }
 quircs = "0.10.2"
 rxing = "0.6.2"
 zbar-rust = "0.0.24"
+qrcode = { version = "0.14", default-features = false, features = ["image"] }  # QR generation for redemptions
 ort = { version = "2.0.0-rc.10", features = ["copy-dylibs"] }
 ndarray = { version = "0.16", features = ["serde"] }
 kornia-rs = "0.1.5"
@@ -64,6 +65,16 @@ imageproc = "0.25"
 lru = "0.12"
 bincode = "1.3"
 hex = "0.4"
+
+# Performance optimization
+tikv-jemallocator = "0.5"
+parking_lot = "0.12"  # Faster mutex implementation
+num_cpus = "1.16"     # CPU detection for runtime config
+bytes = "1.5"         # Efficient buffer management
+
+# Observability & Metrics
+prometheus = "0.13"
+lazy_static = "1.4"
 
 [package]
 name = "lum_rust_ws"
@@ -90,6 +101,7 @@ tower = { workspace = true }
 tower-http = { workspace = true }
 bcrypt = "0.15"
 jsonwebtoken = "9.2"
+sha2 = "0.10"  # Para checksums de sincronización incremental
 validator = { version = "0.18", features = ["derive"] }
 thiserror = "1.0.69"
 rand = "0.8"
@@ -102,6 +114,7 @@ rqrr = { workspace = true }
 quircs = { workspace = true }
 rxing = { workspace = true }
 zbar-rust = { workspace = true }
+qrcode = { workspace = true }  # QR generation
 ort = { workspace = true }
 ndarray = { workspace = true }
 scraper = { workspace = true }
@@ -124,6 +137,14 @@ select = "0.6"
 kornia-rs = "0.1.5"
 flate2 = "1.0"  # GZIP compression for ofertas
 tokio-cron-scheduler = "0.10"  # Scheduled tasks for ofertas refresh
+tikv-jemallocator = { workspace = true }  # Memory allocator optimization
+parking_lot = "0.12"  # Faster mutex - no poisoning, better performance
+num_cpus = "1.16"     # CPU detection for optimal runtime config
+bytes = "1.5"         # Efficient buffer management for serialization
+prometheus = { workspace = true }  # Metrics collection
+lazy_static = { workspace = true }  # Static metrics registration
+hmac = "0.12"  # HMAC for webhook signatures
+gcp_auth = "0.12"  # OAuth 2.0 for FCM HTTP v1 API
 
 [dev-dependencies]
 wiremock = "0.5"
@@ -132,3 +153,7 @@ mime = "0.3"
 [[bin]]
 name = "test_webscrappy"
 path = "test_webscrappy.rs"
+
+[[bin]]
+name = "test_cufe"
+path = "test_cufe.rs"

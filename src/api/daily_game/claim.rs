@@ -6,7 +6,7 @@ use axum::{
 use chrono::Utc;
 use chrono_tz::America::Panama;
 use tracing::{info, warn, error};
-use rust_decimal::Decimal;
+// use rust_decimal::Decimal; // Unused - comentado
 
 use std::sync::Arc;
 use crate::{

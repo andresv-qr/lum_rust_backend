@@ -324,4 +324,4 @@ impl RegistrationErrorResponse {
 
 pub const EMAIL_APP_SOURCE: &str = "EMAIL";
 pub const MAX_REGISTRATION_ATTEMPTS_PER_HOUR: u32 = 5;
-pub const JWT_EXPIRATION_HOURS: i64 = 24;
+pub const JWT_EXPIRATION_HOURS: i64 = 24 * 90;  // 90 days

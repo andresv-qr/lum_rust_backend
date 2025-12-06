@@ -1,3 +1,11 @@
+// Módulos de sincronización incremental
+pub mod sync_types;
+pub mod sync_helpers;
+
+// Re-exports para facilitar imports
+pub use sync_types::*;
+pub use sync_helpers::*;
+
 use axum::{
     extract::{Request, State},
     http::StatusCode,
@@ -208,8 +216,10 @@ impl IntoResponse for ApiError {
         let status = match self.code.as_str() {
             "VALIDATION_ERROR" | "BAD_REQUEST" => StatusCode::BAD_REQUEST,
             "NOT_FOUND" => StatusCode::NOT_FOUND,
-            "UNAUTHORIZED" => StatusCode::UNAUTHORIZED,
+            "UNAUTHORIZED" | "AUTHENTICATION_FAILED" | "TOKEN_EXPIRED" | "INVALID_TOKEN" => StatusCode::UNAUTHORIZED,
+            "FORBIDDEN" | "ACCESS_DENIED" => StatusCode::FORBIDDEN,
             "TOO_MANY_REQUESTS" => StatusCode::TOO_MANY_REQUESTS,
+            "CONFLICT" | "DUPLICATE_ENTRY" => StatusCode::CONFLICT,
             "DATABASE_ERROR" | "CACHE_ERROR" | "INTERNAL_SERVER_ERROR" => StatusCode::INTERNAL_SERVER_ERROR,
             _ => StatusCode::INTERNAL_SERVER_ERROR,
         };

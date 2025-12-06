@@ -166,8 +166,8 @@ impl OcrService {
         // 4. OCR sin costo en Lümis (por ahora)
         let ocr_cost = 0;
 
-        // 6. Process with Gemini OCR
-        let ocr_response = match Self::process_image_with_gemini(&request.image_bytes, &request.mode).await {
+        // 6. Process with OCR (Gemini primary, OpenRouter fallback)
+        let ocr_response = match Self::process_image_with_ocr(&request.image_bytes, &request.mode).await {
             Ok(response) => response,
             Err(e) => {
                 error!("Error en procesamiento OCR para {}: {}", request.user_identifier, e);
@@ -497,6 +497,137 @@ impl OcrService {
         } else {
             // Return as is if no code block markers
             text.to_string()
+        }
+    }
+
+    /// Process image with OpenRouter as fallback (Qwen3-VL-30B model)
+    async fn process_image_with_openrouter(image_bytes: &[u8], mode: &OcrMode) -> Result<OcrResponse> {
+        info!("🔄 FALLBACK: Iniciando procesamiento con OpenRouter (Qwen3-VL-30B)");
+        
+        // OpenRouter API key (fallback)
+        let api_key = std::env::var("OPENROUTER_API_KEY")
+            .unwrap_or_else(|_| "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".to_string());
+
+        // Encode image to base64
+        let image_base64 = general_purpose::STANDARD.encode(image_bytes);
+
+        // Create the client
+        let client = Client::new();
+
+        // Base prompt for OCR (same as Gemini)
+        let base_prompt = "Analiza esta imagen de una factura de Panamá y extrae TODA la información visible en formato JSON exacto:\n\n{\n  \"issuer_name\": \"nombre completo del comercio/empresa emisora (busca nombres grandes arriba de la factura)\",\n  \"ruc\": \"número RUC completo (busca 'RUC:', 'RUC', números cerca del nombre del comercio, puede tener formato 1234567-1-123456 o similar)\",\n  \"dv\": \"dígito verificador que viene después del RUC (ej: si dice 'RUC: 123456-1-654321 DV: 89', extrae '89')\",\n  \"address\": \"dirección completa del establecimiento\",\n  \"invoice_number\": \"número de factura completo (busca 'Factura', 'Fact', números con guiones como 001-002-123456)\",\n  \"date\": \"fecha de emisión en formato YYYY-MM-DD (busca 'Fecha:', fechas en formato DD/MM/YYYY o similar)\",\n  \"total\": valor_total_numerico (busca 'Total', 'Total a Pagar', el número más grande al final),\n  \"products\": [\n    {\n      \"name\": \"descripción completa del producto/ítem\",\n      \"quantity\": cantidad_numerica (si no está, usa 1),\n      \"unit_price\": precio_unitario_numerico,\n      \"total_price\": precio_total_del_item_numerico\n    }\n  ]\n}\n\nINSTRUCCIONES IMPORTANTES:\n1. Extrae TODOS los productos visibles en la factura, no omitas ninguno\n2. Para el RUC, busca números largos cerca del nombre del comercio o en la parte superior\n3. La fecha puede estar en varios formatos (DD/MM/YYYY, DD-MM-YYYY, etc), conviértela a YYYY-MM-DD\n4. Si no encuentras algún campo opcional (DV, dirección), usa null\n5. Los campos CRÍTICOS son: issuer_name, ruc, date, total, products (al menos 1)\n6. Solo responde con el JSON, sin texto adicional ni explicaciones";
+        
+        // Add mode-specific instruction
+        let prompt = match mode {
+            OcrMode::Normal => base_prompt.to_string(),
+            OcrMode::Combined => format!("{}\n\nTen en cuenta que esta imagen es una combinación de varias imágenes, por lo que puede contener datos duplicados. Por favor, elimina los duplicados y construye una única factura consolidada, sin información repetida.", base_prompt)
+        };
+
+        // OpenRouter request payload (OpenAI-compatible format with vision)
+        let payload = json!({
+            "model": "qwen/qwen3-vl-30b-a3b-instruct",
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": format!("data:image/jpeg;base64,{}", image_base64)
+                        }
+                    }
+                ]
+            }],
+            "temperature": 0.1,
+            "max_tokens": 2048
+        });
+
+        // Make the request to OpenRouter
+        let response = client
+            .post("https://openrouter.ai/api/v1/chat/completions")
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("HTTP-Referer", "https://lumis.app")
+            .header("X-Title", "Lumis OCR Fallback")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| anyhow!("Error en request a OpenRouter: {}", e))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(anyhow!("Error en OpenRouter API: {} - {}", status, error_text));
+        }
+
+        let response_json: Value = response.json().await
+            .map_err(|e| anyhow!("Error parseando respuesta de OpenRouter: {}", e))?;
+
+        // 🔍 LOG: Respuesta completa de OpenRouter
+        info!("🔍 OPENROUTER RESPONSE COMPLETA: {}", serde_json::to_string_pretty(&response_json).unwrap_or_default());
+
+        // Extract the text from the response (OpenAI format)
+        let text = response_json
+            .get("choices")
+            .and_then(|c| c.get(0))
+            .and_then(|c| c.get("message"))
+            .and_then(|m| m.get("content"))
+            .and_then(|t| t.as_str())
+            .ok_or_else(|| anyhow!("No se pudo extraer texto de la respuesta de OpenRouter"))?;
+
+        // 🔍 LOG: Texto extraído de OpenRouter
+        info!("🔍 TEXTO ORIGINAL DE OPENROUTER: '{}'", text);
+
+        // Parse the JSON response - handle markdown code blocks
+        let cleaned_text = Self::extract_json_from_markdown(text);
+        
+        // 🔍 LOG: Texto limpiado después del markdown
+        info!("🔍 TEXTO LIMPIADO (sin markdown): '{}'", cleaned_text);
+
+        let ocr_response: OcrResponse = serde_json::from_str(&cleaned_text)
+            .map_err(|e| anyhow!("Error parseando JSON de OCR (OpenRouter): {} - Texto limpio: {} - Texto original: {}", e, cleaned_text, text))?;
+
+        // 🔍 LOG: Datos parseados del OCR
+        info!("🔍 OPENROUTER OCR DATOS PARSEADOS:");
+        info!("  📄 Issuer Name: {:?}", ocr_response.issuer_name);
+        info!("  🏢 RUC: {:?}", ocr_response.ruc);
+        info!("  🔢 DV: {:?}", ocr_response.dv);
+        info!("  🏠 Address: {:?}", ocr_response.address);
+        info!("  📄 Invoice Number: {:?}", ocr_response.invoice_number);
+        info!("  📄 Date: {:?}", ocr_response.date);
+        info!("  📄 Total: {:?}", ocr_response.total);
+        info!("  📄 Products Count: {}", ocr_response.products.len());
+
+        info!("✅ OCR OpenRouter (Qwen3-VL) exitoso: {:?}", ocr_response.issuer_name);
+        Ok(ocr_response)
+    }
+
+    /// Process image with OCR - tries Gemini first, falls back to OpenRouter
+    async fn process_image_with_ocr(image_bytes: &[u8], mode: &OcrMode) -> Result<OcrResponse> {
+        // Try Gemini first
+        match Self::process_image_with_gemini(image_bytes, mode).await {
+            Ok(response) => {
+                info!("✅ OCR procesado exitosamente con Gemini");
+                Ok(response)
+            }
+            Err(gemini_error) => {
+                warn!("⚠️ Gemini OCR falló: {}. Intentando fallback con OpenRouter...", gemini_error);
+                
+                // Try OpenRouter as fallback
+                match Self::process_image_with_openrouter(image_bytes, mode).await {
+                    Ok(response) => {
+                        info!("✅ OCR procesado exitosamente con OpenRouter (fallback)");
+                        Ok(response)
+                    }
+                    Err(openrouter_error) => {
+                        error!("❌ Ambos proveedores OCR fallaron. Gemini: {} | OpenRouter: {}", gemini_error, openrouter_error);
+                        Err(anyhow!("OCR falló en todos los proveedores. Gemini: {} | OpenRouter: {}", gemini_error, openrouter_error))
+                    }
+                }
+            }
         }
     }
 

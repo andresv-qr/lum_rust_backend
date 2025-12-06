@@ -1,6 +1,6 @@
 # Lüm API v4 - Rust Implementation
 
-**🎉 IMPLEMENTACIÓN COMPLETA FINALIZADA** - Sistema completo Lüm/QReader con pipeline híbrido de detección QR y todas las funcionalidades core implementadas en Rust v4.
+**🎉 SISTEMA COMPLETO Y LISTO PARA PRODUCCIÓN** - Sistema completo Lüm/QReader con pipeline híbrido de detección QR, gamificación y redenciones de Lümis implementado en Rust v4.
 
 ## 🏗️ Arquitectura Actual
 
@@ -9,13 +9,84 @@
 - ✅ **Pipeline Híbrido QR** - Múltiples detectores Rust + ONNX + Fallback Python
 - ✅ **Autenticación JWT** completa
 - ✅ **Procesamiento OCR** con Gemini LLM
-- ✅ **Sistema de Rewards** integrado
+- ✅ **Sistema de Rewards & Redemptions** 🆕 - Balance, ofertas, redenciones
+- ✅ **Gamificación Completa** 🆕 - Push notifications, scheduled jobs, analytics
 - ✅ **Gestión de Usuarios** completa
 - ✅ **Persistencia en PostgreSQL**
 - ✅ **Caché Redis** con ETag y versionado
-- ✅ **Observabilidad** - Métricas, logs, health checks
+- ✅ **Observabilidad** - Métricas, logs, health checks, Prometheus
 - ✅ **Seguridad** - Rate limiting, headers de seguridad, validación MIME
 - ✅ **Idempotencia** - Prevención de operaciones duplicadas
+
+## 🎮 Sistema de Redenciones (NUEVO)
+
+### Servicios de Gamificación
+- 📲 **Push Notification Service** - Notificaciones FCM a usuarios
+- 🔗 **Webhook Service** - Notificaciones HMAC a merchants
+- 🚦 **Rate Limiter Service** - Prevención de abuse con Redis
+- ⏰ **Scheduled Jobs Service** - Validación nocturna, expiración automática
+
+### APIs de Redenciones (12 endpoints)
+**User APIs (7)**:
+- `GET /api/v1/rewards/balance` - Consultar balance
+- `GET /api/v1/rewards/offers` - Listar ofertas
+- `POST /api/v1/rewards/redeem` - Crear redención
+- `GET /api/v1/rewards/history` - Historial de redenciones
+- `GET /api/v1/rewards/redemptions/:id` - Detalle de redención
+- `POST /api/v1/rewards/redemptions/:id/cancel` - Cancelar redención
+- `GET /api/v1/rewards/accumulations` - Historial de acumulaciones
+
+**Merchant APIs (5)**:
+- `GET /api/v1/merchant/pending` - Redenciones pendientes
+- `POST /api/v1/merchant/validate/:id` - Validar código
+- `POST /api/v1/merchant/confirm/:id` - Confirmar redención
+- `POST /api/v1/merchant/reject/:id` - Rechazar redención
+- `GET /api/v1/merchant/analytics` - Dashboard analítico
+
+### Métricas Prometheus (12 nuevas)
+- `redemptions_created_total` - Total creadas
+- `redemptions_confirmed_total` - Total confirmadas
+- `redemptions_cancelled_total` - Total canceladas
+- `redemptions_expired_total` - Total expiradas
+- `redemptions_rejected_total` - Total rechazadas
+- `redemptions_active` - Activas en tiempo real
+- `redemptions_processing_duration_seconds` - Tiempo de procesamiento
+- `lumis_redeemed_total` - Total de lümis gastados
+- `offers_created_total` - Ofertas creadas
+- `offers_active` - Ofertas activas
+- `rate_limit_exceeded_total` - Rate limits excedidos
+- `webhook_delivery_duration_seconds` - Tiempo de entrega webhooks
+
+### Base de Datos (Schema `rewards`)
+- `fact_accumulations` - 750+ registros de acumulaciones (receipts, invoices, gamification)
+- `user_redemptions` - Registro de redenciones (pending → confirmed/cancelled/expired)
+- `fact_balance_points` - Balance de lümis por usuario (actualización incremental)
+- Triggers automáticos para actualización de balance
+- Validación nocturna de integridad
+
+## 📚 Documentación del Sistema de Redenciones
+
+### Para Frontend (PRIORIDAD)
+📄 **[docs/DOCUMENTACION_FRONTEND_USUARIOS.md](docs/DOCUMENTACION_FRONTEND_USUARIOS.md)** (15KB)
+- 7 APIs con ejemplos completos
+- Código React Native (200+ líneas)
+- Código Flutter (150+ líneas)
+- Setup de Push Notifications (FCM)
+- Manejo de errores HTTP
+- Guía de testing
+
+### Para Desarrollo
+- 📄 **[INICIO_RAPIDO.md](INICIO_RAPIDO.md)** - Setup en 5 minutos
+- 📄 **[TESTING_RAPIDO.md](TESTING_RAPIDO.md)** - Comandos copy/paste para testing
+- 📄 **[SISTEMA_LISTO_PARA_PRODUCCION.md](SISTEMA_LISTO_PARA_PRODUCCION.md)** - Checklist completo
+
+### Para DevOps
+- 📄 **[ESTADO_ACTUAL_IMPLEMENTACION.md](ESTADO_ACTUAL_IMPLEMENTACION.md)** - Status técnico
+- 📄 **[TRABAJO_COMPLETADO_FINAL.md](TRABAJO_COMPLETADO_FINAL.md)** - Resumen ejecutivo
+- 📄 **[RESUMEN_FINAL_VISUAL.md](RESUMEN_FINAL_VISUAL.md)** - Diagramas ASCII
+
+### Índice Completo
+📄 **[INDICE_MAESTRO.md](INDICE_MAESTRO.md)** - Navegación de 21+ documentos
 
 ## 📦 Componentes
 

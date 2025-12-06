@@ -1,5 +1,8 @@
 // use crate::services::redis_service::create_redis_client; // Not needed with optimized config
 use crate::domains::qr::service::QrService;
+use crate::domains::rewards::offer_service::OfferService;
+use crate::domains::rewards::redemption_service::RedemptionService;
+use crate::domains::rewards::qr_generator::{QrGenerator, QrConfig};
 use crate::cache::UserCache;
 use crate::shared::performance::{PerformanceManager, PerformanceConfig};
 use crate::optimization::{DatabaseConfig, RedisConfig, create_optimized_db_pool, create_optimized_redis_client};
@@ -11,6 +14,7 @@ use sqlx::PgPool;
 use std::env;
 use std::sync::Arc;
 use std::time::Instant;
+use tokio::sync::RwLock;
 
 /// Estado compartido de la aplicación.
 /// Contiene las conexiones a Redis, base de datos y cliente HTTP.
@@ -36,6 +40,12 @@ pub struct AppState {
     pub qr_service: QrService,
     pub performance_manager: Arc<PerformanceManager>,
     pub message_deduplicator: MessageDeduplicator,
+    // Redemption system services
+    pub offer_service: Arc<OfferService>,
+    pub redemption_service: Arc<RedemptionService>,
+    // DGI MEF configuration - dynamic tokens for CUFE processing
+    pub dgi_captcha_token: Arc<RwLock<String>>,
+    pub dgi_session_id: Arc<RwLock<String>>,
 }
 
 impl AppState {
@@ -68,10 +78,17 @@ impl AppState {
             .cookie_store(true)
             .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
             .timeout(std::time::Duration::from_secs(30))
+            // Connection pool optimization - reuse connections
+            .pool_idle_timeout(std::time::Duration::from_secs(90))
+            .pool_max_idle_per_host(10)
+            .tcp_keepalive(std::time::Duration::from_secs(60))
             .build()
             .expect("Failed to build Reqwest client");
 
         let user_cache = UserCache::new();
+        
+        // PERFORMANCE: Start background cleanup task for UserCache
+        UserCache::start_background_cleanup(Arc::new(user_cache.clone()));
         
         // Initialize QR service with Python fallback URL
         let python_fallback_url = env::var("PYTHON_QR_FALLBACK_URL")
@@ -91,7 +108,7 @@ impl AppState {
         }
 
         // Create WS database pool if WS_DATABASE_URL is set
-        let ws_pool = if let Ok(ws_url) = env::var("WS_DATABASE_URL") {
+        let ws_pool = if let Ok(_ws_url) = env::var("WS_DATABASE_URL") { // Prefixed with _
             match crate::db::create_ws_pool().await {
                 Ok(pool) => {
                     tracing::info!("✅ WS database pool initialized for ofertas");
@@ -107,8 +124,20 @@ impl AppState {
             None
         };
 
+        // Initialize DGI MEF tokens for CUFE processing (can be updated at runtime)
+        let dgi_captcha_token = Arc::new(RwLock::new(
+            env::var("DGI_CAPTCHA_TOKEN").unwrap_or_default()
+        ));
+        let dgi_session_id = Arc::new(RwLock::new(
+            env::var("DGI_SESSION_ID").unwrap_or_default()
+        ));
+        tracing::info!("✅ DGI MEF tokens initialized (captcha: {} chars, session: {} chars)", 
+            dgi_captcha_token.read().await.len(),
+            dgi_session_id.read().await.len()
+        );
+
         Ok(AppState {
-            db_pool,
+            db_pool: db_pool.clone(),
             redis_client,
             redis_pool,  // Add Redis pool to AppState
             http_client,
@@ -121,6 +150,16 @@ impl AppState {
             whatsapp_token,
             phone_number_id,
             ws_pool,
+            // Initialize redemption services
+            offer_service: Arc::new(OfferService::new(db_pool.clone())),
+            redemption_service: Arc::new(RedemptionService::new(
+                db_pool.clone(),
+                Arc::new(OfferService::new(db_pool.clone())),
+                Arc::new(QrGenerator::new(QrConfig::default())),
+            )),
+            // DGI MEF dynamic tokens
+            dgi_captcha_token,
+            dgi_session_id,
         })
     }
 }

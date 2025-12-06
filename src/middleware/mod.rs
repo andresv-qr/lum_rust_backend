@@ -6,10 +6,12 @@ pub mod mime_validation;
 
 pub use auth::{
     extract_current_user, 
+    extract_merchant,
     get_current_user_from_request, 
     verify_jwt_token,
     CurrentUser,
     JwtClaims,
+    MerchantClaims,
 };
 
 pub use rate_limit::rate_limit_middleware;

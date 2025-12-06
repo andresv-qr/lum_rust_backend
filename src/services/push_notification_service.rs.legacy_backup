@@ -1,0 +1,686 @@
+// ============================================================================
+// PUSH NOTIFICATION SERVICE - Firebase Cloud Messaging (FCM)
+// ============================================================================
+//
+// Supports both:
+// - Legacy FCM API (server key) - for backwards compatibility
+// - FCM HTTP v1 API (service account) - recommended for new integrations
+//
+// Also includes queue processing for the notifications system
+
+use anyhow::{Context, Result};
+use chrono::{Duration, Utc};
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use sqlx::PgPool;
+use std::sync::Arc;
+use tracing::{error, info, warn};
+use crate::observability::metrics::{record_push_notification, record_notification_queue_processed};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PushNotification {
+    pub user_id: i32,
+    pub title: String,
+    pub body: String,
+    pub data: serde_json::Value,
+    pub priority: NotificationPriority,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum NotificationPriority {
+    High,
+    Normal,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FcmMessage {
+    pub to: String, // FCM token
+    pub notification: FcmNotificationPayload,
+    pub data: serde_json::Value,
+    pub priority: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FcmNotificationPayload {
+    pub title: String,
+    pub body: String,
+    pub sound: String,
+}
+
+pub struct PushNotificationService {
+    db: PgPool,
+    http_client: Client,
+    fcm_server_key: String,
+    fcm_endpoint: String,
+}
+
+impl PushNotificationService {
+    pub fn new(db: PgPool) -> Self {
+        let fcm_server_key = std::env::var("FCM_SERVER_KEY")
+            .unwrap_or_else(|_| {
+                warn!("FCM_SERVER_KEY not set, push notifications will be disabled");
+                String::new()
+            });
+
+        let fcm_endpoint = std::env::var("FCM_ENDPOINT")
+            .unwrap_or_else(|_| "https://fcm.googleapis.com/fcm/send".to_string());
+
+        Self {
+            db,
+            http_client: Client::new(),
+            fcm_server_key,
+            fcm_endpoint,
+        }
+    }
+
+    /// Enviar notificación push a un usuario
+    pub async fn send_notification(&self, notification: PushNotification) -> Result<()> {
+        if self.fcm_server_key.is_empty() {
+            warn!("FCM not configured, skipping notification");
+            return Ok(());
+        }
+
+        // 1. Obtener FCM token del usuario desde la base de datos
+        let fcm_token = self.get_user_fcm_token(notification.user_id).await?;
+
+        if fcm_token.is_empty() {
+            info!("User {} has no FCM token, skipping notification", notification.user_id);
+            return Ok(());
+        }
+
+        // 2. Construir mensaje FCM
+        let priority = match notification.priority {
+            NotificationPriority::High => "high",
+            NotificationPriority::Normal => "normal",
+        };
+
+        let message = FcmMessage {
+            to: fcm_token.clone(),
+            notification: FcmNotificationPayload {
+                title: notification.title.clone(),
+                body: notification.body.clone(),
+                sound: "default".to_string(),
+            },
+            data: notification.data.clone(),
+            priority: priority.to_string(),
+        };
+
+        // 3. Enviar a FCM
+        let response = self
+            .http_client
+            .post(&self.fcm_endpoint)
+            .header("Authorization", format!("key={}", self.fcm_server_key))
+            .header("Content-Type", "application/json")
+            .json(&message)
+            .send()
+            .await
+            .context("Failed to send FCM request")?;
+
+        if response.status().is_success() {
+            info!(
+                "Push notification sent successfully to user {}",
+                notification.user_id
+            );
+            record_push_notification("redemption_notification", true);
+
+            // 4. Guardar en historial de notificaciones
+            self.save_notification_history(&notification).await?;
+
+            Ok(())
+        } else {
+            let status = response.status();
+            let error_body = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            error!(
+                "FCM error (status {}): {}",
+                status, error_body
+            );
+            record_push_notification("redemption_notification", false);
+            Err(anyhow::anyhow!("FCM request failed: {}", error_body))
+        }
+    }
+
+    /// Obtener token FCM del usuario
+    async fn get_user_fcm_token(&self, user_id: i32) -> Result<String> {
+        // First try the new device_tokens table
+        let result = sqlx::query_scalar::<_, String>(
+            r#"
+            SELECT fcm_token 
+            FROM public.device_tokens 
+            WHERE user_id = $1 
+              AND fcm_token IS NOT NULL 
+              AND is_active = true
+            ORDER BY last_used_at DESC NULLS LAST
+            LIMIT 1
+            "#,
+        )
+        .bind(user_id as i64)
+        .fetch_optional(&self.db)
+        .await?;
+
+        if let Some(token) = result {
+            return Ok(token);
+        }
+
+        // Fallback to legacy user_devices table if exists
+        let legacy_result = sqlx::query_scalar::<_, String>(
+            r#"
+            SELECT fcm_token 
+            FROM public.user_devices 
+            WHERE user_id = $1 
+              AND fcm_token IS NOT NULL 
+              AND is_active = true
+            ORDER BY last_used_at DESC
+            LIMIT 1
+            "#,
+        )
+        .bind(user_id)
+        .fetch_optional(&self.db)
+        .await
+        .ok()
+        .flatten();
+
+        Ok(legacy_result.unwrap_or_default())
+    }
+
+    /// Get all active FCM tokens for a user
+    pub async fn get_all_user_tokens(&self, user_id: i64) -> Result<Vec<String>> {
+        let tokens = sqlx::query_scalar::<_, String>(
+            r#"
+            SELECT fcm_token 
+            FROM public.device_tokens 
+            WHERE user_id = $1 
+              AND fcm_token IS NOT NULL 
+              AND is_active = true
+            ORDER BY last_used_at DESC NULLS LAST
+            "#,
+        )
+        .bind(user_id)
+        .fetch_all(&self.db)
+        .await?;
+
+        Ok(tokens)
+    }
+
+    /// Guardar notificación en historial
+    async fn save_notification_history(&self, notification: &PushNotification) -> Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO public.push_notifications_log 
+                (user_id, title, body, data, sent_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            "#,
+        )
+        .bind(notification.user_id)
+        .bind(&notification.title)
+        .bind(&notification.body)
+        .bind(&notification.data)
+        .execute(&self.db)
+        .await
+        .context("Failed to save notification history")?;
+
+        Ok(())
+    }
+
+    /// Notificar cuando se confirma una redención
+    pub async fn notify_redemption_confirmed(
+        &self,
+        user_id: i32,
+        redemption_id: uuid::Uuid,
+        offer_name: &str,
+    ) -> Result<()> {
+        let notification = PushNotification {
+            user_id,
+            title: "¡Redención confirmada!".to_string(),
+            body: format!("Tu redención de {} fue confirmada exitosamente", offer_name),
+            data: json!({
+                "type": "redemption_confirmed",
+                "redemption_id": redemption_id,
+                "offer_name": offer_name,
+            }),
+            priority: NotificationPriority::High,
+        };
+
+        self.send_notification(notification).await
+    }
+
+    /// Notificar cuando una redención está por expirar
+    pub async fn notify_redemption_expiring(
+        &self,
+        user_id: i32,
+        redemption_id: uuid::Uuid,
+        offer_name: &str,
+        minutes_remaining: i32,
+    ) -> Result<()> {
+        let notification = PushNotification {
+            user_id,
+            title: "⏰ Tu redención expira pronto".to_string(),
+            body: format!(
+                "{} expira en {} minutos. ¡Úsala antes de que sea tarde!",
+                offer_name, minutes_remaining
+            ),
+            data: json!({
+                "type": "redemption_expiring",
+                "redemption_id": redemption_id,
+                "offer_name": offer_name,
+                "minutes_remaining": minutes_remaining,
+            }),
+            priority: NotificationPriority::High,
+        };
+
+        self.send_notification(notification).await
+    }
+
+    /// Notificar cuando se crea una redención
+    pub async fn notify_redemption_created(
+        &self,
+        user_id: i32,
+        redemption_id: uuid::Uuid,
+        offer_name: &str,
+        redemption_code: &str,
+    ) -> Result<()> {
+        let notification = PushNotification {
+            user_id,
+            title: "🎁 Nueva redención creada".to_string(),
+            body: format!("Muestra el código {} al comercio", redemption_code),
+            data: json!({
+                "type": "redemption_created",
+                "redemption_id": redemption_id,
+                "offer_name": offer_name,
+                "redemption_code": redemption_code,
+            }),
+            priority: NotificationPriority::Normal,
+        };
+
+        self.send_notification(notification).await
+    }
+}
+
+// ============================================================================
+// SHARED INSTANCE (para uso global)
+// ============================================================================
+
+use std::sync::OnceLock;
+
+static PUSH_SERVICE: OnceLock<Arc<PushNotificationService>> = OnceLock::new();
+
+pub fn init_push_service(db: PgPool) {
+    let service = Arc::new(PushNotificationService::new(db));
+    if PUSH_SERVICE.set(service).is_err() {
+        warn!("Push notification service already initialized");
+    }
+}
+
+pub fn get_push_service() -> Option<Arc<PushNotificationService>> {
+    PUSH_SERVICE.get().cloned()
+}
+
+// ============================================================================
+// NOTIFICATION QUEUE PROCESSOR
+// ============================================================================
+
+/// Constants for queue processing
+const QUEUE_BATCH_SIZE: i64 = 50;
+const MAX_RETRY_ATTEMPTS: i32 = 3;
+const BACKOFF_BASE_SECONDS: i64 = 30;
+
+/// Result of processing the notification queue
+#[derive(Debug, Default)]
+pub struct QueueProcessResult {
+    pub sent: usize,
+    pub failed: usize,
+    pub skipped: usize,
+    pub invalid_tokens: usize,
+}
+
+impl QueueProcessResult {
+    pub fn total_processed(&self) -> usize {
+        self.sent + self.failed + self.skipped
+    }
+}
+
+impl PushNotificationService {
+    /// Process the notification push queue
+    /// Uses SKIP LOCKED for safe concurrent processing
+    pub async fn process_notification_queue(&self) -> Result<QueueProcessResult> {
+        if self.fcm_server_key.is_empty() {
+            return Ok(QueueProcessResult::default());
+        }
+
+        let start = std::time::Instant::now();
+        let now = Utc::now();
+
+        // Fetch pending items with SKIP LOCKED for concurrency safety
+        let pending_items = sqlx::query!(
+            r#"
+            SELECT 
+                q.id,
+                q.notification_id,
+                q.attempts,
+                n.user_id,
+                n.title,
+                n.body,
+                n.type as notification_type,
+                n.action_url,
+                n.payload
+            FROM public.notification_push_queue q
+            JOIN public.notifications n ON q.notification_id = n.id
+            WHERE q.status IN ('pending', 'retrying')
+              AND q.next_attempt_at <= $1
+            ORDER BY q.next_attempt_at ASC
+            LIMIT $2
+            FOR UPDATE OF q SKIP LOCKED
+            "#,
+            now,
+            QUEUE_BATCH_SIZE
+        )
+        .fetch_all(&self.db)
+        .await?;
+
+        if pending_items.is_empty() {
+            return Ok(QueueProcessResult::default());
+        }
+
+        info!("Processing {} push notifications from queue", pending_items.len());
+
+        // Use futures::stream to process notifications concurrently
+        // This significantly improves throughput compared to sequential processing
+        use futures::{stream, StreamExt};
+        
+        let results = stream::iter(pending_items)
+            .map(|item| async move {
+                let mut item_result = QueueProcessResult::default();
+                let mut invalid_tokens_list = Vec::new();
+                let mut all_success = true;
+
+                // Get device tokens for user
+                let tokens_result = self.get_all_user_tokens(item.user_id).await;
+                
+                match tokens_result {
+                    Ok(tokens) if tokens.is_empty() => {
+                        // No active tokens, mark as skipped
+                        sqlx::query!(
+                            r#"
+                            UPDATE public.notification_push_queue
+                            SET status = 'skipped', 
+                                last_attempt_at = $2,
+                                error_message = 'No active device tokens'
+                            WHERE id = $1
+                            "#,
+                            item.id,
+                            now
+                        )
+                        .execute(&self.db)
+                        .await
+                        .ok();
+
+                        item_result.skipped += 1;
+                        return (item_result, invalid_tokens_list);
+                    }
+                    Err(e) => {
+                        warn!("Failed to get tokens for user {}: {}", item.user_id, e);
+                        // Treat as temporary failure
+                        all_success = false;
+                        item_result.failed += 1;
+                    }
+                    Ok(tokens) => {
+                        // Get badge count for user (needed for iOS/Android badge)
+                        let badge_count: i64 = sqlx::query_scalar!(
+                            r#"
+                            SELECT COUNT(*)::BIGINT as "count!"
+                            FROM public.notifications
+                            WHERE user_id = $1 AND is_read = FALSE AND is_dismissed = FALSE
+                            "#,
+                            item.user_id
+                        )
+                        .fetch_one(&self.db)
+                        .await
+                        .unwrap_or(0);
+
+                        // Build data payload
+                        let data = json!({
+                            "notification_id": item.notification_id.to_string(),
+                            "type": item.notification_type,
+                            "action_url": item.action_url.as_deref().unwrap_or(""),
+                            "click_action": "FLUTTER_NOTIFICATION_CLICK",
+                            "badge_count": badge_count
+                        });
+
+                        // Send to all tokens concurrently
+                        let send_futures = tokens.iter().map(|token| {
+                            let message = FcmMessage {
+                                to: token.clone(),
+                                notification: FcmNotificationPayload {
+                                    title: item.title.clone(),
+                                    body: item.body.clone(),
+                                    sound: "default".to_string(),
+                                },
+                                data: data.clone(),
+                                priority: "high".to_string(),
+                            };
+                            
+                            async move {
+                                match self.send_fcm_message(&message).await {
+                                    Ok(_) => Ok(()),
+                                    Err(e) => Err((token.clone(), e)),
+                                }
+                            }
+                        });
+
+                        // Wait for all sends for this user
+                        let send_results = stream::iter(send_futures)
+                            .buffer_unordered(5) // Limit concurrent sends per user
+                            .collect::<Vec<_>>()
+                            .await;
+
+                        for res in send_results {
+                            match res {
+                                Ok(_) => {
+                                    item_result.sent += 1;
+                                    record_push_notification("queue_notification", true);
+                                }
+                                Err((token, e)) => {
+                                    let error_msg = e.to_string();
+                                    if error_msg.contains("NotRegistered") || error_msg.contains("InvalidRegistration") {
+                                        invalid_tokens_list.push(token);
+                                        item_result.invalid_tokens += 1;
+                                    } else {
+                                        warn!("Failed to send push to token: {}", e);
+                                        all_success = false;
+                                        item_result.failed += 1;
+                                    }
+                                    record_push_notification("queue_notification", false);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Update queue item status
+                if all_success || item.attempts >= MAX_RETRY_ATTEMPTS {
+                    let status = if all_success { "sent" } else { "failed" };
+                    sqlx::query!(
+                        r#"
+                        UPDATE public.notification_push_queue
+                        SET status = $2, 
+                            last_attempt_at = $3,
+                            attempts = attempts + 1
+                        WHERE id = $1
+                        "#,
+                        item.id,
+                        status,
+                        now
+                    )
+                    .execute(&self.db)
+                    .await
+                    .ok();
+                } else {
+                    // Schedule retry with exponential backoff
+                    let backoff_seconds = BACKOFF_BASE_SECONDS * 2_i64.pow(item.attempts as u32);
+                    let next_attempt = now + Duration::seconds(backoff_seconds);
+                    sqlx::query!(
+                        r#"
+                        UPDATE public.notification_push_queue
+                        SET status = 'retrying', 
+                            last_attempt_at = $2,
+                            next_attempt_at = $3,
+                            attempts = attempts + 1
+                        WHERE id = $1
+                        "#,
+                        item.id,
+                        now,
+                        next_attempt
+                    )
+                    .execute(&self.db)
+                    .await
+                    .ok();
+                }
+
+                (item_result, invalid_tokens_list)
+            })
+            .buffer_unordered(10) // Process up to 10 notifications concurrently
+            .collect::<Vec<_>>()
+            .await;
+
+        // Aggregate results
+        let mut final_result = QueueProcessResult::default();
+        let mut all_invalid_tokens = Vec::new();
+
+        for (res, invalid_tokens) in results {
+            final_result.sent += res.sent;
+            final_result.failed += res.failed;
+            final_result.skipped += res.skipped;
+            final_result.invalid_tokens += res.invalid_tokens;
+            all_invalid_tokens.extend(invalid_tokens);
+        }
+
+        // Batch deactivate invalid tokens
+        if !all_invalid_tokens.is_empty() {
+            // Process in chunks to avoid huge queries
+            for chunk in all_invalid_tokens.chunks(50) {
+                sqlx::query!(
+                    r#"
+                    UPDATE public.device_tokens
+                    SET is_active = FALSE, updated_at = $2
+                    WHERE fcm_token = ANY($1)
+                    "#,
+                    chunk,
+                    now
+                )
+                .execute(&self.db)
+                .await
+                .ok();
+            }
+        }
+
+        // Record metrics for the batch
+        record_notification_queue_processed(
+            final_result.sent, 
+            final_result.failed, 
+            final_result.skipped, 
+            final_result.invalid_tokens
+        );
+
+        let elapsed = start.elapsed();
+        if final_result.total_processed() > 0 {
+            info!(
+                "Batch processed in {:?}: sent={}, failed={}, skipped={}", 
+                elapsed, final_result.sent, final_result.failed, final_result.skipped
+            );
+        }
+
+        Ok(final_result)
+    }
+
+    /// Internal method to send FCM message
+    async fn send_fcm_message(&self, message: &FcmMessage) -> Result<()> {
+        let response = self
+            .http_client
+            .post(&self.fcm_endpoint)
+            .header("Authorization", format!("key={}", self.fcm_server_key))
+            .header("Content-Type", "application/json")
+            .json(message)
+            .send()
+            .await
+            .context("Failed to send FCM request")?;
+
+        if response.status().is_success() {
+            // Check for FCM-specific errors in response body
+            let body: serde_json::Value = response.json().await.unwrap_or_default();
+            if body.get("failure").and_then(|f| f.as_i64()).unwrap_or(0) > 0 {
+                if let Some(results) = body.get("results").and_then(|r| r.as_array()) {
+                    for result in results {
+                        if let Some(error) = result.get("error").and_then(|e| e.as_str()) {
+                            return Err(anyhow::anyhow!("FCM error: {}", error));
+                        }
+                    }
+                }
+            }
+            Ok(())
+        } else {
+            let status = response.status();
+            let error_body = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            Err(anyhow::anyhow!("FCM request failed ({}): {}", status, error_body))
+        }
+    }
+}
+
+// ============================================================================
+// BACKGROUND WORKER
+// ============================================================================
+
+/// Configuration for the push queue worker
+const WORKER_POLL_INTERVAL_SECS: u64 = 5;
+const WORKER_ERROR_BACKOFF_SECS: u64 = 30;
+
+/// Start the push notification queue worker as a background task
+/// 
+/// IMPORTANT: This function creates a single PushNotificationService instance
+/// that is reused across all iterations. The reqwest::Client inside it maintains
+/// a connection pool, so reusing it is critical for performance.
+pub async fn start_push_queue_worker(db: PgPool) {
+    // Create service ONCE and reuse - reqwest::Client has internal connection pooling
+    let service = Arc::new(PushNotificationService::new(db));
+
+    if service.fcm_server_key.is_empty() {
+        warn!("FCM not configured, push queue worker will not start");
+        return;
+    }
+
+    info!("Starting push notification queue worker (poll interval: {}s)", WORKER_POLL_INTERVAL_SECS);
+
+    let mut consecutive_errors = 0u32;
+
+    loop {
+        match service.process_notification_queue().await {
+            Ok(result) => {
+                consecutive_errors = 0; // Reset on success
+                if result.total_processed() > 0 {
+                    info!(
+                        "Push worker: sent={}, failed={}, skipped={}, invalid_tokens={}",
+                        result.sent, result.failed, result.skipped, result.invalid_tokens
+                    );
+                }
+            }
+            Err(e) => {
+                consecutive_errors += 1;
+                error!("Push worker error (consecutive: {}): {}", consecutive_errors, e);
+                
+                // Exponential backoff on repeated errors (max 5 min)
+                if consecutive_errors >= 3 {
+                    let backoff = std::cmp::min(
+                        WORKER_ERROR_BACKOFF_SECS * 2u64.pow(consecutive_errors - 3),
+                        300
+                    );
+                    warn!("Push worker backing off for {}s due to repeated errors", backoff);
+                    tokio::time::sleep(std::time::Duration::from_secs(backoff)).await;
+                    continue;
+                }
+            }
+        }
+
+        // Normal poll interval
+        tokio::time::sleep(std::time::Duration::from_secs(WORKER_POLL_INTERVAL_SECS)).await;
+    }
+}

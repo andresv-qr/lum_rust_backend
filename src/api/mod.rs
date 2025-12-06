@@ -21,6 +21,8 @@ pub mod register_v4;
 pub mod auth_v4;
 pub mod unified_auth_v4;  // New unified authentication endpoint
 pub mod daily_game;       // Daily constellation game
+pub mod rewards;          // Redemption system - Lümis rewards
+pub mod merchant;         // Merchant portal - Redemption validation
 
 // Re-export models from main models module
 pub use crate::models::{
@@ -46,14 +48,21 @@ pub mod rewards_v4; // Nuevo módulo para rewards y métricas de facturas
 pub mod userdata_v4; // Nuevo módulo para datos de usuario desde dim_users
 pub mod rewards_history_v4; // Nuevo módulo para historial de acumulaciones y redenciones
 pub mod surveys_v4; // Nuevo módulo para encuestas y surveys
+pub mod tinder_v4; // Módulo Lumimatch - preguntas tipo Tinder
 pub mod gamification_v4; // Nuevo módulo para gamificación completa
 pub mod ocr_iterative_v4; // Nuevo módulo para OCR iterativo
 pub mod upload_ocr_v4; // Nuevo módulo para upload OCR endpoint
 pub mod gamification_service; // Servicio de gamificación (cálculo y acreditación de Lumis)
 pub mod user_issuers_v4; // Nuevo módulo para obtener issuers de un usuario
 pub mod user_products_v4; // Nuevo módulo para obtener productos de un usuario
+pub mod user_invoice_headers_v4; // Nuevo módulo para obtener headers de facturas de un usuario
+pub mod user_invoice_details_v4; // Nuevo módulo para obtener detalles de facturas de un usuario
+pub mod integrity_summary_v4; // Nuevo módulo para validación de integridad diaria
+// pub mod invoices_version_v4; // DEPRECATED - dataset_version system removed
 pub mod unified_password; // Nuevo módulo para gestión unificada de contraseñas
 pub mod ofertasws_v4; // Nuevo módulo para ofertas WS con cache Redis
+pub mod notifications_v4; // Sistema de notificaciones in-app y push
+pub mod admin_v4; // Admin endpoints - DGI captcha configuration
 
 // NEW: Invoice processing module
 pub mod invoice_processor; // New robust invoice processing API
@@ -79,9 +88,14 @@ fn create_invoices_v4_router() -> Router<Arc<AppState>> {
     Router::new()
         // Comentado temporalmente para evitar duplicación con el router público
         // .merge(url_processing_v4::router())
-        .merge(invoice_query_v4::create_invoice_query_v4_router())
+        // NOTE: invoice_query_v4 conflicts with user_invoice_headers/details - using sync-specific routes
+        // .merge(invoice_query_v4::create_invoice_query_v4_router())
         .merge(user_issuers_v4::create_user_issuers_v4_router())
         .merge(user_products_v4::create_user_products_v4_router())
+        .merge(user_invoice_headers_v4::create_user_invoice_headers_v4_router())
+        .merge(user_invoice_details_v4::create_user_invoice_details_v4_router())
+        .merge(integrity_summary_v4::create_integrity_summary_v4_router())
+        // .merge(invoices_version_v4::create_version_v4_router())  // DEPRECATED
         // IMPORTANTE: Incluir el router de invoices que contiene upload-ocr
         .merge(invoices_v4::create_invoices_v4_router())
         // Solo middlewares que NO requieren estado
@@ -126,16 +140,22 @@ fn create_protected_v4_router() -> Router<Arc<AppState>> {
         .merge(rewards_history_v4::create_rewards_history_v4_router())
         .merge(surveys_v4::create_surveys_v4_router())
         .merge(gamification_v4::create_gamification_v4_router())
-        .merge(create_invoices_v4_router())  // ADD: Invoices router con issuers y products
+        .merge(tinder_v4::create_tinder_router())
         .nest("/api/v4/rewards", rewards_v4::create_rewards_v4_router())
+        // Notifications system endpoints
+        .nest("/api/v4/notifications", notifications_v4::create_notifications_v4_router())
         // ADD: Protected URL processing endpoint with JWT authentication
         .route("/api/v4/invoices/process-from-url", post(url_processing_v4::process_url_handler))
+        // ADD: Protected CUFE processing endpoint (for OCR-detected CUFE codes)
+        .route("/api/v4/invoices/process-from-cufe", post(url_processing_v4::process_cufe_handler))
         // Daily Game endpoints (protected)
         .route("/api/v4/daily-game/claim", post(daily_game::handle_claim))
         .route("/api/v4/daily-game/status", get(daily_game::handle_status))
         // Ofertas WS endpoints
         .route("/api/v4/ofertasws", get(ofertasws_v4::get_ofertasws))
         .route("/api/v4/ofertasws/refresh", post(ofertasws_v4::refresh_ofertasws_cache))
+        // Admin endpoints - DGI configuration
+        .nest("/api/v4/admin", admin_v4::router())
         .layer(from_fn(extract_current_user))
 }
 
@@ -145,6 +165,9 @@ pub fn create_api_router() -> Router<Arc<AppState>> {
         .merge(root_v4::create_root_v4_router())
         .merge(create_public_v4_router())
         .merge(create_protected_v4_router())
+        // Redemption system endpoints (v1)
+        .nest("/api/v1/rewards", rewards::router())
+        .nest("/api/v1/merchant", merchant::router())
         // Legacy V3 endpoints - TEMPORARILY COMMENTED OUT DURING MIGRATION
         // .route("/api/v3/invoices/upload-ocr", post(invoices::upload_ocr_invoice))
         // .route("/api/v3/invoices/process-from-url", post(invoices::process_invoice_from_url))

@@ -3,8 +3,10 @@
 ## Información General
 
 - **Versión API:** v4
-- **Última actualización:** Septiembre 2025
+- **Última actualización:** Diciembre 2025
 - **Estado:** Producción
+- **Motor OCR Primary:** Google Gemini 2.0 Flash
+- **Motor OCR Fallback:** OpenRouter (Qwen3-VL-30B)
 - **Compatibilidad:** Retrocompatible con versiones anteriores
 
 ## Endpoint: Upload OCR Invoice
@@ -353,12 +355,103 @@ El parámetro `mode` permite especificar el tipo de procesamiento de imagen:
 
 ## Notas Técnicas
 
-- **Motor OCR**: Google Gemini 1.5 Flash
+### Proveedores de IA (con Fallback)
+
+El sistema utiliza un mecanismo de fallback automático para garantizar disponibilidad:
+
+| Prioridad | Proveedor | Modelo | API |
+|-----------|-----------|--------|-----|
+| **1 (Primary)** | Google Gemini | `gemini-2.0-flash` | `generativelanguage.googleapis.com/v1beta` |
+| **2 (Fallback)** | OpenRouter | `qwen/qwen3-vl-30b-a3b-instruct` | `openrouter.ai/api/v1` |
+
+### Flujo de Fallback
+
+```
+┌─────────────────────────────────────────┐
+│  POST /api/v4/invoices/upload-ocr      │
+└─────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────┐
+│  1. Intenta Gemini 2.0 Flash           │
+│     - temperature: 0.1                  │
+│     - maxOutputTokens: 2048            │
+└─────────────────────────────────────────┘
+                    │
+           ┌───────┴───────┐
+           │               │
+        ✅ OK          ❌ Error
+           │               │
+           ▼               ▼
+┌──────────────┐  ┌─────────────────────────────┐
+│  Retorna     │  │  2. FALLBACK: OpenRouter    │
+│  resultado   │  │     Qwen3-VL-30B            │
+└──────────────┘  │     - temperature: 0.1      │
+                  │     - max_tokens: 2048      │
+                  └─────────────────────────────┘
+                              │
+                     ┌───────┴───────┐
+                     │               │
+                  ✅ OK          ❌ Error
+                     │               │
+                     ▼               ▼
+              ┌──────────────┐  ┌──────────────┐
+              │  Retorna     │  │  Error 500   │
+              │  resultado   │  │  Ambos       │
+              └──────────────┘  │  fallaron    │
+                               └──────────────┘
+```
+
+### Configuración de Modelos
+
+**Gemini 2.0 Flash (Primary):**
+```json
+{
+  "temperature": 0.1,
+  "maxOutputTokens": 2048
+}
+```
+
+**Qwen3-VL-30B (Fallback):**
+```json
+{
+  "temperature": 0.1,
+  "max_tokens": 2048
+}
+```
+
+### Variables de Entorno
+
+| Variable | Descripción | Requerido |
+|----------|-------------|-----------|
+| `GEMINI_API_KEY` | API key para Google Gemini | ✅ Sí |
+| `OPENROUTER_API_KEY` | API key para OpenRouter (fallback) | ❌ Tiene default |
+
 - **Formatos soportados**: JPEG, PNG, PDF (validación por magic bytes)
 - **Timeout**: El procesamiento puede tomar 10-30 segundos
 - **Idempotencia**: Múltiples requests con la misma imagen pueden generar CUFEs diferentes
 - **Logging**: Todas las operaciones se registran para auditoría
-- **Fallback**: Si OCR falla, se intenta reembolso automático de Lümis
+- **Fallback**: Si Gemini falla, se intenta automáticamente con OpenRouter
+
+## Integración con Lumimatch (Segmentación)
+
+El procesamiento de facturas via OCR genera **tags automáticos** que se usan para segmentación en el módulo Lumimatch:
+
+### Tags generados automáticamente
+
+| Tipo | Formato del Tag | Ejemplo |
+|------|-----------------|---------|
+| Código de producto | `product_code:{valor}` | `product_code:ABC123` |
+| Categoría L1 | `product_l1:{valor}` | `product_l1:alimentos` |
+| Categoría L2 | `product_l2:{valor}` | `product_l2:lacteos` |
+| Marca de producto | `product_brand:{valor}` | `product_brand:cocacola` |
+| RUC del emisor | `issuer_ruc:{valor}` | `issuer_ruc:12345678` |
+| Marca del comercio | `issuer_brand_name:{valor}` | `issuer_brand_name:mcdonalds` |
+| Tipo de comercio | `issuer_l1:{valor}` | `issuer_l1:restaurantes` |
+
+Estos tags se almacenan en `lumimatch.user_tags` y permiten mostrar preguntas segmentadas basadas en el historial de compras del usuario.
+
+Ver: [API_DOC_LUMIMATCH.md](./API_DOC_LUMIMATCH.md) para documentación completa del motor de preguntas.
 
 ## Ejemplos de Integración
 

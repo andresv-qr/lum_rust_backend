@@ -6,7 +6,7 @@ pub struct InvoiceHeadersQueryTemplates;
 impl InvoiceHeadersQueryTemplates {
     /// get_invoice_headers - list operation with caching
     pub fn get_invoice_headers_query() -> &'static str {
-        "SELECT date, tot_itbms, issuer_name, no, tot_amount, url, process_date, reception_date, type, cufe FROM public.invoice_header WHERE user_id = $1 ORDER BY date DESC LIMIT 100 OFFSET $2"
+        "SELECT date, tot_itbms, issuer_name, issuer_ruc, no, tot_amount, url, process_date, reception_date, type, cufe FROM public.invoice_header WHERE user_id = $1 ORDER BY date DESC LIMIT 100 OFFSET $2"
     }
     
     pub fn get_invoice_headers_cache_key_prefix() -> &'static str {
@@ -24,6 +24,7 @@ pub struct InvoiceHeadersResponse {
     pub date: Option<chrono::NaiveDateTime>,
     pub tot_itbms: Option<String>,
     pub issuer_name: Option<String>,
+    pub issuer_ruc: Option<String>,
     pub no: Option<String>,
     pub tot_amount: Option<String>,
     pub url: Option<String>,

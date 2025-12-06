@@ -1,0 +1,40 @@
+[Unit]
+Description=Lum Rust Web Service - Rewards & Redemptions API
+Documentation=https://github.com/lumapp/lum_rust_ws
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=client_1099_1
+Group=client_1099_1
+WorkingDirectory=/opt/lum_rust_ws
+Environment="RUST_LOG=info,lum_rust_ws=debug,sqlx=warn"
+EnvironmentFile=/opt/lum_rust_ws/.env
+ExecStart=/opt/lum_rust_ws/lum_rust_ws
+Restart=always
+RestartSec=5
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/lum_rust_ws/logs
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lum_rust_ws
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

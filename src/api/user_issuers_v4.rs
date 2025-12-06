@@ -8,55 +8,70 @@ use axum::{
 use std::sync::Arc;
 use tracing::{info, error};
 use uuid::Uuid;
-use sqlx::Row;
 
 use axum::middleware::from_fn;
 use crate::{
     state::AppState,
     middleware::{CurrentUser, extract_current_user},
-    api::common::ApiResponse,
+    api::common::{
+        ApiResponse,
+        IncrementalSyncResponse,
+        calculate_checksum,
+        get_deleted_items_since,
+        extract_max_update_date,
+        extract_record_ids,
+        validate_date_format,
+    },
     api::templates::user_issuers_templates::{
         UserIssuersQueryTemplates, 
         UserIssuersResponse, 
         UserIssuersRequest,
-        UserIssuersPagedResponse,
-        PaginationInfo
     },
 };
 
 /// Create user_issuers v4 router
 pub fn create_user_issuers_v4_router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/api/v4/invoices/issuers", get(get_user_issuers))
+        .route("/issuers", get(get_user_issuers))
         .layer(from_fn(extract_current_user))
 }
 
 /// GET /api/v4/invoices/issuers - Get issuers that a user has invoices with
+/// Now with incremental sync support (Nivel 2)
 pub async fn get_user_issuers(
     State(state): State<Arc<AppState>>,
     Extension(current_user): Extension<CurrentUser>,
     Query(params): Query<UserIssuersRequest>,
-) -> Result<Json<ApiResponse<UserIssuersPagedResponse>>, StatusCode> {
+) -> Result<Json<ApiResponse<IncrementalSyncResponse<UserIssuersResponse>>>, StatusCode> {
     let start_time = std::time::Instant::now();
     let request_id = Uuid::new_v4().to_string();
+    let server_timestamp = chrono::Utc::now().naive_utc();
     
     info!("📋 Fetching user issuers for user_id: {} [{}]", current_user.user_id, request_id);
 
     // Parameters with default values following v4 standards
-    let limit = params.limit.unwrap_or(20).min(100).max(1); // Max 100, min 1
-    let offset = params.offset.unwrap_or(0).max(0); // Min 0
-
+    let limit = params.limit.unwrap_or(20).min(100).max(1);
+    let offset = params.offset.unwrap_or(0).max(0);
     let user_id = current_user.user_id;
 
-    // Parse update_date_from if provided
+    // Validate and parse update_date_from if provided
     let update_date_filter = if let Some(date_str) = &params.update_date_from {
-        match chrono::DateTime::parse_from_rfc3339(date_str) {
-            Ok(parsed_date) => {
+        match validate_date_format(date_str) {
+            Ok(validated) => {
+                // Parse to NaiveDateTime for database query
+                let parsed_date = if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&validated) {
+                    dt.naive_utc()
+                } else if let Ok(date) = chrono::NaiveDate::parse_from_str(&validated, "%Y-%m-%d") {
+                    date.and_hms_opt(0, 0, 0).unwrap()
+                } else {
+                    error!("❌ Failed to parse validated date: {} [{}]", validated, request_id);
+                    return Err(StatusCode::BAD_REQUEST);
+                };
                 info!("🗓️ Using update_date filter: {} [{}]", parsed_date, request_id);
-                Some(parsed_date.naive_utc())
+                Some(parsed_date)
             },
             Err(e) => {
-                error!("❌ Invalid date format '{}': {} [{}]", date_str, e, request_id);
+                error!("❌ Invalid date format: {} [{}]", e, request_id);
                 return Err(StatusCode::BAD_REQUEST);
             }
         }
@@ -64,116 +79,115 @@ pub async fn get_user_issuers(
         None
     };
 
-    // Cache key generation (include filter in cache key)
-    let cache_key = format!(
-        "{}_{}_{}_{}_{}", 
-        UserIssuersQueryTemplates::get_user_issuers_cache_key_prefix(),
-        user_id,
-        limit,
-        offset,
-        params.update_date_from.as_deref().unwrap_or("no_date_filter")
-    );
-
-    info!("🔍 Cache key: {} [{}]", cache_key, request_id);
-
-    // Execute count query for pagination
-    let count_result = if let Some(date_filter) = &update_date_filter {
-        let count_query = UserIssuersQueryTemplates::get_user_issuers_count_with_date_filter_query();
-        match sqlx::query(count_query)
-            .bind(user_id)
-            .bind(date_filter)
-            .fetch_one(&state.db_pool)
-            .await
-        {
-            Ok(row) => {
-                let total: i64 = row.try_get("total").unwrap_or(0);
-                total
-            },
-            Err(e) => {
-                error!("❌ Failed to execute count query with date filter: {} [{}]", e, request_id);
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        }
-    } else {
-        let count_query = UserIssuersQueryTemplates::get_user_issuers_count_query();
-        match sqlx::query(count_query)
-            .bind(user_id)
-            .fetch_one(&state.db_pool)
-            .await
-        {
-            Ok(row) => {
-                let total: i64 = row.try_get("total").unwrap_or(0);
-                total
-            },
-            Err(e) => {
-                error!("❌ Failed to execute count query: {} [{}]", e, request_id);
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        }
-    };
-
     // Execute main query
-    let issuers_result = if let Some(date_filter) = &update_date_filter {
+    let issuers = if let Some(date_filter) = &update_date_filter {
         let main_query = UserIssuersQueryTemplates::get_user_issuers_with_date_filter_query();
-        match sqlx::query_as::<_, UserIssuersResponse>(main_query)
+        sqlx::query_as::<_, UserIssuersResponse>(main_query)
             .bind(user_id)
             .bind(limit)
             .bind(offset)
             .bind(date_filter)
             .fetch_all(&state.db_pool)
             .await
-        {
-            Ok(issuers) => issuers,
-            Err(e) => {
+            .map_err(|e| {
                 error!("❌ Failed to execute issuers query with date filter: {} [{}]", e, request_id);
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        }
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?
     } else {
         let main_query = UserIssuersQueryTemplates::get_user_issuers_query();
-        match sqlx::query_as::<_, UserIssuersResponse>(main_query)
+        sqlx::query_as::<_, UserIssuersResponse>(main_query)
             .bind(user_id)
             .bind(limit)
             .bind(offset)
             .fetch_all(&state.db_pool)
             .await
-        {
-            Ok(issuers) => issuers,
-            Err(e) => {
+            .map_err(|e| {
                 error!("❌ Failed to execute issuers query: {} [{}]", e, request_id);
-                return Err(StatusCode::INTERNAL_SERVER_ERROR);
-            }
-        }
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?
     };
 
-    // Calculate pagination info
-    let total_pages = if limit > 0 { (count_result + limit - 1) / limit } else { 1 };
+    // Get total count
+    let total_count: i64 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(DISTINCT a.issuer_ruc) as total
+        FROM public.dim_issuer a 
+        WHERE EXISTS (
+            SELECT 1 
+            FROM public.invoice_header ih 
+            WHERE ih.user_id = $1 
+            AND a.issuer_ruc = ih.issuer_ruc 
+            AND a.issuer_name = ih.issuer_name
+        )
+        AND a.is_deleted = FALSE
+        "#
+    )
+    .bind(user_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .unwrap_or(0);
+
+    // Get deleted items if update_date_from was provided
+    let deleted_items = if let Some(since) = &update_date_filter {
+        let since_str = since.format("%Y-%m-%dT%H:%M:%S").to_string();
+        get_deleted_items_since(&state.db_pool, "dim_issuer", "issuer_ruc", &since_str).await
+    } else {
+        vec![]
+    };
+
+    // Get dataset version
+
+    // Calculate checksum
+    let data_checksum = calculate_checksum(&issuers)
+        .map_err(|e| {
+            error!("❌ Failed to calculate checksum: {} [{}]", e, request_id);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Extract max_update_date and record_ids
+    let max_update_date = extract_max_update_date(&issuers);
+    let record_ids = extract_record_ids(&issuers);
+
+    // Build pagination info
+    let returned_records = issuers.len();
+    let total_pages = if limit > 0 { (total_count + limit - 1) / limit } else { 1 };
     let current_page = if limit > 0 { (offset / limit) + 1 } else { 1 };
-    let has_next = offset + limit < count_result;
-    let has_previous = offset > 0;
+    let has_more = (offset + limit) < total_count;
 
-    let pagination = PaginationInfo {
-        total: count_result,
-        limit,
-        offset,
-        has_next,
-        has_previous,
-        total_pages,
-        current_page,
-    };
-
-    let response = UserIssuersPagedResponse {
-        issuers: issuers_result,
-        pagination,
+    // Build IncrementalSyncResponse
+    let response = IncrementalSyncResponse {
+        data: issuers,
+        pagination: crate::api::common::PaginationInfo {
+            total_records: total_count,
+            returned_records,
+            limit,
+            offset,
+            has_more,
+            total_pages,
+            current_page,
+        },
+        sync_metadata: crate::api::common::SyncMetadata {
+            max_update_date,
+            server_timestamp,
+            data_checksum,
+            record_ids,
+            returned_records,
+            deleted_since: crate::api::common::DeletedItems {
+                enabled: true,
+                count: deleted_items.len(),
+                items: deleted_items,
+            },
+        },
     };
 
     let execution_time = start_time.elapsed().as_millis() as u64;
     
     info!(
-        "✅ Successfully fetched {} issuers for user {} (total: {}, date_filter: {}) in {}ms [{}]", 
-        response.issuers.len(),
+        "✅ Successfully fetched {} issuers for user {} (total: {}, deleted: {}, date_filter: {}) in {}ms [{}]", 
+        response.data.len(),
         user_id,
-        count_result,
+        total_count,
+        response.sync_metadata.deleted_since.count,
         params.update_date_from.as_deref().unwrap_or("none"),
         execution_time,
         request_id
@@ -183,6 +197,6 @@ pub async fn get_user_issuers(
         response, 
         request_id, 
         Some(execution_time), 
-        false // not cached in this version
+        false
     )))
 }

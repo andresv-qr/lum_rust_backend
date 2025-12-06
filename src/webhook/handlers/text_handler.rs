@@ -151,10 +151,11 @@ async fn handle_offers_radar_request(app_state: &Arc<AppState>, whatsapp_id: &st
         }
     };
     
-    // 2. Query active offers from rewards.fact_redemptions (redem_id = '0')
+    // 2. Query active offers from rewards.fact_redemptions_legacy (redem_id = '0')
+    // TODO: MIGRATED - Use new redemption system
     let query = r#"
         SELECT DISTINCT condition1 
-        FROM rewards.fact_redemptions 
+        FROM rewards.fact_redemptions_legacy 
         WHERE user_id = $1 AND redem_id = '0' AND expiration_date >= $2
     "#;
     

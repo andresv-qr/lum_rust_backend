@@ -17,7 +17,7 @@ use crate::state::AppState;
 
 /// JWT secret key - should be loaded from environment
 const JWT_SECRET: &str = "your-super-secret-jwt-key-change-in-production";
-const JWT_EXPIRATION_HOURS: i64 = 24;
+const JWT_EXPIRATION_HOURS: i64 = 24 * 90;  // 90 days
 
 /// Login endpoint - authenticates user and returns JWT token
 pub async fn login_user(

@@ -98,11 +98,11 @@ pub async fn unified_auth(
                 .and_then(|ci| ci.ip_address.as_deref())
         });
 
-    // Basic email validation if provider is email
+    // Robust email validation if provider is email (using security module regex)
     if let crate::models::unified_auth::ProviderData::Email { email, .. } = &request.provider_data {
-        if !email.contains('@') || email.len() < 5 {
-            error!("❌ Invalid email format");
-            return Err(AuthError::ValidationError("Invalid email format".to_string()));
+        if !crate::security::validation::is_valid_email(email) {
+            error!("❌ Invalid email format: {}", email);
+            return Err(AuthError::ValidationError("Invalid email format. Please provide a valid email address.".to_string()));
         }
     }
 

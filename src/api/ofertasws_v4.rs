@@ -47,11 +47,12 @@ fn serialize_decimal_as_f64<S>(value: &Decimal, serializer: S) -> Result<S::Ok, 
 where
     S: serde::Serializer,
 {
-    use std::str::FromStr;
+    // use std::str::FromStr; // Unused - comentado
     let float_val = value.to_string().parse::<f64>().unwrap_or(0.0);
     serializer.serialize_f64(float_val)
 }
 
+#[allow(dead_code)] // Función auxiliar que puede usarse en el futuro
 fn serialize_option_decimal_as_f64<S>(value: &Option<Decimal>, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,

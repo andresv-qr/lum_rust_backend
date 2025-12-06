@@ -1,5 +1,8 @@
 # 🚀 API Endpoints - Sistema de Gamificación v4
 
+> **Última actualización:** 2025-11-27
+> **Estado:** Documentación sincronizada con implementación real
+
 ## Índice
 1. [Dashboard y Overview](#1-dashboard-y-overview)
 2. [Sistema de Rachas](#2-sistema-de-rachas)
@@ -8,19 +11,14 @@
 5. [Logros y Achievements](#5-logros-y-achievements)
 6. [Niveles y Progresión](#6-niveles-y-progresión)
 7. [Leaderboards y Competencia](#7-leaderboards-y-competencia)
-8. [Sistema Social](#8-sistema-social)
-9. [Equipos y Torneos](#9-equipos-y-torneos)
-10. [Notificaciones](#10-notificaciones)
-11. [Combos y Chains](#11-combos-y-chains)
-12. [Anti-Fraude y Seguridad](#12-anti-fraude-y-seguridad)
-13. [Administración](#13-administración)
+8. [Track Actions](#8-track-actions)
 
 ---
 
 ## 1. Dashboard y Overview
 
 ### `GET /api/v4/gamification/dashboard`
-**Descripción:** Dashboard principal de gamificación del usuario.
+**Descripción:** Dashboard principal de gamificación del usuario. Devuelve toda la información de niveles, rachas activas y progreso.
 
 **Headers:**
 ```
@@ -33,235 +31,439 @@ Content-Type: application/json
 {
   "success": true,
   "data": {
-    "user": {
-      "user_id": 123,
-      "current_level": 5,
-      "level_name": "Silver Hunter",
-      "current_xp": 1250,
-      "xp_to_next_level": 500,
-      "total_lumis": 5430
+    "user_id": 1,
+    "email": "usuario@ejemplo.com",
+    "total_lumis": 708,
+    "current_level": 3,
+    "level_name": "Explorador",
+    "level_description": "Explorador - Basado en 45 facturas",
+    "level_color": "#4CAF50",
+    "level_benefits": {
+      "multiplier": 1.1,
+      "perks": ["descuento_5%", "acceso_ofertas_exclusivas"]
     },
-    "streaks": {
-      "daily_login": {
-        "current": 7,
-        "max": 15,
-        "last_activity": "2025-08-27",
-        "next_reward_at": 14
+    "next_level_hint": "Faltan 15 facturas para Aventurero",
+    "lumis_to_next_level": 15,
+    "next_level_name": "Aventurero",
+    "active_streaks": [
+      {
+        "type": "daily_login",
+        "current": 5,
+        "max": 12,
+        "last_date": "2025-11-26"
       },
-      "invoice_upload": {
-        "current": 3,
-        "max": 8,
-        "last_activity": "2025-08-27"
-      }
-    },
-    "active_missions": [
       {
-        "mission_id": 456,
-        "mission_name": "Subir 3 facturas hoy",
-        "current_progress": 1,
-        "target_count": 3,
-        "reward_lumis": 50,
-        "due_date": "2025-08-27T23:59:59Z"
+        "type": "consistent_month",
+        "current": 2,
+        "max": 4,
+        "last_date": "2025-11-26"
       }
     ],
-    "active_events": [
-      {
-        "event_id": 789,
-        "event_name": "Happy Hour Nocturno",
-        "multiplier": 2.0,
-        "ends_at": "2025-08-27T20:00:00Z",
-        "applicable_actions": ["invoice_upload", "survey_complete"]
-      }
-    ],
-    "recent_achievements": [
-      {
-        "achievement_id": 12,
-        "achievement_name": "Survey Master",
-        "unlocked_at": "2025-08-26T15:30:00Z",
-        "reward_lumis": 100,
-        "is_claimed": false
-      }
-    ],
-    "leaderboard_position": {
-      "weekly_invoices": 23,
-      "monthly_surveys": 45
-    },
-    "next_opportunities": {
-      "next_happy_hour": "2025-08-28T18:00:00Z",
-      "missions_expire_soon": 2,
-      "streak_freeze_available": true
-    }
-  }
+    "active_missions_count": 0,
+    "completed_missions_count": 0,
+    "total_achievements": 0,
+    "recent_activity": []
+  },
+  "request_id": "uuid-here",
+  "timestamp": "2025-11-27T10:00:00Z",
+  "execution_time_ms": 5,
+  "cached": false
 }
 ```
 
-### `GET /api/v4/gamification/stats`
-**Descripción:** Estadísticas detalladas del usuario.
+**Campos de Respuesta:**
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "lifetime_stats": {
-      "total_lumis_earned": 15430,
-      "total_xp_earned": 8750,
-      "total_achievements": 23,
-      "days_active": 145,
-      "longest_streak": 21
-    },
-    "current_month": {
-      "lumis_earned": 2340,
-      "invoices_uploaded": 67,
-      "surveys_completed": 34,
-      "missions_completed": 12
-    },
-    "engagement_score": 85,
-    "user_rank": "Top 15%"
-  }
-}
-```
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `user_id` | int | ID del usuario |
+| `email` | string | Email del usuario |
+| `total_lumis` | int | Balance total de Lümis (facturas registradas) |
+| `current_level` | int | Nivel actual (1-10) |
+| `level_name` | string | Nombre del nivel actual |
+| `level_description` | string | Descripción contextual del nivel |
+| `level_color` | string | Color hex para UI |
+| `level_benefits` | object | Beneficios del nivel (multiplicadores, perks) |
+| `next_level_hint` | string | Mensaje sobre próximo nivel |
+| `lumis_to_next_level` | int | Facturas restantes para subir de nivel |
+| `next_level_name` | string | Nombre del próximo nivel |
+| `active_streaks` | array | Rachas activas del usuario |
+| `active_missions_count` | int | Cantidad de misiones activas |
+| `completed_missions_count` | int | Misiones completadas |
+| `total_achievements` | int | Total de logros desbloqueados |
+| `recent_activity` | array | Actividad reciente |
+
+**Tipos de Rachas (`active_streaks`):**
+
+| Tipo | Descripción | Recompensa |
+|------|-------------|------------|
+| `daily_login` | Login 7 días consecutivos | 1 Lümi al día 7, resetea a 1 |
+| `consistent_month` | 4 semanas consecutivas con facturas | Achievement + recompensa |
 
 ---
 
 ## 2. Sistema de Rachas
 
-### `GET /api/v4/gamification/streaks`
-**Descripción:** Obtiene todas las rachas del usuario.
+Las rachas se obtienen a través del endpoint `/dashboard` en el campo `active_streaks`.
 
-**Response:**
+### Racha de Login Diario (`daily_login`)
+- **Ciclo:** 7 días
+- **Días 1-6:** Solo progreso, 0 Lümis
+- **Día 7:** 1 Lümi + Achievement `week_perfect`
+- **Día 8:** Contador resetea automáticamente a 1 (ciclo infinito)
+
+### Racha de Facturas Semanales (`consistent_month`)
+- **Requisito:** Subir al menos 1 factura por semana
+- **Meta:** 4 semanas consecutivas
+- **Al completar:** Achievement `consistent_month` + recompensa
+- **Se actualiza automáticamente** al subir facturas
+
+### Estructura de cada streak:
 ```json
 {
-  "success": true,
-  "data": {
-    "streaks": [
-      {
-        "streak_type": "daily_login",
-        "current_count": 7,
-        "max_count": 15,
-        "last_activity_date": "2025-08-27",
-        "streak_start_date": "2025-08-21",
-        "total_lumis_earned": 350,
-        "next_milestone": {
-          "at_day": 14,
-          "reward_lumis": 100,
-          "special_bonus": "Streak Badge"
-        }
-      }
-    ],
-    "freeze_tokens": 2,
-    "streak_multipliers": {
-      "daily_login": 1.2,
-      "invoice_upload": 1.1
-    }
-  }
+  "type": "daily_login",
+  "current": 5,
+  "max": 12,
+  "last_date": "2025-11-26"
 }
 ```
 
-### `POST /api/v4/gamification/streaks/freeze`
-**Descripción:** Usar token de freeze para mantener racha.
+| Campo | Descripción |
+|-------|-------------|
+| `type` | Tipo de racha |
+| `current` | Días/semanas consecutivas actuales |
+| `max` | Máximo histórico alcanzado |
+| `last_date` | Última fecha de actividad |
+
+---
+
+## 3. Track Actions (Registrar Acciones)
+
+### `POST /api/v4/gamification/track`
+**Descripción:** Endpoint principal para registrar acciones del usuario y obtener recompensas.
+
+**Headers:**
+```
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+```
 
 **Request:**
 ```json
 {
-  "streak_type": "daily_login"
+  "action": "daily_login",
+  "channel": "mobile_app",
+  "metadata": {}
 }
 ```
 
-**Response:**
+**Acciones válidas:**
+| Action | Descripción | Recompensa |
+|--------|-------------|------------|
+| `daily_login` | Login diario | 0-1 Lümi (1 al día 7) |
+| `invoice_upload` | Subir factura | Variable según categoría |
+| `survey_complete` | Completar encuesta | Variable (en metadata) |
+
+**Response exitosa:**
 ```json
 {
   "success": true,
   "data": {
-    "streak_frozen": true,
-    "freeze_expires_at": "2025-08-28T23:59:59Z",
-    "freeze_tokens_remaining": 1,
-    "message": "Racha congelada por 24 horas"
-  }
+    "lumis_earned": 1,
+    "total_lumis": 709,
+    "xp_earned": 1,
+    "current_level": 3,
+    "level_name": "Explorador",
+    "streaks": {
+      "current_streak": 7,
+      "lumis_earned": 1,
+      "max_streak": 12,
+      "next_milestone": 7,
+      "achievement_unlocked": "week_perfect",
+      "message": "🏆 ¡Semana perfecta! +1 Lümi. Contador resetea para nueva semana",
+      "days_until_reward": 0,
+      "weekly_cycle": true
+    },
+    "achievements_unlocked": [],
+    "active_events": [],
+    "message": "Ganaste 1 Lümis"
+  },
+  "request_id": "uuid-here",
+  "timestamp": "2025-11-27T10:00:00Z",
+  "execution_time_ms": 15,
+  "cached": false
 }
 ```
 
-### `GET /api/v4/gamification/streaks/rewards`
-**Descripción:** Recompensas disponibles por rachas.
-
-**Response:**
+**Response cuando ya se registró hoy:**
 ```json
 {
   "success": true,
   "data": {
-    "available_rewards": [
-      {
-        "streak_type": "daily_login",
-        "milestone_day": 7,
-        "reward_lumis": 50,
-        "is_claimed": true
-      },
-      {
-        "streak_type": "daily_login", 
-        "milestone_day": 14,
-        "reward_lumis": 100,
-        "is_claimed": false,
-        "can_claim": false,
-        "current_progress": 7
-      }
-    ]
+    "lumis_earned": 0,
+    "streaks": {
+      "current_streak": 5,
+      "already_claimed": true,
+      "next_reward_day": 7,
+      "lumis_at_day_7": 1,
+      "message": "Ya registraste tu ingreso hoy"
+    }
   }
 }
 ```
 
 ---
 
-## 3. Misiones y Desafíos
+## 4. Misiones y Desafíos
 
 ### `GET /api/v4/gamification/missions`
-**Descripción:** Obtiene misiones activas, completadas y disponibles.
+**Descripción:** Obtiene misiones del usuario.
+
+**Headers:**
+```
+Authorization: Bearer {jwt_token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "mission_code": "daily_invoices_3",
+      "mission_name": "Subir 3 facturas hoy",
+      "mission_type": "daily",
+      "description": "Sube 3 facturas para completar esta misión",
+      "current_progress": 1,
+      "target_count": 3,
+      "reward_lumis": 50,
+      "due_date": "2025-11-27",
+      "status": "active",
+      "progress_percentage": 33.33
+    }
+  ],
+  "request_id": "uuid-here",
+  "timestamp": "2025-11-27T10:00:00Z",
+  "execution_time_ms": 3,
+  "cached": false
+}
+```
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `mission_code` | string | Código único de la misión |
+| `mission_name` | string | Nombre para mostrar |
+| `mission_type` | string | `daily`, `weekly`, `monthly`, `special` |
+| `description` | string | Descripción detallada |
+| `current_progress` | int | Progreso actual |
+| `target_count` | int | Meta a alcanzar |
+| `reward_lumis` | int | Recompensa en Lümis |
+| `due_date` | date | Fecha límite |
+| `status` | string | `active`, `completed`, `expired` |
+| `progress_percentage` | float | Porcentaje de progreso (0-100) |
+
+---
+
+## 5. Eventos Temporales
+
+### `GET /api/v4/gamification/events`
+**Descripción:** Obtiene eventos activos y próximos (Happy Hours, eventos especiales).
+
+**Headers:**
+```
+Authorization: Bearer {jwt_token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "event_code": "happy_hour_evening",
+      "event_name": "Happy Hour Nocturno",
+      "event_type": "happy_hour",
+      "starts_in_minutes": -30,
+      "ends_in_minutes": 90,
+      "multiplier": "2.0",
+      "description": "¡Doble Lümis en todas las acciones!",
+      "is_active_now": true
+    }
+  ],
+  "request_id": "uuid-here",
+  "timestamp": "2025-11-27T18:30:00Z",
+  "execution_time_ms": 2,
+  "cached": false
+}
+```
+
+| Campo | Descripción |
+|-------|-------------|
+| `starts_in_minutes` | Negativo = ya comenzó hace X minutos |
+| `ends_in_minutes` | Positivo = termina en X minutos |
+| `is_active_now` | Si el evento está activo ahora |
+| `multiplier` | Multiplicador de Lümis durante el evento |
+
+---
+
+## 6. Logros y Achievements
+
+### `GET /api/v4/gamification/achievements`
+**Descripción:** Obtiene logros disponibles y desbloqueados del usuario.
+
+**Headers:**
+```
+Authorization: Bearer {jwt_token}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "achievement_code": "week_perfect",
+      "achievement_name": "Semana Perfecta",
+      "description": "Loguéate 7 días consecutivos",
+      "category": "streak",
+      "rarity": "common",
+      "points_reward": 1,
+      "unlocked_at": "2025-11-20T15:30:00Z",
+      "progress_current": 7,
+      "progress_target": 7,
+      "is_unlocked": true
+    },
+    {
+      "achievement_code": "consistent_month",
+      "achievement_name": "Mes Consistente",
+      "description": "Sube facturas 4 semanas seguidas",
+      "category": "invoice",
+      "rarity": "rare",
+      "points_reward": 10,
+      "unlocked_at": null,
+      "progress_current": 2,
+      "progress_target": 4,
+      "is_unlocked": false
+    }
+  ]
+}
+```
+
+---
+
+## 7. Leaderboard
+
+### `GET /api/v4/gamification/leaderboard`
+**Descripción:** Ranking de usuarios.
+
+**Headers:**
+```
+Authorization: Bearer {jwt_token}
+```
 
 **Query Parameters:**
-- `status` (optional): `active`, `completed`, `expired`, `available`
-- `type` (optional): `daily`, `weekly`, `monthly`, `special`
+- `period` (optional): `daily`, `weekly`, `monthly`, `all_time` (default: `weekly`)
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "user_id": 1,
+      "display_name": "Usuario***",
+      "total_lumis": 1500,
+      "current_level": 5,
+      "level_name": "Aventurero",
+      "rank": 1
+    },
+    {
+      "user_id": 2,
+      "display_name": "Otro***",
+      "total_lumis": 1200,
+      "current_level": 4,
+      "level_name": "Explorador",
+      "rank": 2
+    }
+  ]
+}
+```
+
+---
+
+## 8. Mecánicas del Sistema
+
+### `GET /api/v4/gamification/mechanics`
+**Descripción:** Información sobre las mecánicas de gamificación (para mostrar en UI de ayuda).
+
+**Headers:**
+```
+Authorization: Bearer {jwt_token}
+```
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "active_missions": [
-      {
-        "mission_id": 456,
-        "mission_code": "daily_invoices_3",
-        "mission_name": "Subir 3 facturas hoy",
-        "mission_type": "daily",
-        "current_progress": 1,
-        "target_count": 3,
-        "reward_lumis": 50,
-        "bonus_multiplier": 1.0,
-        "assigned_date": "2025-08-27",
-        "due_date": "2025-08-27T23:59:59Z",
-        "difficulty": "easy",
-        "progress_percentage": 33
-      }
+    "levels": [
+      {"level": 1, "name": "Chispa Lüm", "min_invoices": 0},
+      {"level": 2, "name": "Novato", "min_invoices": 10},
+      {"level": 3, "name": "Explorador", "min_invoices": 30}
     ],
-    "available_missions": [
-      {
-        "mission_code": "weekly_surveys_5",
-        "mission_name": "Completa 5 encuestas esta semana",
-        "reward_lumis": 150,
-        "requirements": "Nivel mínimo: Silver",
-        "can_accept": true
+    "streaks": {
+      "daily_login": {
+        "description": "Ingresa 7 días seguidos para ganar 1 Lümi",
+        "cycle": 7,
+        "reward_day": 7
+      },
+      "consistent_month": {
+        "description": "Sube facturas 4 semanas seguidas",
+        "cycle": 4,
+        "reward_week": 4
       }
-    ],
-    "completed_today": 2,
-    "daily_missions_limit": 5
+    }
   }
 }
 ```
 
-### `POST /api/v4/gamification/missions/accept`
-**Descripción:** Acepta una misión disponible.
+---
 
-**Request:**
+## Resumen de Endpoints Implementados
+
+| Endpoint | Método | Descripción |
+|----------|--------|-------------|
+| `/api/v4/gamification/dashboard` | GET | Dashboard completo con streaks |
+| `/api/v4/gamification/track` | POST | Registrar acciones (login, factura, encuesta) |
+| `/api/v4/gamification/missions` | GET | Misiones del usuario |
+| `/api/v4/gamification/events` | GET | Eventos activos (Happy Hours) |
+| `/api/v4/gamification/achievements` | GET | Logros disponibles y desbloqueados |
+| `/api/v4/gamification/leaderboard` | GET | Ranking de usuarios |
+| `/api/v4/gamification/mechanics` | GET | Info de mecánicas para UI |
+
+---
+
+## Notas de Implementación
+
+### Autenticación
+Todos los endpoints requieren JWT válido en header `Authorization: Bearer {token}`.
+
+### Rachas
+- **No hay endpoint `/streaks` separado** - usar `/dashboard` que incluye `active_streaks`
+- El login diario se registra con `POST /track` action `"daily_login"`
+- Las facturas actualizan `consistent_month` automáticamente via trigger
+
+### Errores Comunes
 ```json
 {
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid action type"
+  }
+}
+```
+
+Códigos: `VALIDATION_ERROR` (400), `UNAUTHORIZED` (401), `NOT_FOUND` (404), `DATABASE_ERROR` (500)
   "mission_code": "weekly_surveys_5"
 }
 ```

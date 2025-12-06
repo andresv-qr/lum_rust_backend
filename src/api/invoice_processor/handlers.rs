@@ -12,9 +12,9 @@ use crate::state::AppState;
 
 use crate::api::invoice_processor::{
     models::{ProcessInvoiceRequest},
-    validation::{validate_process_request, determine_invoice_type},
+    validation::{validate_process_request, determine_invoice_type, categorize_error},
     error_handling::{InvoiceProcessingError, create_success_response},
-    repository::{check_duplicate_invoice, save_invoice_data},
+    repository::{check_duplicate_invoice, save_invoice_data, save_to_mef_pending},
     logging_service::LoggingService,
     scraper_service::ScraperService,
 };
@@ -78,7 +78,7 @@ pub async fn process_invoice_handler(
     
     // 4. WEB SCRAPING PHASE
     debug!("Phase 4: Starting web scraping");
-    let (full_invoice_data, fields_extracted, retry_attempts) = scraper_service
+    let scraping_result = scraper_service
         .scrape_invoice_with_retries(
             &request.url,
             &request.user_id,
@@ -88,10 +88,47 @@ pub async fn process_invoice_handler(
             reception_date,
             process_date,
         )
-        .await.map_err(|e| {
-            error!("Scraping failed: {:?}", e);
-            InvoiceProcessingError::ValidationError { message: format!("Scraping failed: {}", e) }
-        })?;
+        .await;
+    
+    // ✅ MANEJO DE ERRORES DE SCRAPING: Fallback a mef_pending
+    let (full_invoice_data, fields_extracted, retry_attempts) = match scraping_result {
+        Ok(data) => data,
+        Err(scraping_error) => {
+            error!("❌ Scraping failed: {:?}", scraping_error);
+            
+            let error_msg = format!("{:?}", scraping_error);
+            let error_type = categorize_error(&error_msg);
+            
+            // Log scraping error
+            let _ = logging_service.log_scraping_error(
+                log_id,
+                &error_msg,
+                error_type,
+                start_time,
+                0, // No retries completed
+            ).await;
+            
+            // Guardar en mef_pending para procesamiento manual
+            if let Err(e) = save_to_mef_pending(
+                &pool,
+                &request.url,
+                &request.user_id,
+                &request.user_email,
+                &request.origin,
+                &error_msg,
+                None, // No CUFE disponible
+            ).await {
+                warn!("⚠️ Failed to save to mef_pending: {:?}", e);
+            }
+            
+            // Retornar respuesta amigable al usuario
+            return Ok(ResponseJson(serde_json::json!({
+                "status": "pending",
+                "message": "La factura ha sido recibida y pronto será procesada",
+                "details": "No pudimos procesar la factura automáticamente. Nuestro equipo la revisará manualmente y te notificaremos cuando esté lista."
+            })));
+        }
+    };
     
     info!(
         "Successfully scraped invoice data for CUFE: {}, fields: {}, retries: {}",

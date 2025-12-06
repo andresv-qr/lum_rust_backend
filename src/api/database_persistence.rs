@@ -54,6 +54,56 @@ pub async fn persist_scraped_data(
         }
     };
 
+    // VALIDATION: Ensure we have critical data before saving as valid invoice
+    // These validations match the WhatsApp flow in data_parser.rs
+    // If any are missing, it means the invoice is not yet fully available in MEF
+    
+    // 1. Validate tot_amount exists and is greater than 0
+    let has_valid_amount = header.tot_amount
+        .map(|amt| amt > 0.0)
+        .unwrap_or(false);
+    
+    // 2. Validate issuer_name exists and is not empty
+    let has_valid_issuer_name = header.issuer_name
+        .as_ref()
+        .map(|name| !name.trim().is_empty())
+        .unwrap_or(false);
+    
+    // 3. Validate issuer_ruc exists and is not empty
+    let has_valid_issuer_ruc = header.issuer_ruc
+        .as_ref()
+        .map(|ruc| !ruc.trim().is_empty())
+        .unwrap_or(false);
+    
+    // 4. Validate invoice number (no) exists and is not empty
+    let has_valid_no = header.no
+        .as_ref()
+        .map(|no| !no.trim().is_empty())
+        .unwrap_or(false);
+    
+    // 5. Validate date exists and is not empty
+    let has_valid_date = header.date
+        .as_ref()
+        .map(|date| !date.trim().is_empty())
+        .unwrap_or(false);
+    
+    if !has_valid_amount || !has_valid_issuer_name || !has_valid_issuer_ruc || !has_valid_no || !has_valid_date {
+        let missing_fields: Vec<&str> = [
+            (!has_valid_amount, "monto"),
+            (!has_valid_issuer_name, "nombre del emisor"),
+            (!has_valid_issuer_ruc, "RUC del emisor"),
+            (!has_valid_no, "número de factura"),
+            (!has_valid_date, "fecha"),
+        ]
+        .iter()
+        .filter(|(missing, _)| *missing)
+        .map(|(_, field)| *field)
+        .collect();
+        
+        warn!("⚠️ Invoice data incomplete. Missing fields: {:?}. CUFE: {}", missing_fields, header.cufe);
+        return Err(ProcessUrlResponse::error("Factura no disponible: Datos incompletos en MEF"));
+    }
+
     let mut tx = match db_pool.begin().await {
         Ok(tx) => tx,
         Err(e) => {

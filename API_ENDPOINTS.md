@@ -1372,65 +1372,67 @@ Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
 
 **Tipos de Datos de Respuesta:**
 
-| Campo | Tipo | Nullable | Descripción |
-|-------|------|----------|-------------|
-| `code` | `string` | Yes | Código único del producto |
-| `issuer_name` | `string` | Yes | Nombre del emisor de la factura |
-| `description` | `string` | Yes | Descripción detallada del producto |
-| `l1` | `string` | Yes | Clasificación nivel 1 (categoría principal) |
-| `l2` | `string` | Yes | Clasificación nivel 2 (subcategoría) |
-| `l3` | `string` | Yes | Clasificación nivel 3 (categoría específica) |
-| `l4` | `string` | Yes | Clasificación nivel 4 (subcategoría específica) |
-| `process_date` | `string` | Yes | Fecha de procesamiento del producto |
+| Campo API | Campo DB | Tipo | Nullable | Descripción |
+|-----------|----------|------|----------|-------------|
+| `code` | `dim_product.code` | `string` | Yes | Código único del producto |
+| `code_cleaned` | `dim_product.code_cleaned` | `string` | Yes | Código limpio/normalizado del producto |
+| `issuer_name` | `dim_product.issuer_name` | `string` | Yes | Nombre del emisor de la factura |
+| `issuer_ruc` | `dim_product.issuer_ruc` | `string` | Yes | RUC del emisor |
+| `description` | `dim_product.description` | `string` | Yes | Descripción detallada del producto |
+| `l1` | `dim_product.l1` | `string` | Yes | Clasificación nivel 1 (categoría principal) |
+| `l2` | `dim_product.l2` | `string` | Yes | Clasificación nivel 2 (subcategoría) |
+| `l3` | `dim_product.l3` | `string` | Yes | Clasificación nivel 3 (categoría específica) |
+| `l4` | `dim_product.l4` | `string` | Yes | Clasificación nivel 4 (subcategoría específica) |
+| `update_date` | `dim_product.update_date` | `NaiveDateTime` | Yes | Fecha de última actualización del producto |
 
 **SQL Query Ejecutada:**
 ```sql
 -- Sin filtro de fecha
 SELECT 
     p.code,
+    p.code_cleaned,
     p.issuer_name,
+    p.issuer_ruc,
     p.description,
-    p.l1_gemini as l1,
-    p.l2_gemini as l2,
-    p.l3_gemini as l3,
-    p.l4_gemini as l4,
-    p.process_date
+    p.l1,
+    p.l2,
+    p.l3,
+    p.l4,
+    p.update_date
 FROM public.dim_product p
 JOIN (
-    SELECT DISTINCT d.code, h.issuer_name, d.description
+    SELECT DISTINCT d.code, h.issuer_ruc
     FROM public.invoice_detail d
-    JOIN public.invoice_header h
-      ON d.cufe = h.cufe
+    JOIN public.invoice_header h ON d.cufe = h.cufe
     WHERE h.user_id = $1
-) u
-  ON p.code = u.code
- AND p.issuer_name = u.issuer_name
- AND p.description = u.description
-ORDER BY p.description ASC;
+) u ON p.code = u.code
+   AND p.issuer_ruc = u.issuer_ruc
+ORDER BY p.update_date DESC, p.issuer_name ASC, p.description ASC
+LIMIT $2 OFFSET $3;
 
 -- Con filtro de fecha
 SELECT 
     p.code,
+    p.code_cleaned,
     p.issuer_name,
+    p.issuer_ruc,
     p.description,
-    p.l1_gemini as l1,
-    p.l2_gemini as l2,
-    p.l3_gemini as l3,
-    p.l4_gemini as l4,
-    p.process_date
+    p.l1,
+    p.l2,
+    p.l3,
+    p.l4,
+    p.update_date
 FROM public.dim_product p
 JOIN (
-    SELECT DISTINCT d.code, h.issuer_name, d.description
+    SELECT DISTINCT d.code, h.issuer_ruc
     FROM public.invoice_detail d
-    JOIN public.invoice_header h
-      ON d.cufe = h.cufe
+    JOIN public.invoice_header h ON d.cufe = h.cufe
     WHERE h.user_id = $1
-) u
-  ON p.code = u.code
- AND p.issuer_name = u.issuer_name
- AND p.description = u.description
-WHERE p.process_date >= $2
-ORDER BY p.description ASC;
+) u ON p.code = u.code
+   AND p.issuer_ruc = u.issuer_ruc
+WHERE p.update_date >= $4
+ORDER BY p.update_date DESC, p.issuer_name ASC, p.description ASC
+LIMIT $2 OFFSET $3;
 ```
 
 **Respuesta exitosa (200 OK):**
@@ -1441,33 +1443,39 @@ ORDER BY p.description ASC;
   "data": [
     {
       "code": "PROD001",
+      "code_cleaned": "PROD001-CLEAN",
       "issuer_name": "Super 99",
+      "issuer_ruc": "1234567890-1-2023",
       "description": "Laptop Dell Inspiron 15",
       "l1": "Tecnología",
       "l2": "Computadoras",
       "l3": "Laptops",
       "l4": "Laptops Personales",
-      "process_date": "2024-08-20"
+      "update_date": "2024-08-20"
     },
     {
       "code": "PROD002",
+      "code_cleaned": "PROD002-CLEAN",
       "issuer_name": "Farmacia Arrocha",
+      "issuer_ruc": "9876543210-1-2022",
       "description": "Vitamina C 1000mg",
       "l1": "Salud",
       "l2": "Suplementos",
       "l3": "Vitaminas",
       "l4": "Vitamina C",
-      "process_date": "2024-08-15"
+      "update_date": "2024-08-15"
     },
     {
       "code": "PROD003",
+      "code_cleaned": "PROD003-CLEAN",
       "issuer_name": "Restaurante Casa Vegetariana",
+      "issuer_ruc": "5555555555-1-2021",
       "description": "Ensalada Mediterránea",
       "l1": "Alimentación",
       "l2": "Comida Preparada",
       "l3": "Ensaladas",
       "l4": "Ensaladas Gourmet",
-      "process_date": "2024-09-01"
+      "update_date": "2024-09-01"
     }
   ],
   "timestamp": "2024-08-26T15:30:45Z",
@@ -2382,26 +2390,17 @@ GET /api/v4/invoices/headers?issuer_name=Panama&order_by=tot_amount&order_direct
   "success": true,
   "data": [
     {
-      "id": 1,
-      "no": "FE01-00012345",
       "date": "2024-01-15T10:30:00",
-      "tot_itbms": 12.50,
-      "cufe": "FE01200000000434-15-9379...",
+      "tot_itbms": "12.50",
       "issuer_name": "Empresa Ejemplo S.A.",
-      "tot_amount": 112.50,
+      "issuer_ruc": "1234567890-1-2023",
+      "no": "FE01-00012345",
+      "tot_amount": "112.50",
       "url": "https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR?chFE=...",
-      "process_date": "2024-01-15T10:35:00Z",
-      "reception_date": "2024-01-15T10:30:00Z",
+      "process_date": "2024-01-15T10:35:00",
+      "reception_date": "2024-01-15T10:30:00",
       "type": "01",
-      "issuer_ruc": "1234567890",
-      "issuer_dv": "12",
-      "issuer_address": "Calle 50, Ciudad de Panamá",
-      "issuer_phone": "+507 123-4567",
-      "time": "",
-      "auth_date": "",
-      "receptor_name": "",
-      "details_count": 5,
-      "payments_count": 1
+      "cufe": "FE01200000000434-15-9379..."
     }
   ],
   "total": 150,
@@ -2434,30 +2433,21 @@ GET /api/v4/invoices/headers?issuer_name=Panama&order_by=tot_amount&order_direct
 }
 ```
 
-##### Estructura de Campos (`InvoiceHeaderItem`)
+##### Estructura de Campos (`InvoiceHeadersResponse`)
 
-| Campo | Tipo | Nullable | Descripción |
-|-------|------|----------|-------------|
-| `id` | `i64` | No | ID secuencial generado por ROW_NUMBER() |
-| `no` | `String` | Sí | Número de factura (ej: "FE01-00012345") |
-| `date` | `NaiveDateTime` | Sí | Fecha de emisión de la factura |
-| `tot_itbms` | `f64` | Sí | Total de ITBMS (impuesto) |
-| `cufe` | `String` | Sí | Código Único de Factura Electrónica |
-| `issuer_name` | `String` | Sí | Nombre del emisor/proveedor |
-| `tot_amount` | `f64` | Sí | Monto total de la factura |
-| `url` | `String` | Sí | URL del QR de consulta DGI |
-| `process_date` | `DateTime<Utc>` | Sí | Fecha de procesamiento del sistema |
-| `reception_date` | `DateTime<Utc>` | Sí | Fecha de recepción (usado para ordenar) |
-| `type` | `String` | Sí | Tipo de factura ("01" = Factura, etc.) |
-| `details_count` | `i64` | No | Cantidad de líneas de detalle (JOIN con `invoice_detail`) |
-| `payments_count` | `i64` | No | Cantidad de pagos asociados (JOIN con `invoice_payment`) |
-| `issuer_ruc` | `String` | Sí | RUC (Registro Único de Contribuyente) del emisor |
-| `issuer_dv` | `String` | Sí | Dígito verificador del RUC del emisor |
-| `issuer_address` | `String` | Sí | Dirección física del emisor/comercio |
-| `issuer_phone` | `String` | Sí | Teléfono de contacto del emisor |
-| `time` | `String` | Sí | **Campo legacy** (vacío, mantener por compatibilidad) |
-| `auth_date` | `String` | Sí | **Campo legacy** (vacío, mantener por compatibilidad) |
-| `receptor_name` | `String` | Sí | **Campo legacy** (vacío, mantener por compatibilidad) |
+| Campo API | Campo DB | Tipo | Nullable | Descripción |
+|-----------|----------|------|----------|-------------|
+| `date` | `invoice_header.date` | `NaiveDateTime` | Sí | Fecha de emisión de la factura |
+| `tot_itbms` | `invoice_header.tot_itbms` | `String` | Sí | Total de ITBMS (impuesto) |
+| `issuer_name` | `invoice_header.issuer_name` | `String` | Sí | Nombre del emisor/proveedor |
+| `issuer_ruc` | `invoice_header.issuer_ruc` | `String` | Sí | RUC (Registro Único de Contribuyente) del emisor |
+| `no` | `invoice_header.no` | `String` | Sí | Número de factura (ej: "FE01-00012345") |
+| `tot_amount` | `invoice_header.tot_amount` | `String` | Sí | Monto total de la factura |
+| `url` | `invoice_header.url` | `String` | Sí | URL del QR de consulta DGI |
+| `process_date` | `invoice_header.process_date` | `NaiveDateTime` | Sí | Fecha de procesamiento del sistema |
+| `reception_date` | `invoice_header.reception_date` | `NaiveDateTime` | Sí | Fecha de recepción (usado para ordenar) |
+| `type` | `invoice_header.type` | `String` | Sí | Tipo de factura ("01" = Factura, etc.) |
+| `cufe` | `invoice_header.cufe` | `String` | Sí | Código Único de Factura Electrónica |
 
 ##### Estructura del Summary
 
@@ -3875,6 +3865,8 @@ Authorization: Bearer {jwt_token}
       "Acceso a misiones premium",
       "Badge dorado personalizable"
     ],
+    "level_min_points": 2000,
+    "level_max_points": 3000,
     "next_level_hint": "Faltan 550 Lumis para Platinum Master",
     "lumis_to_next_level": 550,
     "next_level_name": "Platinum Master",
@@ -3913,6 +3905,17 @@ Authorization: Bearer {jwt_token}
   "cached": true
 }
 ```
+
+**Campos de Nivel:**
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `level_min_points` | `int` | Puntos mínimos requeridos para el nivel actual |
+| `level_max_points` | `int` | Puntos máximos del nivel actual (umbral para subir) |
+
+> **Tip para Frontend:** Para calcular el progreso dentro del nivel:
+> ```javascript
+> const progress = (total_lumis - level_min_points) / (level_max_points - level_min_points) * 100;
+> ```
 
 ---
 

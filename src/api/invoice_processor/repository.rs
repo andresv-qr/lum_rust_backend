@@ -424,6 +424,72 @@ pub async fn invoice_exists(
     Ok(exists)
 }
 
+// ============================================================================
+// MEF_PENDING FALLBACK
+// ============================================================================
+
+/// Saves invoice data to mef_pending table when automatic processing fails
+/// This allows manual review and processing later
+pub async fn save_to_mef_pending(
+    pool: &PgPool,
+    url: &str,
+    user_id: &str,
+    user_email: &str,
+    origin: &str,
+    error_message: &str,
+    cufe: Option<&str>,
+) -> Result<(), InvoiceProcessingError> {
+    info!("💾 Guardando factura en mef_pending para procesamiento manual");
+    info!("   URL: {}", url);
+    info!("   User ID: {}", user_id);
+    info!("   Error: {}", error_message);
+    if let Some(c) = cufe {
+        info!("   CUFE: {}", c);
+    }
+
+    let query = r#"
+        INSERT INTO public.mef_pending (
+            url, 
+            date, 
+            type, 
+            user_email, 
+            user_id, 
+            error, 
+            origin
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (url) DO UPDATE SET
+            date = EXCLUDED.date,
+            error = EXCLUDED.error,
+            user_id = EXCLUDED.user_id
+    "#;
+
+    // Parse user_id to i64
+    let user_id_i64: i64 = user_id.parse().unwrap_or_else(|e| {
+        warn!("Failed to parse user_id '{}' as i64: {}. Using 0.", user_id, e);
+        0
+    });
+
+    sqlx::query(query)
+        .bind(url)
+        .bind(Utc::now())
+        .bind("API_INVOICE")
+        .bind(user_email)
+        .bind(user_id_i64)
+        .bind(error_message)
+        .bind(origin)
+        .execute(pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to insert into mef_pending: {}", e);
+            InvoiceProcessingError::DatabaseError {
+                message: format!("Error saving to mef_pending: {}", e),
+            }
+        })?;
+
+    info!("✅ Factura guardada en mef_pending exitosamente");
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

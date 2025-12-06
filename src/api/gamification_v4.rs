@@ -21,6 +21,32 @@ use crate::{
 type ResponseJson<T> = Result<Json<ApiResponse<T>>, ApiError>;
 
 // ============================================================================
+// CONSTANTS FOR VALIDATION
+// ============================================================================
+
+/// Valid action types for gamification tracking
+const VALID_ACTIONS: &[&str] = &[
+    "daily_login",
+    "invoice_upload", 
+    "survey_complete",
+    "referral_complete",
+    "profile_complete",
+    "first_redemption",
+];
+
+/// Valid channel types
+const VALID_CHANNELS: &[&str] = &[
+    "mobile_app",
+    "whatsapp",
+    "web_app",
+    "telegram",
+    "api",
+];
+
+/// Maximum metadata JSON size in bytes (10KB)
+const MAX_METADATA_SIZE: usize = 10 * 1024;
+
+// ============================================================================
 // REQUEST/RESPONSE MODELS
 // ============================================================================
 
@@ -31,6 +57,43 @@ pub struct TrackActionRequest {
     pub channel: String,  // 'mobile_app', 'whatsapp', 'web_app'
     #[serde(default)]
     pub metadata: serde_json::Value,
+}
+
+impl TrackActionRequest {
+    /// Validate the request fields
+    pub fn validate(&self) -> Result<(), String> {
+        // Validate action
+        if !VALID_ACTIONS.contains(&self.action.as_str()) {
+            return Err(format!(
+                "Invalid action '{}'. Valid actions: {:?}",
+                self.action, VALID_ACTIONS
+            ));
+        }
+        
+        // Validate channel
+        if !VALID_CHANNELS.contains(&self.channel.as_str()) {
+            return Err(format!(
+                "Invalid channel '{}'. Valid channels: {:?}",
+                self.channel, VALID_CHANNELS
+            ));
+        }
+        
+        // Validate metadata size (prevent DoS with huge JSON)
+        let metadata_str = self.metadata.to_string();
+        if metadata_str.len() > MAX_METADATA_SIZE {
+            return Err(format!(
+                "Metadata too large ({} bytes). Maximum allowed: {} bytes",
+                metadata_str.len(), MAX_METADATA_SIZE
+            ));
+        }
+        
+        // Validate metadata is object or null (not array, string, etc.)
+        if !self.metadata.is_null() && !self.metadata.is_object() {
+            return Err("Metadata must be a JSON object or null".to_string());
+        }
+        
+        Ok(())
+    }
 }
 
 fn default_channel() -> String {
@@ -60,6 +123,8 @@ pub struct UserDashboard {
     pub level_description: Option<String>,
     pub level_color: Option<String>,
     pub level_benefits: Option<serde_json::Value>,
+    pub level_min_points: Option<i32>,  // Minimum points for current level
+    pub level_max_points: Option<i32>,  // Maximum points for current level
     pub next_level_hint: Option<String>,
     pub lumis_to_next_level: Option<i32>,
     pub next_level_name: Option<String>,
@@ -156,9 +221,9 @@ pub async fn track_action(
 ) -> ResponseJson<GamificationResponse> {
     let start_time = Utc::now();
     
-    // Validate action type
-    if !["daily_login", "invoice_upload", "survey_complete"].contains(&request.action.as_str()) {
-        return Err(ApiError::validation_error("Invalid action type"));
+    // Validate request using the new validation method
+    if let Err(validation_error) = request.validate() {
+        return Err(ApiError::validation_error(&validation_error));
     }
     
     // Call the database function
@@ -190,12 +255,12 @@ pub async fn track_action(
     let user_info = sqlx::query!(
         r#"
         SELECT 
-            COALESCE(p.total_xp, 0) as total_lumis,
-            COALESCE(p.current_level, 1) as level,
+            COALESCE(us.total_xp, 0) as total_lumis,
+            COALESCE(us.current_level_id, 1) as level,
             COALESCE(l.level_name, 'Chispa Lüm') as name
         FROM public.dim_users u
-        LEFT JOIN gamification.fact_user_progression p ON u.id = p.user_id
-        LEFT JOIN gamification.dim_user_levels l ON p.current_level = l.level_id
+        LEFT JOIN gamification.user_status us ON u.id = us.user_id
+        LEFT JOIN gamification.dim_user_levels l ON us.current_level_id = l.level_id
         WHERE u.id = $1
         "#,
         current_user.user_id as i32
@@ -234,38 +299,26 @@ pub async fn get_dashboard(
         UserDashboard,
         r#"
         SELECT 
-            lum.user_id::int4 as user_id,
-            u.email,
-            lum.total_invoices::int4 as total_lumis,  -- Representa facturas, no balance
-            lum.current_level::int4 as current_level,
-            lum.level_name,
-            CONCAT(lum.level_name, ' - Basado en ', lum.total_invoices, ' facturas') as level_description,
-            lum.level_color,
-            lum.level_benefits,
-            CONCAT('Faltan ', lum.lumis_to_next_level, ' facturas para ', lum.next_level_name) as next_level_hint,
-            lum.lumis_to_next_level::int4 as lumis_to_next_level,
-            lum.next_level_name,
-            -- Obtener streaks activas reales
-            COALESCE(
-                (SELECT jsonb_agg(
-                    jsonb_build_object(
-                        'type', streak_type,
-                        'current', current_count,
-                        'max', max_count,
-                        'last_date', last_activity_date
-                    )
-                ) FROM gamification.fact_user_streaks 
-                WHERE user_id = lum.user_id AND is_active = true), 
-                '[]'::jsonb
-            ) as active_streaks,
-            -- Misiones (mantener compatibilidad)
-            0::int8 as active_missions_count,
+            user_id::int4,
+            email,
+            total_invoices::int4 as total_lumis,
+            current_level::int4,
+            level_name,
+            CONCAT(level_name, ' - Basado en ', total_invoices, ' facturas') as level_description,
+            level_color,
+            level_benefits,
+            level_min_points::int4,
+            level_max_points::int4,
+            CONCAT('Faltan ', invoices_to_next_level, ' facturas para ', next_level_name) as next_level_hint,
+            invoices_to_next_level::int4 as lumis_to_next_level,
+            next_level_name,
+            active_streaks,
+            active_mechanics_count::int8 as active_missions_count,
             0::int8 as completed_missions_count,
             0::int8 as total_achievements,
             '[]'::jsonb as recent_activity
-        FROM gamification.vw_user_lum_levels lum
-        JOIN public.dim_users u ON lum.user_id = u.id
-        WHERE lum.user_id = $1 AND u.is_active = true
+        FROM gamification.v_user_dashboard
+        WHERE user_id = $1
         "#,
         current_user.user_id as i32
     )
@@ -294,30 +347,31 @@ pub async fn get_missions(
         Mission,
         r#"
         SELECT 
-            m.mission_code,
-            m.mission_name,
-            m.mission_type,
-            COALESCE(r.requirements_json->>'description', m.mission_name) as description,
-            m.current_progress,
-            m.target_count,
+            m.mechanic_code as mission_code,
+            m.mechanic_name as mission_name,
+            'mission' as mission_type,
+            m.description,
+            (um.progress->>'current')::int4 as current_progress,
+            (m.config->>'target_count')::int4 as target_count,
             m.reward_lumis,
-            m.due_date,
-            m.status,
+            m.end_date::date as due_date,
+            um.status,
             CASE 
-                WHEN m.target_count > 0 THEN (m.current_progress::float / m.target_count::float * 100)::float
+                WHEN (m.config->>'target_count')::int4 > 0 THEN 
+                    ((um.progress->>'current')::float / (m.config->>'target_count')::float * 100)::float
                 ELSE 0.0
             END as progress_percentage
-        FROM gamification.fact_user_missions m
-        LEFT JOIN gamification.dim_rewards_config r ON m.mission_code = r.reward_code
-        WHERE m.user_id = $1
+        FROM gamification.user_mechanics um
+        JOIN gamification.dim_mechanics m ON um.mechanic_id = m.mechanic_id
+        WHERE um.user_id = $1 AND m.mechanic_type = 'mission'
         ORDER BY 
-            CASE m.status 
+            CASE um.status 
                 WHEN 'active' THEN 1 
                 WHEN 'completed' THEN 2 
                 ELSE 3 
             END,
-            m.due_date ASC NULLS LAST,
-            m.created_at DESC
+            m.end_date ASC NULLS LAST,
+            um.started_at DESC
         "#,
         current_user.user_id as i32
     )
@@ -342,16 +396,17 @@ pub async fn get_events(
         Event,
         r#"
         SELECT 
-            event_code,
-            event_name,
-            event_type,
+            mechanic_code as event_code,
+            mechanic_name as event_name,
+            (config->>'event_type') as event_type,
             (EXTRACT(EPOCH FROM (start_date - NOW())) / 60)::float8 as starts_in_minutes,
             (EXTRACT(EPOCH FROM (end_date - NOW())) / 60)::float8 as ends_in_minutes,
-            multiplier,
-            COALESCE(config_json->>'description', event_name) as description,
+            (config->>'multiplier')::numeric as multiplier,
+            description,
             (NOW() BETWEEN start_date AND end_date) as is_active_now
-        FROM gamification.dim_events
+        FROM gamification.dim_mechanics
         WHERE is_active = true
+        AND mechanic_type = 'event'
         AND (
             (NOW() BETWEEN start_date AND end_date) OR -- Currently active
             (start_date > NOW() AND start_date < NOW() + INTERVAL '24 hours') -- Starting within 24h
@@ -383,29 +438,30 @@ pub async fn get_achievements(
         Achievement,
         r#"
         SELECT 
-            a.achievement_code,
-            a.achievement_name,
-            a.description,
-            a.category,
-            a.difficulty,
-            a.reward_lumis,
-            ua.unlocked_at,
-            (ua.user_id IS NOT NULL) as is_unlocked
-        FROM gamification.dim_achievements a
-        LEFT JOIN gamification.fact_user_achievements ua 
-            ON a.achievement_id = ua.achievement_id 
-            AND ua.user_id = $1
-        WHERE a.is_active = true
+            m.mechanic_code as achievement_code,
+            m.mechanic_name as achievement_name,
+            m.description,
+            (m.config->>'category') as category,
+            m.difficulty,
+            m.reward_lumis,
+            um.completed_at as unlocked_at,
+            (um.user_id IS NOT NULL AND um.status IN ('completed', 'claimed')) as is_unlocked
+        FROM gamification.dim_mechanics m
+        LEFT JOIN gamification.user_mechanics um 
+            ON m.mechanic_id = um.mechanic_id 
+            AND um.user_id = $1
+        WHERE m.is_active = true
+        AND m.mechanic_type = 'achievement'
         ORDER BY 
             is_unlocked DESC,
-            CASE a.difficulty 
+            CASE m.difficulty 
                 WHEN 'bronze' THEN 1 
                 WHEN 'silver' THEN 2 
                 WHEN 'gold' THEN 3 
                 WHEN 'platinum' THEN 4 
                 ELSE 5 
             END,
-            a.achievement_name
+            m.mechanic_name
         "#,
         current_user.user_id as i32
     )
@@ -434,18 +490,19 @@ pub async fn get_mechanics_info(
             mechanic_name,
             mechanic_type,
             description,
-            display_name,
-            short_description,
-            long_description,
-            how_it_works,
-            rewards,
-            tips
-        FROM gamification.v_mechanics_info
+            mechanic_name as display_name,
+            description as short_description,
+            description as long_description,
+            config as how_it_works,
+            jsonb_build_object('lumis', reward_lumis) as rewards,
+            '{}'::jsonb as tips
+        FROM gamification.dim_mechanics
+        WHERE is_active = true
         ORDER BY 
             CASE mechanic_type 
                 WHEN 'streak' THEN 1 
-                WHEN 'milestone' THEN 2 
-                WHEN 'mission' THEN 3 
+                WHEN 'mission' THEN 2 
+                WHEN 'achievement' THEN 3 
                 ELSE 4 
             END,
             mechanic_name
@@ -478,13 +535,13 @@ pub async fn get_leaderboard(
         SELECT 
             u.id::int4 as user_id,
             COALESCE(u.name, u.email) as username,
-            COALESCE(p.total_xp, 0)::int8 as total_lumis,
-            COALESCE(p.current_level, 1)::int4 as current_level,
+            COALESCE(us.total_xp, 0)::int8 as total_lumis,
+            COALESCE(us.current_level_id, 1)::int4 as current_level,
             COALESCE(l.level_name, 'Chispa Lüm') as level_name,
-            ROW_NUMBER() OVER (ORDER BY COALESCE(p.total_xp, 0) DESC) as rank
+            ROW_NUMBER() OVER (ORDER BY COALESCE(us.total_xp, 0) DESC) as rank
         FROM public.dim_users u
-        LEFT JOIN gamification.fact_user_progression p ON u.id = p.user_id
-        LEFT JOIN gamification.dim_user_levels l ON p.current_level = l.level_id
+        LEFT JOIN gamification.user_status us ON u.id = us.user_id
+        LEFT JOIN gamification.dim_user_levels l ON us.current_level_id = l.level_id
         WHERE u.is_active = true
         ORDER BY total_lumis DESC, u.id ASC
         LIMIT $1 OFFSET $2

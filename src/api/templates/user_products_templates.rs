@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::api::common::{HasUpdateDate, HasId};
 
 /// Query templates for user_products domain
 pub struct UserProductsQueryTemplates;
@@ -9,50 +10,52 @@ impl UserProductsQueryTemplates {
         r#"
         SELECT 
             p.code,
+            p.code_cleaned,
             p.issuer_name,
+            p.issuer_ruc,
             p.description,
-            p.l1_gemini as l1,
-            p.l2_gemini as l2,
-            p.l3_gemini as l3,
-            p.l4_gemini as l4,
-            p.process_date
+            p.l1,
+            p.l2,
+            p.l3,
+            p.l4,
+            p.update_date
         FROM public.dim_product p
         JOIN (
-            SELECT DISTINCT d.code, h.issuer_name, d.description
+            SELECT DISTINCT d.code, h.issuer_ruc
             FROM public.invoice_detail d
             JOIN public.invoice_header h ON d.cufe = h.cufe
             WHERE h.user_id = $1
         ) u ON p.code = u.code
-           AND p.issuer_name = u.issuer_name
-           AND p.description = u.description
-        ORDER BY p.process_date DESC, p.issuer_name ASC, p.description ASC
+           AND p.issuer_ruc = u.issuer_ruc
+        ORDER BY p.update_date DESC, p.issuer_name ASC, p.description ASC
         LIMIT $2 OFFSET $3
         "#
     }
     
-    /// get_user_products_with_date_filter - Get products with process_date filter
+    /// get_user_products_with_date_filter - Get products with update_date filter
     pub fn get_user_products_with_date_filter_query() -> &'static str {
         r#"
         SELECT 
             p.code,
+            p.code_cleaned,
             p.issuer_name,
+            p.issuer_ruc,
             p.description,
-            p.l1_gemini as l1,
-            p.l2_gemini as l2,
-            p.l3_gemini as l3,
-            p.l4_gemini as l4,
-            p.process_date
+            p.l1,
+            p.l2,
+            p.l3,
+            p.l4,
+            p.update_date
         FROM public.dim_product p
         JOIN (
-            SELECT DISTINCT d.code, h.issuer_name, d.description
+            SELECT DISTINCT d.code, h.issuer_ruc
             FROM public.invoice_detail d
             JOIN public.invoice_header h ON d.cufe = h.cufe
             WHERE h.user_id = $1
         ) u ON p.code = u.code
-           AND p.issuer_name = u.issuer_name
-           AND p.description = u.description
-        WHERE p.process_date >= $4
-        ORDER BY p.process_date DESC, p.issuer_name ASC, p.description ASC
+           AND p.issuer_ruc = u.issuer_ruc
+        WHERE p.update_date >= $4
+        ORDER BY p.update_date DESC, p.issuer_name ASC, p.description ASC
         LIMIT $2 OFFSET $3
         "#
     }
@@ -86,7 +89,7 @@ impl UserProductsQueryTemplates {
         ) u ON p.code = u.code
            AND p.issuer_name = u.issuer_name
            AND p.description = u.description
-        WHERE p.process_date >= $2
+        WHERE p.update_date >= $2
         "#
     }
     
@@ -103,13 +106,28 @@ impl UserProductsQueryTemplates {
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct UserProductsResponse {
     pub code: Option<String>,
+    pub code_cleaned: Option<String>,
     pub issuer_name: Option<String>,
+    pub issuer_ruc: Option<String>,
     pub description: Option<String>,
     pub l1: Option<String>,
     pub l2: Option<String>,
     pub l3: Option<String>,
     pub l4: Option<String>,
-    pub process_date: Option<String>,
+    pub update_date: Option<chrono::NaiveDateTime>,
+}
+
+// Implement traits for incremental sync helpers
+impl HasUpdateDate for UserProductsResponse {
+    fn get_update_date(&self) -> Option<chrono::NaiveDateTime> {
+        self.update_date
+    }
+}
+
+impl HasId for UserProductsResponse {
+    fn get_id(&self) -> Option<String> {
+        self.code.clone()
+    }
 }
 
 /// Count result for pagination

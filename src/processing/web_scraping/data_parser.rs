@@ -13,24 +13,67 @@ pub fn parse_invoice_data(
     let main_info = &extracted_data.header;
     let line_items = &extracted_data.details;
 
+    // ✅ VALIDACIÓN ESTRICTA: CUFE es obligatorio y no puede estar vacío
     let cufe = main_info
         .get("cufe")
-        .context("CUFE not found in main info")?
+        .filter(|s| !s.is_empty())
+        .context("CUFE not found or empty in main info")?
         .clone();
 
-    let _date_str = main_info.get("date").cloned().unwrap_or_default();
+    // ✅ VALIDACIÓN ESTRICTA: Número de factura es obligatorio y no puede estar vacío
+    let no = main_info
+        .get("no")
+        .filter(|s| !s.is_empty())
+        .context("Invoice number (no) not found or empty")?
+        .clone();
+
+    // ✅ VALIDACIÓN ESTRICTA: Fecha es obligatoria y debe tener formato válido
+    let date_str = main_info
+        .get("date")
+        .filter(|s| !s.is_empty())
+        .context("Invoice date not found or empty")?;
+    
+    let date = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S")
+        .context(format!("Invalid date format: '{}'. Expected format: DD/MM/YYYY HH:MM:SS", date_str))?;
+
+    // ✅ VALIDACIÓN ESTRICTA: Nombre del emisor es obligatorio y no puede estar vacío
+    let issuer_name = main_info
+        .get("emisor_name")
+        .filter(|s| !s.is_empty())
+        .context("Issuer name not found or empty")?
+        .clone();
+
+    // ✅ VALIDACIÓN ESTRICTA: RUC del emisor es obligatorio y no puede estar vacío
+    let issuer_ruc = main_info
+        .get("emisor_ruc")
+        .filter(|s| !s.is_empty())
+        .context("Issuer RUC not found or empty")?
+        .clone();
+
+    // ✅ VALIDACIÓN ESTRICTA: Monto total es obligatorio y debe ser > 0
+    let tot_amount = main_info
+        .get("tot_amount")
+        .and_then(|s| to_f64(s))
+        .filter(|&amount| amount > 0.0)
+        .context("Total amount not found, invalid, or must be greater than 0")?;
+    
+    // Campos opcionales (pueden estar vacíos)
+    let issuer_dv = main_info.get("emisor_dv").cloned().unwrap_or_default();
+    let issuer_address = main_info.get("emisor_address").cloned().unwrap_or_default();
+    let issuer_phone = main_info.get("emisor_phone").cloned().unwrap_or_default();
+    let tot_itbms = main_info.get("tot_itbms").and_then(|s| to_f64(s)).unwrap_or(0.0);
     
     let header = InvoiceHeader {
-        no: main_info.get("no").cloned().unwrap_or_default(),
-        date: main_info.get("date").and_then(|s| NaiveDateTime::parse_from_str(&s, "%d/%m/%Y %H:%M:%S").ok()),
-        cufe: main_info.get("cufe").cloned().unwrap_or_default(),
-        issuer_name: main_info.get("emisor_name").cloned().unwrap_or_default(),
-        issuer_ruc: main_info.get("emisor_ruc").cloned().unwrap_or_default(),
-        issuer_dv: main_info.get("emisor_dv").cloned().unwrap_or_default(),
-        issuer_address: main_info.get("emisor_address").cloned().unwrap_or_default(),
-        issuer_phone: main_info.get("emisor_phone").cloned().unwrap_or_default(),
-        tot_amount: main_info.get("tot_amount").and_then(|s| to_f64(s)).unwrap_or(0.0),
-        tot_itbms: main_info.get("tot_itbms").and_then(|s| to_f64(s)).unwrap_or(0.0),
+        no,
+        date: Some(date),
+        cufe: cufe.clone(),
+        issuer_name,
+        issuer_ruc,
+        issuer_dv,
+        issuer_address,
+        issuer_phone,
+        tot_amount,
+        tot_itbms,
         url: url.to_string(),
         r#type: "".to_string(), // Will be set based on URL analysis
         process_date: chrono::Utc::now(),

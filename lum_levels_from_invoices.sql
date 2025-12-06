@@ -141,10 +141,10 @@ FROM user_with_levels uwl
 LEFT JOIN public.dim_users u ON uwl.user_id = u.id
 LEFT JOIN gamification.dim_user_levels ul ON uwl.calculated_level = ul.level_number
 LEFT JOIN gamification.dim_user_levels next_ul ON (uwl.calculated_level + 1) = next_ul.level_number
-LEFT JOIN gamification.fact_user_streaks fs ON uwl.user_id = fs.user_id AND fs.streak_type = 'daily_login'
-LEFT JOIN gamification.fact_user_streaks fs_month ON uwl.user_id = fs_month.user_id AND fs_month.streak_type = 'consistent_month'
-LEFT JOIN gamification.dim_achievements da_week ON da_week.achievement_code = 'week_perfect'
-LEFT JOIN gamification.dim_achievements da_month ON da_month.achievement_code = 'consistent_month'
+LEFT JOIN gamification.user_streaks fs ON uwl.user_id = fs.user_id AND fs.streak_type = 'daily_login'
+LEFT JOIN gamification.user_streaks fs_month ON uwl.user_id = fs_month.user_id AND fs_month.streak_type = 'consistent_month'
+LEFT JOIN gamification.dim_mechanics da_week ON da_week.mechanic_code = 'week_perfect'
+LEFT JOIN gamification.dim_mechanics da_month ON da_month.mechanic_code = 'consistent_month'
 WHERE u.is_active = true;
 
 -- 3. CREAR ÍNDICES PARA PERFORMANCE
@@ -264,7 +264,7 @@ BEGIN
     -- Obtener el streak anterior y fecha de inicio para detectar completions
     SELECT COALESCE(fus.current_count, 0), fus.streak_start_date
     INTO old_streak, old_streak_start_date
-    FROM gamification.fact_user_streaks fus
+    FROM gamification.user_streaks fus
     WHERE fus.user_id = p_user_id AND fus.streak_type = 'consistent_month';
     
     -- Calcular racha de semanas consecutivas
@@ -282,8 +282,8 @@ BEGIN
         current_start_date := old_streak_start_date;
     END IF;
     
-    -- Actualizar o insertar en fact_user_streaks (incluir campos requeridos)
-    INSERT INTO gamification.fact_user_streaks (
+    -- Actualizar o insertar en user_streaks (incluir campos requeridos)
+    INSERT INTO gamification.user_streaks (
         user_id, 
         streak_type, 
         current_count,
@@ -331,19 +331,34 @@ DECLARE
     accumulation_def_id INTEGER;
     reward_amount INTEGER;
 BEGIN
-    -- Buscar la configuración del achievement en gamification.dim_achievements
+    -- Buscar la configuración del achievement en gamification.dim_mechanics
     SELECT * INTO achievement_record
-    FROM gamification.dim_achievements 
-    WHERE achievement_code = p_achievement_code;
+    FROM gamification.dim_mechanics 
+    WHERE mechanic_code = p_achievement_code;
     
-    -- Si no existe el achievement, salir
+    -- Si no existe el achievement, crear uno por defecto con 1 lumi (evita bloqueo de flujo)
     IF NOT FOUND THEN
-        RAISE NOTICE 'Achievement % no encontrado', p_achievement_code;
-        RETURN;
+        INSERT INTO gamification.dim_mechanics (
+            mechanic_code,
+            mechanic_name,
+            mechanic_type,
+            description,
+            reward_lumis,
+            created_at
+        ) VALUES (
+            p_achievement_code,
+            p_achievement_code,
+            'achievement',
+            format('Auto-created achievement for %', p_achievement_code),
+            1,
+            NOW()
+        ) RETURNING * INTO achievement_record;
+
+        RAISE NOTICE 'Achievement % no encontrado — creado por defecto con 1 Lümis', p_achievement_code;
     END IF;
     
     -- Extraer la cantidad de recompensa
-    reward_amount := achievement_record.points_reward;
+    reward_amount := achievement_record.reward_lumis;
     
     -- Si no hay recompensa, salir
     IF reward_amount IS NULL OR reward_amount <= 0 THEN
@@ -366,8 +381,8 @@ BEGIN
             created_at
         ) VALUES (
             p_achievement_code,
-            achievement_record.achievement_name,
-            format('Logro %s: %s', p_achievement_code, achievement_record.achievement_name),
+            achievement_record.mechanic_name,
+            format('Logro %s: %s', p_achievement_code, achievement_record.mechanic_name),
             reward_amount,
             NOW()
         ) RETURNING id INTO accumulation_def_id;
@@ -413,7 +428,7 @@ BEGIN
     -- Obtener el streak anterior, última fecha de login y fecha de inicio de racha
     SELECT COALESCE(fus.current_count, 0), fus.last_activity_date, fus.streak_start_date
     INTO old_streak, last_login, old_streak_start_date
-    FROM gamification.fact_user_streaks fus
+    FROM gamification.user_streaks fus
     WHERE fus.user_id = p_user_id AND fus.streak_type = 'daily_login';
     
     -- Calcular nuevo streak basado en login consecutivos
@@ -437,7 +452,7 @@ BEGIN
     END IF;
     
     -- Actualizar o insertar el streak
-    INSERT INTO gamification.fact_user_streaks (
+    INSERT INTO gamification.user_streaks (
         user_id, 
         streak_type, 
         current_count,
@@ -494,7 +509,7 @@ BEGIN
     IF p_achievement_code = 'week_perfect' THEN
         SELECT COALESCE(fus.current_count, 0), fus.streak_start_date
         INTO user_streak, user_streak_start
-        FROM gamification.fact_user_streaks fus
+        FROM gamification.user_streaks fus
         WHERE fus.user_id = p_user_id AND fus.streak_type = 'daily_login';
         
         required_count := 7;
@@ -502,7 +517,7 @@ BEGIN
     ELSIF p_achievement_code = 'consistent_month' THEN
         SELECT COALESCE(fus.current_count, 0), fus.streak_start_date
         INTO user_streak, user_streak_start
-        FROM gamification.fact_user_streaks fus
+        FROM gamification.user_streaks fus
         WHERE fus.user_id = p_user_id AND fus.streak_type = 'consistent_month';
         
         required_count := 4;
