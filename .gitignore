@@ -38,3 +38,11 @@ dump.rdb
 # Environment
 .env
 .env.local
+
+# Archivos binarios grandes
+lum_rust_ws
+test_server/target/
+models/*.onnx
+
+# Archivos de depuración grandes
+**/target/debug/deps/*
