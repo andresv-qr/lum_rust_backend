@@ -20,7 +20,7 @@ use crate::{
         get_deleted_items_since,
         extract_max_update_date,
         extract_record_ids,
-        validate_date_format,
+        parse_date_to_naive,
     },
     api::templates::user_issuers_templates::{
         UserIssuersQueryTemplates, 
@@ -54,21 +54,12 @@ pub async fn get_user_issuers(
     let offset = params.offset.unwrap_or(0).max(0);
     let user_id = current_user.user_id;
 
-    // Validate and parse update_date_from if provided
-    let update_date_filter = if let Some(date_str) = &params.update_date_from {
-        match validate_date_format(date_str) {
-            Ok(validated) => {
-                // Parse to NaiveDateTime for database query
-                let parsed_date = if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(&validated) {
-                    dt.naive_utc()
-                } else if let Ok(date) = chrono::NaiveDate::parse_from_str(&validated, "%Y-%m-%d") {
-                    date.and_hms_opt(0, 0, 0).unwrap()
-                } else {
-                    error!("❌ Failed to parse validated date: {} [{}]", validated, request_id);
-                    return Err(StatusCode::BAD_REQUEST);
-                };
-                info!("🗓️ Using update_date filter: {} [{}]", parsed_date, request_id);
-                Some(parsed_date)
+    // Validate and parse update_date_from if provided (must be NaiveDateTime for PostgreSQL)
+    let update_date_filter: Option<chrono::NaiveDateTime> = if let Some(date_str) = &params.update_date_from {
+        match parse_date_to_naive(date_str) {
+            Ok(naive_dt) => {
+                info!("🗓️ Using update_date filter: {} [{}]", naive_dt, request_id);
+                Some(naive_dt)
             },
             Err(e) => {
                 error!("❌ Invalid date format: {} [{}]", e, request_id);

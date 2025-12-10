@@ -13,6 +13,7 @@ use crate::api::templates::invoices_templates::{
 };
 use crate::api::ocr_iterative_v4::{process_ocr_iterative, save_ocr_invoice};
 use crate::api::upload_ocr_v4::upload_ocr_invoice;
+use crate::api::upload_ocr_retry_v4::upload_ocr_retry;
 use crate::middleware::auth::extract_current_user;
 use crate::state::AppState;
 
@@ -26,6 +27,8 @@ pub fn create_invoices_v4_router() -> Router<Arc<AppState>> {
         .route("/save-ocr", post(save_ocr_invoice))
         // Upload OCR endpoint (protected by auth)
         .route("/upload-ocr", post(upload_ocr_invoice))
+        // Upload OCR Retry endpoint - for missing fields (protected by auth)
+        .route("/upload-ocr-retry", post(upload_ocr_retry))
         // Apply auth middleware to protected routes
         .layer(axum::middleware::from_fn(extract_current_user))
 }

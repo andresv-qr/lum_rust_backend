@@ -52,6 +52,7 @@ pub mod tinder_v4; // Módulo Lumimatch - preguntas tipo Tinder
 pub mod gamification_v4; // Nuevo módulo para gamificación completa
 pub mod ocr_iterative_v4; // Nuevo módulo para OCR iterativo
 pub mod upload_ocr_v4; // Nuevo módulo para upload OCR endpoint
+pub mod upload_ocr_retry_v4; // Nuevo módulo para retry de OCR con campos específicos
 pub mod gamification_service; // Servicio de gamificación (cálculo y acreditación de Lumis)
 pub mod user_issuers_v4; // Nuevo módulo para obtener issuers de un usuario
 pub mod user_products_v4; // Nuevo módulo para obtener productos de un usuario

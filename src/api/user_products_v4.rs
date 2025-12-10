@@ -20,7 +20,7 @@ use crate::{
         get_deleted_items_since,
         extract_max_update_date,
         extract_record_ids,
-        validate_date_format,
+        parse_date_to_naive,
     },
     api::templates::user_products_templates::{
         UserProductsQueryTemplates, 
@@ -54,12 +54,12 @@ pub async fn get_user_products(
     let offset = params.offset.unwrap_or(0).max(0); // Min 0
     let user_id = current_user.user_id;
 
-    // Validate and parse update_date_from if provided
-    let update_date_filter = if let Some(date_str) = &params.update_date_from {
-        match validate_date_format(date_str) {
-            Ok(validated) => {
-                info!("🗓️ Using update_date filter: {} [{}]", validated, request_id);
-                Some(validated)
+    // Validate and parse update_date_from if provided (must be NaiveDateTime for PostgreSQL)
+    let update_date_filter: Option<chrono::NaiveDateTime> = if let Some(date_str) = &params.update_date_from {
+        match parse_date_to_naive(date_str) {
+            Ok(naive_dt) => {
+                info!("🗓️ Using update_date filter: {} [{}]", naive_dt, request_id);
+                Some(naive_dt)
             },
             Err(e) => {
                 error!("❌ Invalid date format: {} [{}]", e, request_id);
@@ -120,7 +120,9 @@ pub async fn get_user_products(
 
     // Get deleted items if update_date_from was provided
     let deleted_items = if let Some(since) = &update_date_filter {
-        get_deleted_items_since(&state.db_pool, "dim_product", "code", since).await
+        // Convertir NaiveDateTime a string ISO para get_deleted_items_since
+        let since_str = since.format("%Y-%m-%dT%H:%M:%S%.6f").to_string();
+        get_deleted_items_since(&state.db_pool, "dim_product", "code", &since_str).await
     } else {
         vec![]
     };

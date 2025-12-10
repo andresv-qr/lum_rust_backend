@@ -75,16 +75,85 @@ pub struct OcrProcessResponse {
     pub products: Option<Vec<OcrProductResponse>>,
     pub cost_lumis: i32,
     pub message: String,
+    /// Lista de campos obligatorios faltantes (solo presente cuando success=false por validación)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub missing_fields: Option<Vec<RequiredField>>,
+    /// Datos extraídos exitosamente (para usar en retry)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extracted_data: Option<ExtractedOcrData>,
 }
 
 /// Product details in OCR response
-#[derive(Debug, serde::Serialize, Clone)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
 pub struct OcrProductResponse {
     pub name: String,
     pub quantity: f64,
     pub unit_price: f64,
     pub total_price: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub partkey: Option<String>,
+}
+
+/// Campos obligatorios que deben estar presentes
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RequiredField {
+    pub field_name: String,
+    pub field_key: String,
+    pub description: String,
+}
+
+/// Datos extraídos del OCR (para enviar al retry)
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ExtractedOcrData {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ruc: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dv: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub invoice_number: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total: Option<f64>,
+    #[serde(default)]
+    pub products: Vec<OcrProductResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub issuer_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub issuer_address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tot_itbms: Option<f64>,
+}
+
+/// Resultado de validación de campos obligatorios
+#[derive(Debug, serde::Serialize)]
+pub struct ValidationResult {
+    pub is_valid: bool,
+    pub missing_fields: Vec<RequiredField>,
+    pub partial_data: PartialOcrData,
+}
+
+/// Datos parciales extraídos (para cuando faltan campos)
+#[derive(Debug, serde::Serialize, Clone)]
+pub struct PartialOcrData {
+    pub ruc: Option<String>,
+    pub dv: Option<String>,
+    pub invoice_number: Option<String>,
+    pub total: Option<f64>,
+    pub products: Vec<OcrProductResponse>,
+    pub issuer_name: Option<String>,
+    pub issuer_address: Option<String>,
+    pub date: Option<String>,
+    pub tot_itbms: Option<f64>,
+}
+
+/// Request para retry de OCR con campos específicos y datos previos
+#[derive(Debug, serde::Deserialize)]
+pub struct OcrRetryRequest {
+    pub missing_fields: Vec<String>,  // Lista de field_keys a buscar
+    /// Datos extraídos previamente (del primer OCR)
+    #[serde(default)]
+    pub previous_data: Option<ExtractedOcrData>,
 }
 
 /// Main OCR processing service
@@ -116,6 +185,8 @@ impl OcrService {
                     products: None,
                     cost_lumis: 0,
                     message: "Usuario no encontrado. Por favor, regístrate primero.".to_string(),
+                    missing_fields: None,
+                    extracted_data: None,
                 });
             }
         };
@@ -138,6 +209,8 @@ impl OcrService {
                 products: None,
                 cost_lumis: 0,
                 message: "La imagen no parece ser una factura válida. Por favor, envía una imagen clara de tu factura.".to_string(),
+                missing_fields: None,
+                extracted_data: None,
             });
         }
 
@@ -159,6 +232,8 @@ impl OcrService {
                     products: None,
                     cost_lumis: 0,
                     message: format!("{}. Usa más facturas con código QR para mejorar tu límite de OCR.", rate_message),
+                    missing_fields: None,
+                    extracted_data: None,
                 });
             }
         }
@@ -187,17 +262,28 @@ impl OcrService {
                     products: None,
                     cost_lumis: ocr_cost,
                     message: "Error procesando la imagen. Intenta con una imagen más clara.".to_string(),
+                    missing_fields: None,
+                    extracted_data: None,
                 });
             }
         };
 
-        // 7. Validate required fields
-        if let Err(e) = Self::validate_required_fields(&ocr_response) {
-            warn!("Validación de campos falló para {}: {}", request.user_identifier, e);
+        // 7. Validate required fields (new v2 validation with detailed missing fields)
+        let validation_result = Self::validate_required_fields_v2(&ocr_response);
+        
+        if !validation_result.is_valid {
+            warn!("Validación de campos obligatorios falló para {}: {} campos faltantes", 
+                  request.user_identifier, validation_result.missing_fields.len());
             
-            Self::log_ocr_attempt(&state, &request.user_identifier, "field_validation_failed", &e.to_string()).await?;
+            let missing_field_names: Vec<String> = validation_result.missing_fields
+                .iter()
+                .map(|f| f.field_name.clone())
+                .collect();
             
-            // Devolver datos parciales que SÍ fueron extraídos
+            Self::log_ocr_attempt(&state, &request.user_identifier, "missing_required_fields", 
+                &format!("Campos faltantes: {}", missing_field_names.join(", "))).await?;
+            
+            // Devolver datos parciales + información de campos faltantes
             let partial_products: Vec<OcrProductResponse> = ocr_response.products.iter().map(|p| {
                 OcrProductResponse {
                     name: p.name.clone(),
@@ -207,6 +293,25 @@ impl OcrService {
                     partkey: None,
                 }
             }).collect();
+            
+            // Construir extracted_data con los campos que SÍ se extrajeron
+            let extracted_data = ExtractedOcrData {
+                ruc: ocr_response.ruc.clone(),
+                dv: ocr_response.dv.clone(),
+                invoice_number: ocr_response.invoice_number.clone(),
+                total: ocr_response.total,
+                products: partial_products.clone(),
+                issuer_name: ocr_response.issuer_name.clone(),
+                issuer_address: ocr_response.address.clone(),
+                date: ocr_response.date.clone(),
+                tot_itbms: None,
+            };
+            
+            // Construir mensaje descriptivo
+            let message = format!(
+                "No se pudieron detectar todos los campos obligatorios. Campos faltantes: {}. Por favor, sube una nueva imagen donde estos campos sean claramente visibles, o usa el endpoint /api/v4/invoices/upload-ocr-retry para reintentar con una imagen adicional.",
+                missing_field_names.join(", ")
+            );
             
             return Ok(OcrProcessResponse {
                 success: false,
@@ -221,7 +326,9 @@ impl OcrService {
                 tot_itbms: Some(0.0),
                 products: if partial_products.is_empty() { None } else { Some(partial_products) },
                 cost_lumis: ocr_cost,
-                message: e.to_string(),
+                message,
+                missing_fields: Some(validation_result.missing_fields),
+                extracted_data: Some(extracted_data),
             });
         }
 
@@ -260,6 +367,8 @@ impl OcrService {
                 }).collect()),
                 cost_lumis: ocr_cost,
                 message: "Esta factura ya fue registrada anteriormente.".to_string(),
+                missing_fields: None,
+                extracted_data: None,
             });
         }
 
@@ -296,6 +405,8 @@ impl OcrService {
                 }).collect()),
                 cost_lumis: ocr_cost,
                 message: "Tu factura fue procesada correctamente, pero hubo un problema guardando los datos. Nuestro equipo lo revisará.".to_string(),
+                missing_fields: None,
+                extracted_data: None,
             });
         }
 
@@ -340,6 +451,8 @@ impl OcrService {
             products: Some(products_response),
             cost_lumis: ocr_cost,
             message: "Factura procesada exitosamente. Pendiente de validación por nuestro equipo.".to_string(),
+            missing_fields: None,
+            extracted_data: None,
         })
     }
 
@@ -632,85 +745,99 @@ impl OcrService {
     }
 
     /// Validate required fields and collect all missing fields
-    fn validate_required_fields(ocr_response: &OcrResponse) -> Result<()> {
-        let mut missing_fields: Vec<String> = Vec::new();
+    /// Returns ValidationResult with partial data and missing fields info
+    fn validate_required_fields_v2(ocr_response: &OcrResponse) -> ValidationResult {
+        let mut missing_fields: Vec<RequiredField> = Vec::new();
         
-        // Validar nombre del comercio
-        if let Some(name) = &ocr_response.issuer_name {
-            if name.trim().is_empty() {
-                missing_fields.push("nombre del comercio".to_string());
-            }
+        // 1. Validar RUC (OBLIGATORIO)
+        let ruc_valid = ocr_response.ruc.as_ref()
+            .map(|r| !r.trim().is_empty())
+            .unwrap_or(false);
+        if !ruc_valid {
+            missing_fields.push(RequiredField {
+                field_name: "RUC del comercio".to_string(),
+                field_key: "ruc".to_string(),
+                description: "Número de RUC del comercio emisor (ej: 155751938-2-2024)".to_string(),
+            });
+        }
+        
+        // 2. Validar DV (OBLIGATORIO)
+        let dv_valid = ocr_response.dv.as_ref()
+            .map(|d| !d.trim().is_empty())
+            .unwrap_or(false);
+        if !dv_valid {
+            missing_fields.push(RequiredField {
+                field_name: "Dígito Verificador (DV)".to_string(),
+                field_key: "dv".to_string(),
+                description: "Dígito verificador que acompaña al RUC (ej: 66, 89)".to_string(),
+            });
+        }
+        
+        // 3. Validar Número de Factura (OBLIGATORIO)
+        let invoice_valid = ocr_response.invoice_number.as_ref()
+            .map(|n| !n.trim().is_empty())
+            .unwrap_or(false);
+        if !invoice_valid {
+            missing_fields.push(RequiredField {
+                field_name: "Número de Factura".to_string(),
+                field_key: "invoice_number".to_string(),
+                description: "Número o código de la factura (ej: 001-002-123456, 10374)".to_string(),
+            });
+        }
+        
+        // 4. Validar Monto Total (OBLIGATORIO)
+        let total_valid = ocr_response.total
+            .map(|t| t > 0.0)
+            .unwrap_or(false);
+        if !total_valid {
+            missing_fields.push(RequiredField {
+                field_name: "Monto Total".to_string(),
+                field_key: "total".to_string(),
+                description: "Valor total de la factura (ej: 25.99, 1.30)".to_string(),
+            });
+        }
+        
+        // 5. Validar Productos (OBLIGATORIO - al menos 1 con descripción y monto)
+        let products_valid = if ocr_response.products.is_empty() {
+            false
         } else {
-            missing_fields.push("nombre del comercio".to_string());
+            // Al menos un producto debe tener descripción y precio
+            ocr_response.products.iter().any(|p| {
+                !p.name.trim().is_empty() && p.total_price > 0.0
+            })
+        };
+        if !products_valid {
+            missing_fields.push(RequiredField {
+                field_name: "Detalle de Productos".to_string(),
+                field_key: "products".to_string(),
+                description: "Al menos un producto con descripción y monto (ej: 'Coca Cola 500ml - $1.50')".to_string(),
+            });
         }
         
-        // Validar RUC
-        if let Some(ruc) = &ocr_response.ruc {
-            if ruc.trim().is_empty() {
-                missing_fields.push("RUC".to_string());
-            }
-        } else {
-            missing_fields.push("RUC".to_string());
-        }
+        // Construir datos parciales
+        let partial_data = PartialOcrData {
+            ruc: ocr_response.ruc.clone(),
+            dv: ocr_response.dv.clone(),
+            invoice_number: ocr_response.invoice_number.clone(),
+            total: ocr_response.total,
+            products: ocr_response.products.iter().map(|p| OcrProductResponse {
+                name: p.name.clone(),
+                quantity: p.quantity,
+                unit_price: p.unit_price,
+                total_price: p.total_price,
+                partkey: None,
+            }).collect(),
+            issuer_name: ocr_response.issuer_name.clone(),
+            issuer_address: ocr_response.address.clone(),
+            date: ocr_response.date.clone(),
+            tot_itbms: None,
+        };
         
-        // Validar fecha
-        if let Some(date_str) = &ocr_response.date {
-            if date_str.trim().is_empty() {
-                missing_fields.push("fecha".to_string());
-            }
-        } else {
-            missing_fields.push("fecha".to_string());
+        ValidationResult {
+            is_valid: missing_fields.is_empty(),
+            missing_fields,
+            partial_data,
         }
-        
-        // Validar monto total
-        if let Some(total) = ocr_response.total {
-            if total <= 0.0 {
-                missing_fields.push("monto total válido".to_string());
-            }
-        } else {
-            missing_fields.push("monto total".to_string());
-        }
-        
-        // Validar productos
-        if ocr_response.products.is_empty() {
-            missing_fields.push("productos".to_string());
-        } else {
-            // Validar campos de cada producto
-            let mut product_issues = Vec::new();
-            for (i, product) in ocr_response.products.iter().enumerate() {
-                let mut product_missing = Vec::new();
-                
-                if product.name.trim().is_empty() {
-                    product_missing.push("descripción");
-                }
-                if product.quantity <= 0.0 {
-                    product_missing.push("cantidad válida");
-                }
-                if product.unit_price < 0.0 {
-                    product_missing.push("precio unitario válido");
-                }
-                
-                if !product_missing.is_empty() {
-                    product_issues.push(format!("Producto {}: {}", i + 1, product_missing.join(", ")));
-                }
-            }
-            
-            if !product_issues.is_empty() {
-                missing_fields.push(format!("datos de productos ({})", product_issues.join("; ")));
-            }
-        }
-        
-        // Si hay campos faltantes, devolver error con mensaje específico
-        if !missing_fields.is_empty() {
-            let error_message = if missing_fields.len() == 1 {
-                format!("Por favor, vuelve a subir una factura donde se pueda ver claramente el campo: {}", missing_fields[0])
-            } else {
-                format!("Por favor, vuelve a subir una factura donde se puedan ver claramente los siguientes campos: {}", missing_fields.join(", "))
-            };
-            return Err(anyhow!(error_message));
-        }
-        
-        Ok(())
     }
 
     /// Assign partkeys to products based on CUFE
@@ -1022,6 +1149,381 @@ impl OcrService {
             efectivo: ocr_data.total.unwrap_or(0.0).to_string(),
             valor_pago: ocr_data.total.unwrap_or(0.0).to_string(),
         })
+    }
+
+    /// Process OCR retry - focuses only on specific missing fields
+    /// 
+    /// Este método es para cuando el usuario toma una nueva foto
+    /// enfocada en los campos que no se pudieron detectar la primera vez.
+    /// Combina los datos previos con los nuevos extraídos.
+    pub async fn process_ocr_retry(
+        state: Arc<AppState>,
+        user_id: i64,
+        user_email: String,
+        image_bytes: Vec<u8>,
+        retry_request: OcrRetryRequest,
+    ) -> Result<OcrProcessResponse> {
+        info!("🔄 Iniciando OCR RETRY para usuario {} - campos: {:?}", user_email, retry_request.missing_fields);
+        info!("📦 Datos previos recibidos: {:?}", retry_request.previous_data.is_some());
+
+        // 1. Verify user exists
+        let user_exists = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM users WHERE user_id = $1)"
+        )
+        .bind(user_id)
+        .fetch_one(&state.db_pool)
+        .await?;
+
+        if !user_exists {
+            return Ok(OcrProcessResponse {
+                success: false,
+                cufe: None,
+                invoice_number: None,
+                issuer_name: None,
+                issuer_ruc: None,
+                issuer_dv: None,
+                issuer_address: None,
+                date: None,
+                total: None,
+                tot_itbms: None,
+                products: None,
+                cost_lumis: 0,
+                message: "Usuario no encontrado.".to_string(),
+                missing_fields: None,
+                extracted_data: None,
+            });
+        }
+
+        // 2. Build specialized prompt for missing fields
+        let ocr_result = Self::process_image_for_specific_fields(&image_bytes, &retry_request.missing_fields).await;
+
+        match ocr_result {
+            Ok(new_ocr_response) => {
+                // 3. Merge previous data with new extracted data
+                let merged_data = Self::merge_ocr_data(
+                    retry_request.previous_data.as_ref(),
+                    &new_ocr_response,
+                    &retry_request.missing_fields,
+                );
+                
+                info!("🔗 Datos combinados:");
+                info!("  RUC: {:?}", merged_data.ruc);
+                info!("  DV: {:?}", merged_data.dv);
+                info!("  Invoice: {:?}", merged_data.invoice_number);
+                info!("  Total: {:?}", merged_data.total);
+                info!("  Products: {}", merged_data.products.len());
+                
+                // 4. Validate completeness with merged data
+                let validation = Self::validate_merged_data(&merged_data);
+                
+                if validation.is_valid {
+                    // All fields complete!
+                    info!("✅ OCR RETRY exitoso - factura completa con datos combinados");
+                    
+                    Ok(OcrProcessResponse {
+                        success: true,
+                        cufe: None,  // Retry no genera CUFE aún
+                        invoice_number: merged_data.invoice_number.clone(),
+                        issuer_name: merged_data.issuer_name.clone(),
+                        issuer_ruc: merged_data.ruc.clone(),
+                        issuer_dv: merged_data.dv.clone(),
+                        issuer_address: merged_data.issuer_address.clone(),
+                        date: merged_data.date.clone(),
+                        total: merged_data.total,
+                        tot_itbms: merged_data.tot_itbms,
+                        products: if merged_data.products.is_empty() { None } else { Some(merged_data.products.clone()) },
+                        cost_lumis: 5, // Costo reducido por ser retry
+                        message: "¡Factura completa! Todos los campos obligatorios fueron extraídos.".to_string(),
+                        missing_fields: None,
+                        extracted_data: Some(merged_data),
+                    })
+                } else {
+                    // Still missing some fields
+                    warn!("⚠️ OCR RETRY parcial - aún faltan campos: {:?}", validation.missing_fields);
+                    
+                    Ok(OcrProcessResponse {
+                        success: false,
+                        cufe: None,
+                        invoice_number: merged_data.invoice_number.clone(),
+                        issuer_name: merged_data.issuer_name.clone(),
+                        issuer_ruc: merged_data.ruc.clone(),
+                        issuer_dv: merged_data.dv.clone(),
+                        issuer_address: merged_data.issuer_address.clone(),
+                        date: merged_data.date.clone(),
+                        total: merged_data.total,
+                        tot_itbms: merged_data.tot_itbms,
+                        products: if merged_data.products.is_empty() { None } else { Some(merged_data.products.clone()) },
+                        cost_lumis: 5,
+                        message: format!("Aún no se pudieron detectar todos los campos requeridos. Faltan: {}", 
+                            validation.missing_fields.iter()
+                                .map(|f| f.field_name.clone())
+                                .collect::<Vec<_>>()
+                                .join(", ")),
+                        missing_fields: Some(validation.missing_fields),
+                        extracted_data: Some(merged_data),
+                    })
+                }
+            }
+            Err(e) => {
+                error!("💥 Error en OCR RETRY: {}", e);
+                // En caso de error, devolver los datos previos si existen
+                let prev = retry_request.previous_data.clone();
+                Ok(OcrProcessResponse {
+                    success: false,
+                    cufe: None,
+                    invoice_number: prev.as_ref().and_then(|p| p.invoice_number.clone()),
+                    issuer_name: prev.as_ref().and_then(|p| p.issuer_name.clone()),
+                    issuer_ruc: prev.as_ref().and_then(|p| p.ruc.clone()),
+                    issuer_dv: prev.as_ref().and_then(|p| p.dv.clone()),
+                    issuer_address: prev.as_ref().and_then(|p| p.issuer_address.clone()),
+                    date: prev.as_ref().and_then(|p| p.date.clone()),
+                    total: prev.as_ref().and_then(|p| p.total),
+                    tot_itbms: prev.as_ref().and_then(|p| p.tot_itbms),
+                    products: prev.as_ref().map(|p| p.products.clone()).filter(|p| !p.is_empty()),
+                    cost_lumis: 0,
+                    message: format!("Error procesando la imagen: {}. Los datos previos se mantienen.", e),
+                    missing_fields: None,
+                    extracted_data: prev,
+                })
+            }
+        }
+    }
+
+    /// Merge previous OCR data with new extracted data
+    /// Prioriza los nuevos datos para los campos que se estaban buscando
+    fn merge_ocr_data(
+        previous: Option<&ExtractedOcrData>,
+        new_response: &OcrResponse,
+        searched_fields: &[String],
+    ) -> ExtractedOcrData {
+        let prev = previous.cloned().unwrap_or_else(|| ExtractedOcrData {
+            ruc: None,
+            dv: None,
+            invoice_number: None,
+            total: None,
+            products: vec![],
+            issuer_name: None,
+            issuer_address: None,
+            date: None,
+            tot_itbms: None,
+        });
+        
+        // Para cada campo: usar el nuevo si se buscaba Y se encontró, sino mantener el anterior
+        let use_new_ruc = searched_fields.contains(&"ruc".to_string()) 
+            && new_response.ruc.as_ref().map(|r| !r.trim().is_empty()).unwrap_or(false);
+        let use_new_dv = searched_fields.contains(&"dv".to_string()) 
+            && new_response.dv.as_ref().map(|d| !d.trim().is_empty()).unwrap_or(false);
+        let use_new_invoice = searched_fields.contains(&"invoice_number".to_string()) 
+            && new_response.invoice_number.as_ref().map(|n| !n.trim().is_empty()).unwrap_or(false);
+        let use_new_total = searched_fields.contains(&"total".to_string()) 
+            && new_response.total.map(|t| t > 0.0).unwrap_or(false);
+        let use_new_products = searched_fields.contains(&"products".to_string()) 
+            && !new_response.products.is_empty() 
+            && new_response.products.iter().any(|p| !p.name.trim().is_empty() && p.total_price > 0.0);
+        
+        ExtractedOcrData {
+            ruc: if use_new_ruc { new_response.ruc.clone() } else { prev.ruc },
+            dv: if use_new_dv { new_response.dv.clone() } else { prev.dv },
+            invoice_number: if use_new_invoice { new_response.invoice_number.clone() } else { prev.invoice_number },
+            total: if use_new_total { new_response.total } else { prev.total },
+            products: if use_new_products {
+                new_response.products.iter().map(|p| OcrProductResponse {
+                    name: p.name.clone(),
+                    quantity: p.quantity,
+                    unit_price: p.unit_price,
+                    total_price: p.total_price,
+                    partkey: None,
+                }).collect()
+            } else {
+                prev.products
+            },
+            // Campos secundarios: usar nuevo si existe, sino mantener anterior
+            issuer_name: new_response.issuer_name.clone().or(prev.issuer_name),
+            issuer_address: new_response.address.clone().or(prev.issuer_address),
+            date: new_response.date.clone().or(prev.date),
+            tot_itbms: prev.tot_itbms, // Mantener el anterior si existe
+        }
+    }
+
+    /// Validate merged data for completeness
+    fn validate_merged_data(data: &ExtractedOcrData) -> ValidationResult {
+        let mut missing_fields: Vec<RequiredField> = Vec::new();
+        
+        // 1. Validar RUC
+        if !data.ruc.as_ref().map(|r| !r.trim().is_empty()).unwrap_or(false) {
+            missing_fields.push(RequiredField {
+                field_name: "RUC del comercio".to_string(),
+                field_key: "ruc".to_string(),
+                description: "Número de RUC del comercio emisor".to_string(),
+            });
+        }
+        
+        // 2. Validar DV
+        if !data.dv.as_ref().map(|d| !d.trim().is_empty()).unwrap_or(false) {
+            missing_fields.push(RequiredField {
+                field_name: "Dígito Verificador (DV)".to_string(),
+                field_key: "dv".to_string(),
+                description: "Dígito verificador que acompaña al RUC".to_string(),
+            });
+        }
+        
+        // 3. Validar Número de Factura
+        if !data.invoice_number.as_ref().map(|n| !n.trim().is_empty()).unwrap_or(false) {
+            missing_fields.push(RequiredField {
+                field_name: "Número de Factura".to_string(),
+                field_key: "invoice_number".to_string(),
+                description: "Número o código de la factura".to_string(),
+            });
+        }
+        
+        // 4. Validar Total
+        if !data.total.map(|t| t > 0.0).unwrap_or(false) {
+            missing_fields.push(RequiredField {
+                field_name: "Monto Total".to_string(),
+                field_key: "total".to_string(),
+                description: "Valor total de la factura".to_string(),
+            });
+        }
+        
+        // 5. Validar Productos
+        let has_valid_products = !data.products.is_empty() 
+            && data.products.iter().any(|p| !p.name.trim().is_empty() && p.total_price > 0.0);
+        if !has_valid_products {
+            missing_fields.push(RequiredField {
+                field_name: "Detalle de Productos".to_string(),
+                field_key: "products".to_string(),
+                description: "Al menos un producto con descripción y monto".to_string(),
+            });
+        }
+        
+        ValidationResult {
+            is_valid: missing_fields.is_empty(),
+            missing_fields,
+            partial_data: PartialOcrData {
+                ruc: data.ruc.clone(),
+                dv: data.dv.clone(),
+                invoice_number: data.invoice_number.clone(),
+                total: data.total,
+                products: data.products.clone(),
+                issuer_name: data.issuer_name.clone(),
+                issuer_address: data.issuer_address.clone(),
+                date: data.date.clone(),
+                tot_itbms: data.tot_itbms,
+            },
+        }
+    }
+
+    /// Process image focusing only on specific fields
+    async fn process_image_for_specific_fields(image_bytes: &[u8], missing_fields: &[String]) -> Result<OcrResponse> {
+        info!("🎯 Procesando imagen para campos específicos: {:?}", missing_fields);
+        
+        let api_key = std::env::var("GEMINI_API_KEY")
+            .map_err(|_| anyhow!("GEMINI_API_KEY no configurado"))?;
+
+        let image_base64 = general_purpose::STANDARD.encode(image_bytes);
+        let client = Client::new();
+
+        // Build focused prompt based on which fields we need
+        let field_instructions = missing_fields.iter().map(|f| {
+            match f.as_str() {
+                "ruc" => "- RUC: Número de RUC del comercio (formato: números con guiones como 1234567-1-654321, busca cerca del nombre del negocio o encabezado)".to_string(),
+                "dv" => "- DV: Dígito Verificador que acompaña al RUC (usualmente 2 dígitos después de 'DV:' o al final del RUC)".to_string(),
+                "invoice_number" => "- invoice_number: Número de factura (busca 'Factura', 'Fact', 'No.', números con formato como 001-002-123456)".to_string(),
+                "total" => "- total: Monto total de la factura (busca 'Total', 'Total a Pagar', generalmente el número más grande al final)".to_string(),
+                "products" => "- products: Lista de productos/servicios con nombre, cantidad y precio (escanea todas las líneas de ítems)".to_string(),
+                _ => format!("- {}: valor correspondiente", f)
+            }
+        }).collect::<Vec<_>>().join("\n");
+
+        let prompt = format!(r#"Esta imagen es de una factura de Panamá. SOLO necesito que extraigas los siguientes campos ESPECÍFICOS:
+
+{field_instructions}
+
+Responde ÚNICAMENTE con un JSON con esta estructura exacta (incluye todos los campos aunque estén vacíos):
+
+{{
+  "issuer_name": "nombre del comercio o null si no es visible",
+  "ruc": "número RUC completo o null",
+  "dv": "dígito verificador o null",
+  "address": null,
+  "invoice_number": "número de factura o null",
+  "date": null,
+  "total": valor_numerico_o_null,
+  "products": [
+    {{
+      "name": "descripción del producto",
+      "quantity": cantidad_numerica,
+      "unit_price": precio_unitario,
+      "total_price": precio_total
+    }}
+  ]
+}}
+
+IMPORTANTE:
+1. ENFÓCATE ESPECÍFICAMENTE en los campos listados arriba
+2. Si el campo NO está visible en la imagen, usa null (no inventes datos)
+3. Para productos, extrae TODOS los que sean visibles
+4. Solo responde con el JSON, sin texto adicional"#, field_instructions = field_instructions);
+
+        let payload = json!({
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image_base64
+                        }
+                    }
+                ]
+            }],
+            "generationConfig": {
+                "temperature": 0.1,
+                "maxOutputTokens": 2048
+            }
+        });
+
+        let url = format!("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={}", api_key);
+        
+        let response = client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| anyhow!("Error en request a Gemini RETRY: {}", e))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            return Err(anyhow!("Error en Gemini API RETRY: {} - {}", status, error_text));
+        }
+
+        let response_json: Value = response.json().await
+            .map_err(|e| anyhow!("Error parseando respuesta de Gemini RETRY: {}", e))?;
+
+        info!("🔍 GEMINI RETRY RESPONSE: {}", serde_json::to_string_pretty(&response_json).unwrap_or_default());
+
+        let text = response_json
+            .get("candidates")
+            .and_then(|c| c.get(0))
+            .and_then(|c| c.get("content"))
+            .and_then(|c| c.get("parts"))
+            .and_then(|p| p.get(0))
+            .and_then(|p| p.get("text"))
+            .and_then(|t| t.as_str())
+            .ok_or_else(|| anyhow!("No se pudo extraer texto de respuesta Gemini RETRY"))?;
+
+        let cleaned_text = Self::extract_json_from_markdown(text);
+        
+        let ocr_response: OcrResponse = serde_json::from_str(&cleaned_text)
+            .map_err(|e| anyhow!("Error parseando JSON de OCR RETRY: {} - Texto: {}", e, cleaned_text))?;
+
+        info!("✅ OCR RETRY procesado - RUC: {:?}, DV: {:?}, Invoice: {:?}, Total: {:?}, Products: {}", 
+            ocr_response.ruc, ocr_response.dv, ocr_response.invoice_number, 
+            ocr_response.total, ocr_response.products.len());
+
+        Ok(ocr_response)
     }
 }
 

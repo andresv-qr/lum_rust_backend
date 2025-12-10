@@ -216,6 +216,47 @@ pub fn validate_date_format(date_str: &str) -> Result<String, String> {
     ))
 }
 
+/// Parsear string de fecha a NaiveDateTime para usar con SQLx/PostgreSQL
+/// 
+/// # Arguments
+/// * `date_str` - String de fecha en formato ISO 8601
+/// 
+/// # Returns
+/// Ok(NaiveDateTime) si se parsea correctamente, Err con mensaje de error si no
+/// 
+/// # Formatos aceptados
+/// - ISO 8601 con timezone: "2025-11-07T10:30:45Z" o "2025-11-07T10:30:45.123456Z"
+/// - DateTime sin timezone: "2025-11-07T10:30:45"
+/// - Solo fecha: "2025-11-07" (asume 00:00:00)
+pub fn parse_date_to_naive(date_str: &str) -> Result<chrono::NaiveDateTime, String> {
+    use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime};
+    
+    // Intentar parsear como DateTime con timezone (RFC3339) y convertir a NaiveDateTime
+    if let Ok(dt) = DateTime::parse_from_rfc3339(date_str) {
+        return Ok(dt.naive_utc());
+    }
+    
+    // Intentar parsear como NaiveDateTime con microsegundos
+    if let Ok(naive_dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S%.f") {
+        return Ok(naive_dt);
+    }
+    
+    // Intentar parsear como NaiveDateTime sin fracciones de segundo
+    if let Ok(naive_dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S") {
+        return Ok(naive_dt);
+    }
+    
+    // Intentar parsear como fecha sola (YYYY-MM-DD) - asumir 00:00:00
+    if let Ok(naive_date) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+        return Ok(NaiveDateTime::new(naive_date, NaiveTime::from_hms_opt(0, 0, 0).unwrap()));
+    }
+    
+    Err(format!(
+        "Invalid date format '{}'. Use ISO 8601 format (e.g., 2025-11-07T10:30:45Z, 2025-11-07T10:30:45, or 2025-11-07)",
+        date_str
+    ))
+}
+
 /// Extraer max update_date de un vector de items
 /// 
 /// Este es un helper genérico que funciona con cualquier tipo que tenga

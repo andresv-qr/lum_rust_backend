@@ -188,7 +188,8 @@ pub async fn upload_ocr_invoice(
                     "products_count": ocr_response.products.as_ref().map(|p| p.len()).unwrap_or(0),
                     "cost_lumis": ocr_response.cost_lumis,
                     "status": "pending_validation",
-                    "message": ocr_response.message
+                    "message": ocr_response.message,
+                    "missing_fields": ocr_response.missing_fields
                 });
 
                 let request_id = Uuid::new_v4().to_string();
@@ -222,7 +223,9 @@ pub async fn upload_ocr_invoice(
                     "total": ocr_response.total,
                     "tot_itbms": ocr_response.tot_itbms,
                     "products": ocr_response.products,
-                    "products_count": ocr_response.products.as_ref().map(|p| p.len()).unwrap_or(0)
+                    "products_count": ocr_response.products.as_ref().map(|p| p.len()).unwrap_or(0),
+                    "missing_fields": ocr_response.missing_fields,
+                    "extracted_data": ocr_response.extracted_data
                 });
 
                 let error_code = if ocr_response.message.contains("ya fue registrada") || ocr_response.message.contains("duplicada") {
