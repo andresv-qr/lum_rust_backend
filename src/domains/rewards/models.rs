@@ -117,18 +117,77 @@ impl UserRedemption {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
+/// Item de redención para mostrar al usuario
+/// Los campos sensibles (código, QR) se ocultan para redenciones usadas/expiradas
+#[derive(Debug, Serialize, Deserialize)]
 pub struct UserRedemptionItem {
     pub redemption_id: Uuid,
     pub offer_name: String,
     pub merchant_name: Option<String>,
     pub lumis_spent: i32,
-    pub redemption_code: String,
-    pub qr_landing_url: String,
+    /// Código de redención - None si ya fue usado o expiró
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub redemption_code: Option<String>,
+    /// URL del QR - None si ya fue usado o expiró
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub qr_landing_url: Option<String>,
     pub redemption_status: String,
     pub code_expires_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
     pub validated_at: Option<DateTime<Utc>>,
+    /// Indica si el código QR está disponible para mostrar
+    pub qr_visible: bool,
+    /// Mensaje explicativo del estado
+    pub status_message: String,
+}
+
+impl UserRedemptionItem {
+    /// Crear item con visibilidad correcta según el estado
+    pub fn new(
+        redemption_id: Uuid,
+        offer_name: String,
+        merchant_name: Option<String>,
+        lumis_spent: i32,
+        redemption_code: String,
+        qr_landing_url: String,
+        redemption_status: String,
+        code_expires_at: DateTime<Utc>,
+        created_at: DateTime<Utc>,
+        validated_at: Option<DateTime<Utc>>,
+    ) -> Self {
+        let is_pending = redemption_status == "pending";
+        let is_expired = code_expires_at < Utc::now();
+        let qr_visible = is_pending && !is_expired;
+        
+        let status_message = match redemption_status.as_str() {
+            "pending" if is_expired => "Código expirado".to_string(),
+            "pending" => "Presenta este código en el comercio".to_string(),
+            "confirmed" => format!(
+                "Canjeado el {}",
+                validated_at.map(|d| d.format("%d/%m/%Y %H:%M").to_string())
+                    .unwrap_or_else(|| "fecha desconocida".to_string())
+            ),
+            "cancelled" => "Redención cancelada - Lümis devueltos".to_string(),
+            "expired" => "Código expirado sin usar".to_string(),
+            _ => "Estado desconocido".to_string(),
+        };
+        
+        Self {
+            redemption_id,
+            offer_name,
+            merchant_name,
+            lumis_spent,
+            // Ocultar código si no es visible
+            redemption_code: if qr_visible { Some(redemption_code) } else { None },
+            qr_landing_url: if qr_visible { Some(qr_landing_url) } else { None },
+            redemption_status,
+            code_expires_at,
+            created_at,
+            validated_at,
+            qr_visible,
+            status_message,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]

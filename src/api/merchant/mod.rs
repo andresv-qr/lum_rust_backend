@@ -6,6 +6,7 @@ pub mod auth;
 pub mod validate;
 pub mod stats;
 pub mod analytics;
+pub mod dashboard;
 
 use axum::{
     routing::{get, post},
@@ -30,6 +31,10 @@ pub fn router() -> Router<Arc<AppState>> {
         .route("/confirm/:id", post(validate::confirm_redemption))
         .route("/stats", get(stats::get_merchant_stats))
         .route("/analytics", get(analytics::get_merchant_analytics))
+        // Dashboard endpoints
+        .route("/dashboard", get(dashboard::merchant_dashboard))
+        .route("/dashboard/stats", get(dashboard::merchant_stats))
+        .route("/pending", get(dashboard::pending_redemptions))
         .layer(from_fn(extract_merchant));
     
     // Merge both

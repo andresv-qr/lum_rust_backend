@@ -45,11 +45,20 @@ pub struct JwtClaims {
 /// Merchant JWT Claims structure
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MerchantClaims {
-    pub sub: String,     // merchant_id as string
+    pub sub: String,     // merchant_id as string (UUID)
     pub merchant_name: String,
     pub role: String,    // Should be "merchant"
     pub exp: i64,
     pub iat: i64,
+    #[serde(default)]
+    pub merchant_id: Option<uuid::Uuid>,  // Optional for backward compatibility
+}
+
+impl MerchantClaims {
+    /// Helper method to get merchant_id, parsing from sub if not present
+    pub fn get_merchant_id(&self) -> Option<uuid::Uuid> {
+        self.merchant_id.or_else(|| uuid::Uuid::parse_str(&self.sub).ok())
+    }
 }
 
 impl JwtClaims {

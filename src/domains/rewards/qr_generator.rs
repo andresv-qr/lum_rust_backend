@@ -1,8 +1,10 @@
 use anyhow::{Context, Result};
 use chrono::{Duration, Utc};
 use image::{imageops, DynamicImage, ImageBuffer, Rgba};
+use jsonwebtoken::{encode, decode, DecodingKey, EncodingKey, Header, Validation, Algorithm};
 use qrcode::QrCode;
 use rand::Rng;
+use sha2::{Sha256, Digest};
 use std::io::Cursor;
 use uuid::Uuid;
 
@@ -170,6 +172,84 @@ impl QrGenerator {
             None => format!("{}/r/{}", self.config.landing_base_url, redemption_code),
         }
     }
+
+    /// Genera un QR simple sin logo (fallback si no hay logo disponible)
+    pub fn generate_qr_simple(&self, redemption_code: &str) -> Result<Vec<u8>> {
+        let qr_url = format!("{}/r/{}", self.config.landing_base_url, redemption_code);
+        
+        let qr = QrCode::new(qr_url.as_bytes())
+            .context("Error al crear QR code")?;
+
+        let qr_image = qr
+            .render::<Rgba<u8>>()
+            .max_dimensions(self.config.size, self.config.size)
+            .build();
+
+        let mut buffer = Cursor::new(Vec::new());
+        DynamicImage::ImageRgba8(qr_image)
+            .write_to(&mut buffer, image::ImageFormat::Png)
+            .context("Error al escribir imagen PNG")?;
+
+        Ok(buffer.into_inner())
+    }
+
+    /// Genera token JWT de validación para el QR
+    pub fn generate_validation_token(
+        &self,
+        redemption_code: &str,
+        user_id: i32,
+        redemption_id: &Uuid,
+    ) -> Result<String> {
+        let secret = std::env::var("JWT_SECRET")
+            .unwrap_or_else(|_| "lumis_jwt_secret_super_seguro_production_2024_rust_server_key".to_string());
+        
+        let claims = ValidationTokenClaims::new(
+            redemption_code.to_string(),
+            user_id,
+            self.config.token_expiration_seconds,
+        );
+        
+        // Agregar redemption_id al jti para mayor trazabilidad
+        let claims_with_rid = ValidationTokenClaimsExtended {
+            redemption_code: claims.redemption_code,
+            user_id: claims.user_id,
+            redemption_id: *redemption_id,
+            exp: claims.exp,
+            jti: claims.jti,
+        };
+        
+        encode(
+            &Header::default(),
+            &claims_with_rid,
+            &EncodingKey::from_secret(secret.as_bytes()),
+        )
+        .context("Error al generar token de validación")
+    }
+
+    /// Verifica un token de validación JWT
+    pub fn verify_validation_token(&self, token: &str) -> Result<ValidationTokenClaimsExtended> {
+        let secret = std::env::var("JWT_SECRET")
+            .unwrap_or_else(|_| "lumis_jwt_secret_super_seguro_production_2024_rust_server_key".to_string());
+        
+        let mut validation = Validation::new(Algorithm::HS256);
+        validation.validate_exp = true;
+        
+        let token_data = decode::<ValidationTokenClaimsExtended>(
+            token,
+            &DecodingKey::from_secret(secret.as_bytes()),
+            &validation,
+        )
+        .context("Token de validación inválido o expirado")?;
+        
+        Ok(token_data.claims)
+    }
+
+    /// Genera un hash del token para almacenar en DB (no el token completo)
+    pub fn hash_token(token: &str) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(token.as_bytes());
+        format!("{:x}", hasher.finalize())
+    }
 }
 
 /// Claims del JWT de validación
@@ -179,6 +259,16 @@ pub struct ValidationTokenClaims {
     pub user_id: i32,
     pub exp: i64,        // Timestamp de expiración
     pub jti: String,     // JWT ID único (previene replay)
+}
+
+/// Claims extendidos con redemption_id
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ValidationTokenClaimsExtended {
+    pub redemption_code: String,
+    pub user_id: i32,
+    pub redemption_id: Uuid,
+    pub exp: i64,
+    pub jti: String,
 }
 
 impl ValidationTokenClaims {

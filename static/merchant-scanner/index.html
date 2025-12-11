@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6B46C1">
+    <meta name="description" content="Scanner de códigos QR para validación de Lumis">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <title>Lum Scanner - Comercios</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6B46C1 0%, #9F7AEA 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 28px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #9CA3AF;
+            font-size: 14px;
+        }
+
+        /* Login Form */
+        .login-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #D1D5DB;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #374151;
+            border-radius: 12px;
+            background: #1F2937;
+            color: #fff;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #6B46C1;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6B46C1 0%, #9F7AEA 100%);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(107, 70, 193, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #374151;
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+            color: #fff;
+        }
+
+        /* Scanner View */
+        .scanner-container {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+        }
+
+        .merchant-info {
+            background: #1F2937;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .merchant-name {
+            font-weight: 600;
+        }
+
+        .merchant-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #10B981;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #10B981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        #scanner-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .scanner-frame {
+            width: 70%;
+            height: 70%;
+            border: 3px solid rgba(107, 70, 193, 0.8);
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .scanner-frame::before,
+        .scanner-frame::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-color: #6B46C1;
+            border-style: solid;
+        }
+
+        .scanner-frame::before {
+            top: -3px;
+            left: -3px;
+            border-width: 4px 0 0 4px;
+            border-radius: 20px 0 0 0;
+        }
+
+        .scanner-frame::after {
+            top: -3px;
+            right: -3px;
+            border-width: 4px 4px 0 0;
+            border-radius: 0 20px 0 0;
+        }
+
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #6B46C1, transparent);
+            animation: scan 2s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+
+        .scan-instructions {
+            text-align: center;
+            color: #9CA3AF;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* Manual Input */
+        .manual-input {
+            background: #1F2937;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .manual-input-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .manual-input-title {
+            font-size: 14px;
+            color: #9CA3AF;
+        }
+
+        .manual-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .manual-input-row input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #374151;
+            border-radius: 10px;
+            background: #111827;
+            color: #fff;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .manual-input-row input:focus {
+            outline: none;
+            border-color: #6B46C1;
+        }
+
+        .btn-small {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        /* Result Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1F2937;
+            border-radius: 20px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .modal-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+
+        .modal-icon.success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+
+        .modal-icon.error {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+        }
+
+        .modal-icon.warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: #F59E0B;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .modal-message {
+            color: #9CA3AF;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .redemption-details {
+            background: #111827;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #9CA3AF;
+            font-size: 13px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .lumis-value {
+            color: #9F7AEA;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #374151;
+            border-top-color: #6B46C1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1F2937;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 300;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            background: #DC2626;
+        }
+
+        /* Logout button */
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #9CA3AF;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .logout-btn:hover {
+            color: #fff;
+        }
+
+        /* History */
+        .history-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #374151;
+        }
+
+        .history-title {
+            font-size: 14px;
+            color: #9CA3AF;
+            margin-bottom: 10px;
+        }
+
+        .history-item {
+            background: #111827;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-code {
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .history-time {
+            font-size: 11px;
+            color: #9CA3AF;
+        }
+
+        .history-status {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 20px;
+        }
+
+        .history-status.confirmed {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10B981;
+        }
+
+        /* Responsive */
+        @media (max-height: 700px) {
+            .video-container {
+                aspect-ratio: 4/3;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login View -->
+    <div class="container" id="login-view">
+        <header>
+            <div class="logo">💜</div>
+            <h1>Lum Scanner</h1>
+            <p class="subtitle">Validación de códigos QR para comercios</p>
+        </header>
+
+        <div class="login-container">
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="merchant-code">Código de comercio</label>
+                    <input type="text" id="merchant-code" placeholder="Ingresa tu código" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="api-key">Clave API</label>
+                    <input type="password" id="api-key" placeholder="Tu clave secreta" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    Iniciar Sesión
+                </button>
+            </form>
+
+            <p style="text-align: center; margin-top: 30px; color: #6B7280; font-size: 12px;">
+                ¿No tienes credenciales?<br>
+                Contacta al administrador de Lum
+            </p>
+        </div>
+    </div>
+
+    <!-- Scanner View -->
+    <div class="container scanner-container" id="scanner-view">
+        <header>
+            <div class="merchant-info">
+                <div>
+                    <div class="merchant-name" id="merchant-display-name">Comercio</div>
+                    <div class="merchant-status">
+                        <span class="status-dot"></span>
+                        Conectado
+                    </div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+            </div>
+        </header>
+
+        <div class="video-container">
+            <video id="scanner-video" playsinline></video>
+            <div class="scanner-overlay">
+                <div class="scanner-frame">
+                    <div class="scanner-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <p class="scan-instructions">
+            Apunta la cámara al código QR del cliente
+        </p>
+
+        <div class="manual-input">
+            <div class="manual-input-header">
+                <span class="manual-input-title">O ingresa el código manualmente</span>
+            </div>
+            <div class="manual-input-row">
+                <input type="text" id="manual-code" placeholder="LUMS-XXXXXX">
+                <button class="btn btn-primary btn-small" onclick="validateManualCode()">
+                    Validar
+                </button>
+            </div>
+        </div>
+
+        <div class="history-section" id="history-section" style="display: none;">
+            <h3 class="history-title">Últimas validaciones</h3>
+            <div id="history-list"></div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div class="modal" id="result-modal">
+        <div class="modal-content">
+            <div class="modal-icon" id="modal-icon">✓</div>
+            <h2 class="modal-title" id="modal-title">Código Válido</h2>
+            <p class="modal-message" id="modal-message">El código QR ha sido verificado correctamente.</p>
+            
+            <div class="redemption-details" id="redemption-details">
+                <div class="detail-row">
+                    <span class="detail-label">Oferta</span>
+                    <span class="detail-value" id="detail-offer">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Cliente</span>
+                    <span class="detail-value" id="detail-user">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Lumis</span>
+                    <span class="detail-value lumis-value" id="detail-lumis">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Código</span>
+                    <span class="detail-value" id="detail-code">-</span>
+                </div>
+            </div>
+
+            <button class="btn btn-success" id="confirm-btn" onclick="confirmRedemption()">
+                ✓ Confirmar Uso
+            </button>
+            <button class="btn btn-secondary" onclick="closeModal()">
+                Cancelar
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal" id="error-modal">
+        <div class="modal-content">
+            <div class="modal-icon error">✕</div>
+            <h2 class="modal-title" id="error-title">Error</h2>
+            <p class="modal-message" id="error-message">Ha ocurrido un error.</p>
+            <button class="btn btn-secondary" onclick="closeErrorModal()">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- QR Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
+    <script>
+        // Configuration
+        const API_BASE_URL = window.location.origin;
+        
+        // State
+        let merchantCredentials = null;
+        let currentRedemptionId = null;
+        let html5QrCode = null;
+        let scanHistory = [];
+
+        // Elements
+        const loginView = document.getElementById('login-view');
+        const scannerView = document.getElementById('scanner-view');
+        const resultModal = document.getElementById('result-modal');
+        const errorModal = document.getElementById('error-modal');
+        const loading = document.getElementById('loading');
+        const toast = document.getElementById('toast');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for saved session
+            const savedCredentials = localStorage.getItem('merchantCredentials');
+            if (savedCredentials) {
+                try {
+                    merchantCredentials = JSON.parse(savedCredentials);
+                    // Verify token exists (migration from old version)
+                    if (merchantCredentials && merchantCredentials.token) {
+                        showScannerView();
+                    } else {
+                        localStorage.removeItem('merchantCredentials');
+                    }
+                } catch (e) {
+                    localStorage.removeItem('merchantCredentials');
+                }
+            }
+
+            // Load history
+            const savedHistory = localStorage.getItem('scanHistory');
+            if (savedHistory) {
+                scanHistory = JSON.parse(savedHistory);
+                renderHistory();
+            }
+
+            // Login form
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+        });
+
+        // Login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const merchantCode = document.getElementById('merchant-code').value.trim();
+            const apiKey = document.getElementById('api-key').value.trim();
+
+            if (!merchantCode || !apiKey) {
+                showToast('Completa todos los campos', true);
+                return;
+            }
+
+            showLoading();
+
+            try {
+                // Authenticate with backend
+                const response = await fetch(`${API_BASE_URL}/api/v1/merchant/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        merchant_name: merchantCode, 
+                        api_key: apiKey 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Credenciales inválidas');
+                }
+
+                // Save credentials
+                merchantCredentials = {
+                    merchantCode,
+                    merchantName: data.merchant.merchant_name,
+                    token: data.token
+                };
+                localStorage.setItem('merchantCredentials', JSON.stringify(merchantCredentials));
+                
+                showScannerView();
+                showToast('Sesión iniciada correctamente');
+
+            } catch (error) {
+                showError('Error de autenticación', error.message || 'No se pudo verificar las credenciales');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Show Scanner View
+        async function showScannerView() {
+            loginView.style.display = 'none';
+            scannerView.style.display = 'flex';
+            
+            document.getElementById('merchant-display-name').textContent = 
+                merchantCredentials.merchantName || merchantCredentials.merchantCode;
+
+            // Start camera scanner
+            startScanner();
+        }
+
+        // Start QR Scanner
+        async function startScanner() {
+            try {
+                html5QrCode = new Html5Qrcode("scanner-video", {
+                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+                });
+
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                };
+
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    onQrCodeScanned,
+                    onQrCodeError
+                );
+
+            } catch (error) {
+                console.error('Error starting scanner:', error);
+                showToast('No se pudo acceder a la cámara', true);
+            }
+        }
+
+        // QR Code Scanned
+        async function onQrCodeScanned(decodedText, decodedResult) {
+            // Pause scanner while processing
+            if (html5QrCode) {
+                await html5QrCode.pause(true);
+            }
+
+            // Extract code from URL or use as-is
+            let code = decodedText;
+            
+            // If it's a URL, extract the code from path or query
+            if (decodedText.startsWith('http')) {
+                try {
+                    const url = new URL(decodedText);
+                    // Try path: /redeem/LUMS-XXXXX
+                    const pathMatch = url.pathname.match(/LUMS-[A-Z0-9]+/i);
+                    if (pathMatch) {
+                        code = pathMatch[0];
+                    }
+                    // Try query: ?code=LUMS-XXXXX
+                    const queryCode = url.searchParams.get('code');
+                    if (queryCode) {
+                        code = queryCode;
+                    }
+                } catch (e) {
+                    // Not a valid URL, use as-is
+                }
+            }
+
+            await validateCode(code);
+            
+            // Resume scanner after a delay
+            setTimeout(async () => {
+                if (html5QrCode) {
+                    try {
+                        await html5QrCode.resume();
+                    } catch (e) {}
+                }
+            }, 2000);
+        }
+
+        function onQrCodeError(errorMessage) {
+            // Ignore continuous scanning errors
+        }
+
+        // Manual Code Validation
+        async function validateManualCode() {
+            const input = document.getElementById('manual-code');
+            const code = input.value.trim().toUpperCase();
+            
+            if (!code) {
+                showToast('Ingresa un código', true);
+                return;
+            }
+
+            await validateCode(code);
+            input.value = '';
+        }
+
+        // Validate Code
+        async function validateCode(code) {
+            showLoading();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/merchant/validate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${merchantCredentials.token}`
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || 'Error al validar');
+                }
+
+                // Show result modal
+                showValidationResult(data);
+
+            } catch (error) {
+                showError('Código Inválido', error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Show Validation Result
+        function showValidationResult(data) {
+            const modalIcon = document.getElementById('modal-icon');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const confirmBtn = document.getElementById('confirm-btn');
+            const details = document.getElementById('redemption-details');
+
+            // Store redemption ID for confirmation
+            currentRedemptionId = data.redemption_id || data.id;
+
+            // Update modal content
+            modalIcon.className = 'modal-icon success';
+            modalIcon.textContent = '✓';
+            modalTitle.textContent = 'Código Válido';
+            modalMessage.textContent = 'El código QR ha sido verificado. Confirma para marcar como usado.';
+
+            // Update details
+            document.getElementById('detail-offer').textContent = data.offer_name || data.offer?.name || '-';
+            document.getElementById('detail-user').textContent = data.user_name || data.user?.name || 'Cliente';
+            document.getElementById('detail-lumis').textContent = data.lumis_cost || data.lumis || '-';
+            document.getElementById('detail-code').textContent = data.redemption_code || data.code || '-';
+
+            // Show confirm button
+            confirmBtn.style.display = 'block';
+            details.style.display = 'block';
+
+            // Show modal
+            resultModal.classList.add('active');
+        }
+
+        // Confirm Redemption
+        async function confirmRedemption() {
+            if (!currentRedemptionId) {
+                showToast('Error: No hay redención para confirmar', true);
+                return;
+            }
+
+            showLoading();
+            closeModal();
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/v1/merchant/confirm/${currentRedemptionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${merchantCredentials.token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || 'Error al confirmar');
+                }
+
+                // Success!
+                showToast('¡Redención confirmada exitosamente!');
+                
+                // Add to history
+                addToHistory({
+                    code: data.redemption_code || currentRedemptionId,
+                    time: new Date().toISOString(),
+                    status: 'confirmed'
+                });
+
+                currentRedemptionId = null;
+
+            } catch (error) {
+                showError('Error al Confirmar', error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // History
+        function addToHistory(item) {
+            scanHistory.unshift(item);
+            if (scanHistory.length > 10) {
+                scanHistory = scanHistory.slice(0, 10);
+            }
+            localStorage.setItem('scanHistory', JSON.stringify(scanHistory));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const section = document.getElementById('history-section');
+            const list = document.getElementById('history-list');
+
+            if (scanHistory.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            list.innerHTML = scanHistory.map(item => `
+                <div class="history-item">
+                    <div>
+                        <div class="history-code">${item.code}</div>
+                        <div class="history-time">${formatTime(item.time)}</div>
+                    </div>
+                    <span class="history-status ${item.status}">${item.status === 'confirmed' ? 'Confirmado' : 'Pendiente'}</span>
+                </div>
+            `).join('');
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) + 
+                   ' - ' + date.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+        }
+
+        // Logout
+        function logout() {
+            if (html5QrCode) {
+                html5QrCode.stop().catch(() => {});
+            }
+            
+            localStorage.removeItem('merchantCredentials');
+            merchantCredentials = null;
+            currentRedemptionId = null;
+
+            scannerView.style.display = 'none';
+            loginView.style.display = 'flex';
+
+            // Clear form
+            document.getElementById('merchant-code').value = '';
+            document.getElementById('api-key').value = '';
+        }
+
+        // UI Helpers
+        function showLoading() {
+            loading.classList.add('active');
+        }
+
+        function hideLoading() {
+            loading.classList.remove('active');
+        }
+
+        function showError(title, message) {
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-message').textContent = message;
+            errorModal.classList.add('active');
+        }
+
+        function closeErrorModal() {
+            errorModal.classList.remove('active');
+        }
+
+        function closeModal() {
+            resultModal.classList.remove('active');
+        }
+
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.className = 'toast' + (isError ? ' error' : '');
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Service Worker Registration (for PWA)
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW registration failed'));
+        }
+    </script>
+</body>
+</html>

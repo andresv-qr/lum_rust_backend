@@ -1,1124 +1,419 @@
-# 🎁 API DE REDENCIÓN DE LÜMIS - DOCUMENTACIÓN COMPLETA
+# 📱 API de Redención de Lumis - Documentación Completa
 
-**Versión**: 2.0  
-**Fecha**: 2025-10-18  
-**Estado**: ✅ Producción  
+> **Versión:** 2.0  
+> **Última actualización:** 10 de Diciembre, 2025  
+> **Base URL:** `https://api.lumis.pa/api/v1`
 
-## 📋 Tabla de Contenidos
+---
 
-1. [Arquitectura del Sistema](#arquitectura-del-sistema)
-2. [Explicación Conceptual](#explicación-conceptual)
-3. [Modelo de Datos](#modelo-de-datos)
-4. [Diagramas de Flujo](#diagramas-de-flujo)
-5. [API Endpoints - Usuarios](#api-endpoints---usuarios)
-6. [API Endpoints - Merchant](#api-endpoints---merchant)
-7. [Autenticación y Seguridad](#autenticación-y-seguridad)
+## 📋 Índice
+
+1. [Resumen del Sistema](#resumen-del-sistema)
+2. [Flujo de Redención](#flujo-de-redención)
+3. [Endpoints de Usuario](#endpoints-de-usuario)
+4. [Endpoints de Comercio](#endpoints-de-comercio)
+5. [Endpoints de Administración](#endpoints-de-administración)
+6. [PWA Scanner para Comercios](#pwa-scanner-para-comercios)
+7. [Modelos de Datos](#modelos-de-datos)
 8. [Códigos de Error](#códigos-de-error)
-9. [Ejemplos de Integración](#ejemplos-de-integración)
+9. [Rate Limiting](#rate-limiting)
+10. [Webhooks](#webhooks)
+11. [Seguridad](#seguridad)
 
 ---
 
-## 🏗️ Arquitectura del Sistema
+## 🎯 Resumen del Sistema
 
-### Stack Tecnológico
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Backend: Rust + Axum (Puerto 8000)                         │
-│  Base de Datos: PostgreSQL 14+                              │
-│  Autenticación: JWT (HS256)                                 │
-│  Passwords: bcrypt                                           │
-│  QR Generation: qrcode-generator crate                      │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Arquitectura de Módulos
+El sistema de redención de Lumis permite a los usuarios canjear sus puntos (Lumis) por ofertas en comercios asociados. El flujo completo es:
 
 ```
-lum_rust_ws/
-├── src/
-│   ├── domains/
-│   │   └── rewards/
-│   │       ├── models.rs          → Structs (RedemptionOffer, UserRedemption)
-│   │       ├── offer_service.rs   → Lógica de catálogo y balance
-│   │       └── redemption_service.rs → Lógica de redención
-│   │
-│   ├── api/
-│   │   ├── rewards/
-│   │   │   ├── offers.rs         → GET /api/v1/rewards/offers
-│   │   │   ├── redeem.rs         → POST /api/v1/rewards/redeem
-│   │   │   └── user.rs           → GET /api/v1/rewards/history|stats
-│   │   │
-│   │   └── merchant/
-│   │       ├── auth.rs           → POST /api/v1/merchant/auth/login
-│   │       ├── validate.rs       → POST /api/v1/merchant/validate
-│   │       └── stats.rs          → GET /api/v1/merchant/stats
-│   │
-│   └── middleware/
-│       └── auth.rs               → extract_current_user(), extract_merchant()
-│
-└── database/
-    └── schema: rewards
-        ├── redemption_offers
-        ├── user_redemptions
-        ├── fact_accumulations
-        ├── fact_balance_points
-        └── merchants
+Usuario redime oferta → Se genera QR con token JWT → Comercio escanea QR → 
+Comercio valida código → Comercio confirma uso → Usuario recibe notificación
 ```
+
+### Características Principales
+
+| Característica | Descripción |
+|----------------|-------------|
+| **QR con Logo** | Códigos QR de 800x800px con logo Lum centrado (15%) |
+| **Token JWT** | Validación criptográfica con expiración de 60 segundos |
+| **Rate Limiting** | 10 redenciones/hora, 30/día por usuario (Redis) |
+| **Notificaciones** | Push (FCM) al usuario + Webhook al comercio |
+| **Expiración Automática** | Job cada hora expira códigos pendientes |
+| **Ocultamiento** | Códigos usados/expirados se ocultan del usuario |
 
 ---
 
-## 💡 Explicación Conceptual
-
-### ¿Qué es el Sistema de Redención?
-
-El sistema de redención permite a los usuarios de la app Lümis **canjear sus puntos Lümis** por productos o servicios reales en comercios aliados.
-
-### Conceptos Clave
-
-#### 1. **Lümis (Puntos)**
-- Moneda virtual de la app
-- Los usuarios acumulan Lümis comprando facturas
-- 1 Lümi = unidad base (no fraccionable)
-- Balance se guarda en `rewards.fact_balance_points`
-
-#### 2. **Oferta de Redención (Redemption Offer)**
-- Producto o servicio ofrecido por un comercio
-- Ejemplos: "Café Americano - 55 Lümis", "Entrada al Cine - 150 Lümis"
-- Almacenado en `rewards.redemption_offers`
-- Tiene costo en Lümis, imagen, descripción, términos y condiciones
-
-#### 3. **Redención (User Redemption)**
-- Instancia de un usuario canjeando una oferta
-- Se crea cuando el usuario presiona "Redimir"
-- Genera un **código único** (ej: `LUMS-967E-F893-7EC2`)
-- Estados: `pending`, `confirmed`, `cancelled`, `expired`
-
-#### 4. **Código de Redención**
-- Código alfanumérico único de 19 caracteres
-- Formato: `LUMS-XXXX-XXXX-XXXX`
-- Válido por tiempo limitado (configurable, típicamente 15 minutos)
-- El comercio lo escanea/ingresa para validar
-
-#### 5. **QR Code**
-- Generado automáticamente para cada redención
-- Contiene el código de redención
-- Landing URL: `https://app.lumis.pa/redeem/{code}`
-- Image URL: `https://cdn.lumis.pa/qr/{code}.png`
-
-#### 6. **Merchant (Comercio Aliado)**
-- Negocio que acepta redenciones
-- Tiene API key hasheado con bcrypt
-- Recibe JWT token tras login
-- Puede validar y confirmar redenciones
-
----
-
-## 🗄️ Modelo de Datos
-
-### Diagrama ER
-
-```
-┌─────────────────────────┐
-│  redemption_offers      │
-│─────────────────────────│
-│ ✓ offer_id (UUID, PK)   │
-│   name_friendly         │
-│   lumis_cost (INT)      │
-│   merchant_id (UUID, FK)│
-│   terms_and_conditions  │
-│   is_active (BOOLEAN)   │
-└──────────┬──────────────┘
-           │ 1
-           │
-           │ N
-┌──────────┴──────────────┐       ┌─────────────────────────┐
-│  user_redemptions       │       │  merchants              │
-│─────────────────────────│       │─────────────────────────│
-│ ✓ redemption_id (UUID)  │       │ ✓ merchant_id (UUID, PK)│
-│   user_id (INT, FK)     │──────>│   merchant_name         │
-│   offer_id (UUID, FK)   │       │   api_key_hash          │
-│   redemption_code       │       │   is_active (BOOLEAN)   │
-│   redemption_status     │       │   total_redemptions     │
-│   lumis_spent (INT)     │       │   total_lumis_redeemed  │
-│   code_expires_at       │       └─────────────────────────┘
-│   validated_at          │
-│   validated_by_merchant │
-└──────────┬──────────────┘
-           │
-           │ 1
-           │
-           │ 1
-┌──────────┴──────────────┐
-│  fact_accumulations     │
-│─────────────────────────│
-│ ✓ id (SERIAL, PK)       │
-│   user_id (INT)         │
-│   accum_type (TEXT)     │  -- 'earn' | 'spend'
-│   dtype (TEXT)          │  -- 'points'
-│   quantity (NUMERIC)    │
-│   date (TIMESTAMPTZ)    │
-│   redemption_id (UUID)  │
-└─────────────────────────┘
-
-┌─────────────────────────┐
-│  fact_balance_points    │
-│─────────────────────────│
-│ ✓ user_id (INT, PK)     │
-│   balance (NUMERIC)     │
-│   latest_update         │
-└─────────────────────────┘
-```
-
-### Tabla: `redemption_offers`
-
-**Descripción**: Catálogo de ofertas disponibles para redención
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `offer_id` | UUID | Identificador único (PK) |
-| `name_friendly` | VARCHAR(255) | Nombre para mostrar al usuario |
-| `description_friendly` | VARCHAR(500) | Descripción de la oferta |
-| `lumis_cost` | INTEGER | Costo en Lümis |
-| `points` | INTEGER | Alias legacy (mismo que lumis_cost) |
-| `merchant_id` | UUID | FK a tabla merchants |
-| `merchant_name` | VARCHAR(255) | Nombre del comercio |
-| `offer_category` | VARCHAR(50) | food, entertainment, shopping, etc |
-| `img` | VARCHAR(500) | URL de imagen |
-| `terms_and_conditions` | TEXT | Términos y condiciones |
-| `is_active` | BOOLEAN | Si la oferta está disponible |
-| `valid_from` | TIMESTAMPTZ | Fecha inicio vigencia |
-| `valid_to` | TIMESTAMPTZ | Fecha fin vigencia |
-| `stock_quantity` | INTEGER | NULL = ilimitado |
-| `max_redemptions_per_user` | INTEGER | Límite por usuario |
-
-**Ejemplo**:
-```json
-{
-  "offer_id": "550e8400-e29b-41d4-a716-446655440000",
-  "name_friendly": "Café Americano",
-  "description_friendly": "Disfruta un delicioso café americano",
-  "lumis_cost": 55,
-  "merchant_id": "a1726cd2-dd94-45c6-b996-3c89fa927a0c",
-  "merchant_name": "Starbucks Panamá",
-  "offer_category": "food",
-  "img": "https://cdn.lumis.pa/offers/starbucks-cafe.jpg",
-  "terms_and_conditions": "Válido solo en sucursales participantes...",
-  "is_active": true
-}
-```
-
-### Tabla: `user_redemptions`
-
-**Descripción**: Registro de redenciones de usuarios
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `redemption_id` | UUID | Identificador único (PK) |
-| `user_id` | INTEGER | ID del usuario |
-| `offer_id` | UUID | FK a redemption_offers |
-| `redemption_code` | VARCHAR(50) | Código único LUMS-XXXX-XXXX-XXXX |
-| `redemption_status` | VARCHAR(20) | pending, confirmed, cancelled, expired |
-| `lumis_spent` | INTEGER | Lümis gastados |
-| `qr_landing_url` | TEXT | URL de landing page |
-| `qr_image_url` | TEXT | URL de imagen QR |
-| `created_at` | TIMESTAMPTZ | Cuando se creó |
-| `code_expires_at` | TIMESTAMPTZ | Cuando expira el código |
-| `validated_at` | TIMESTAMPTZ | Cuando el merchant lo validó |
-| `validated_by_merchant_id` | UUID | Qué merchant lo validó |
-
-**Estados del ciclo de vida**:
-```
-pending ──> confirmed  (merchant confirma)
-   │
-   ├──> cancelled  (usuario cancela)
-   │
-   └──> expired    (timeout sin usar)
-```
-
-### Tabla: `fact_accumulations`
-
-**Descripción**: Registro de transacciones de Lümis
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `id` | SERIAL | ID autoincremental |
-| `user_id` | INTEGER | ID del usuario |
-| `accum_type` | TEXT | 'earn' (ganar) o 'spend' (gastar) |
-| `dtype` | TEXT | Tipo de operación ('points') |
-| `quantity` | NUMERIC | Cantidad de Lümis (positivo) |
-| `date` | TIMESTAMPTZ | Fecha de la transacción |
-| `redemption_id` | UUID | FK opcional a user_redemptions |
-
-**Lógica del Balance**:
-```sql
-balance = SUM(
-  CASE 
-    WHEN accum_type = 'earn' THEN quantity
-    WHEN accum_type = 'spend' THEN -quantity
-  END
-)
-```
-
-### Tabla: `merchants`
-
-**Descripción**: Comercios aliados que aceptan redenciones
-
-| Campo | Tipo | Descripción |
-|-------|------|-------------|
-| `merchant_id` | UUID | Identificador único (PK) |
-| `merchant_name` | VARCHAR(255) | Nombre del comercio (UNIQUE) |
-| `merchant_type` | VARCHAR(50) | restaurant, cafe, cinema, etc |
-| `contact_email` | VARCHAR(255) | Email de contacto |
-| `api_key_hash` | VARCHAR(255) | API key hasheado con bcrypt |
-| `is_active` | BOOLEAN | Si puede operar |
-| `total_redemptions` | INTEGER | Contador de redenciones |
-| `total_lumis_redeemed` | BIGINT | Total de Lümis canjeados |
-
----
-
-## 📊 Diagramas de Flujo
-
-### Flujo 1: Usuario Redime Oferta
+## 🔄 Flujo de Redención
 
 ```mermaid
 sequenceDiagram
-    participant U as Usuario (App)
-    participant API as API Rust
-    participant DB as PostgreSQL
-    participant QR as QR Generator
-
-    U->>API: POST /api/v1/rewards/redeem<br/>{offer_id, JWT}
-    
-    API->>DB: Verificar balance >= lumis_cost
-    
-    alt Balance insuficiente
-        DB-->>API: balance < cost
-        API-->>U: 400 Saldo insuficiente
-    else Balance suficiente
-        DB-->>API: balance OK
-        
-        API->>API: Generar código único<br/>LUMS-XXXX-XXXX-XXXX
-        
-        API->>QR: Generar QR code
-        QR-->>API: QR image data
-        
-        API->>DB: BEGIN TRANSACTION
-        
-        API->>DB: INSERT INTO user_redemptions<br/>(pending, code, expires_at)
-        
-        API->>DB: INSERT INTO fact_accumulations<br/>(spend, -lumis_cost)
-        
-        DB->>DB: TRIGGER: fun_update_balance_points()<br/>recalcula balance
-        
-        API->>DB: COMMIT TRANSACTION
-        
-        API-->>U: 200 OK<br/>{redemption_id, code, qr_urls, new_balance}
-    end
-```
-
-### Flujo 2: Merchant Valida y Confirma
-
-```mermaid
-sequenceDiagram
-    participant M as Merchant
-    participant API as API Rust
-    participant DB as PostgreSQL
     participant U as Usuario
-
-    M->>API: POST /api/v1/merchant/auth/login<br/>{merchant_name, api_key}
+    participant API as API Lumis
+    participant M as Comercio
+    participant DB as Database
     
-    API->>DB: SELECT api_key_hash FROM merchants
-    DB-->>API: Hashed key
+    U->>API: POST /rewards/redeem {offer_id}
+    API->>DB: Validar balance y oferta
+    API->>API: Generar QR + Token JWT
+    API->>DB: Guardar redención (status: pending)
+    API-->>U: QR Code + redemption_code
     
-    API->>API: bcrypt::verify(api_key, hash)
+    U->>M: Muestra QR
+    M->>API: POST /merchant/validate {code}
+    API->>DB: Verificar código válido
+    API-->>M: Detalles de redención
     
-    alt Valid credentials
-        API->>API: Generate JWT token<br/>(exp: 8 hours)
-        API-->>M: 200 OK {token, merchant_id}
-    else Invalid
-        API-->>M: 401 Unauthorized
-    end
-    
-    M->>API: POST /api/v1/merchant/validate<br/>{code, Bearer token}
-    
-    API->>API: Decode & verify JWT
-    
-    API->>DB: SELECT * FROM user_redemptions<br/>WHERE code AND status='pending'
-    
-    alt Valid code
-        DB-->>API: Redemption data
-        API->>API: Check expiration
-        API-->>M: 200 OK {valid: true, offer_name, lumis_spent}
-    else Invalid
-        API-->>M: 200 OK {valid: false, error}
-    end
-    
-    M->>API: POST /api/v1/merchant/confirm/:id<br/>{Bearer token}
-    
-    API->>DB: BEGIN TRANSACTION
-    API->>DB: SELECT FOR UPDATE<br/>WHERE id AND status='pending'
-    
-    alt Still pending
-        API->>DB: UPDATE SET status='confirmed',<br/>validated_at=NOW()
-        
-        DB->>DB: TRIGGER: update_merchant_stats()<br/>increment counters
-        
-        API->>DB: COMMIT
-        API-->>M: 200 OK {success: true, confirmed_at}
-        
-        API->>U: 📱 Push notification<br/>"Tu redención fue confirmada"
-    else Already confirmed
-        API->>DB: ROLLBACK
-        API-->>M: 400 Ya fue confirmada
-    end
-```
-
-### Flujo 3: Cálculo de Balance (Triggers)
-
-```mermaid
-graph TD
-    A[INSERT INTO fact_accumulations] --> B{Trigger:}
-    B --> C[fun_update_balance_points]
-    
-    C --> D[Calcular nuevo balance]
-    D --> E["SUM(CASE<br/>WHEN accum_type='earn' THEN +quantity<br/>WHEN accum_type='spend' THEN -quantity<br/>END)"]
-    
-    E --> F[UPDATE fact_balance_points<br/>SET balance = calculated]
-    
-    F --> G{Balance existe?}
-    G -->|No| H[INSERT nuevo registro<br/>en fact_balance_points]
-    G -->|Sí| I[UPDATE registro existente]
+    M->>API: POST /merchant/confirm/{id}
+    API->>DB: Actualizar status: used
+    API->>U: Push notification
+    API->>M: Webhook confirmation
+    API-->>M: Success
 ```
 
 ---
 
-## 🔌 API Endpoints - Usuarios
+## 👤 Endpoints de Usuario
 
-### Base URL
+### Autenticación
+Todos los endpoints de usuario requieren header:
 ```
-https://api.lumis.pa/api/v1/rewards
+Authorization: Bearer <jwt_token>
 ```
 
 ---
 
-### 1. Listar Ofertas Disponibles
+### `GET /rewards/offers`
+Lista ofertas disponibles para el usuario.
 
-```http
-GET /api/v1/rewards/offers
-```
+**Query Parameters:**
+| Param | Tipo | Descripción |
+|-------|------|-------------|
+| `category` | string | Filtrar por categoría |
+| `min_cost` | int | Costo mínimo en Lumis |
+| `max_cost` | int | Costo máximo en Lumis |
+| `merchant_id` | uuid | Filtrar por comercio |
+| `sort` | string | `cost_asc`, `cost_desc`, `newest` |
+| `limit` | int | Default: 20 |
+| `offset` | int | Default: 0 |
 
-**Autenticación**: ✅ JWT Required
-
-**Headers**:
-```http
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-**Query Parameters**:
-| Parámetro | Tipo | Requerido | Descripción |
-|-----------|------|-----------|-------------|
-| `category` | string | No | Filtrar por categoría (food, entertainment, etc) |
-| `min_cost` | integer | No | Costo mínimo en Lümis |
-| `max_cost` | integer | No | Costo máximo en Lümis |
-| `sort` | string | No | Ordenar: `cost_asc`, `cost_desc`, `newest` |
-| `limit` | integer | No | Límite de resultados (default: 20) |
-| `offset` | integer | No | Offset para paginación (default: 0) |
-
-**Ejemplo Request**:
-```bash
-curl -X GET "https://api.lumis.pa/api/v1/rewards/offers?category=food&sort=cost_asc&limit=10" \
-  -H "Authorization: Bearer eyJ..."
-```
-
-**Response 200 OK**:
+**Response:**
 ```json
 {
   "success": true,
-  "offers": [
-    {
-      "offer_id": "550e8400-e29b-41d4-a716-446655440000",
-      "name_friendly": "Café Americano",
-      "description_friendly": "Disfruta un delicioso café americano en Starbucks",
-      "lumis_cost": 55,
-      "category": "food",
-      "merchant_name": "Starbucks Panamá",
-      "image_url": "https://cdn.lumis.pa/offers/starbucks-cafe.jpg",
-      "terms_and_conditions": "Válido solo en sucursales participantes. No acumulable con otras promociones.",
-      "stock_available": true,
-      "user_can_redeem": true,
-      "user_redemptions_count": 0,
-      "max_redemptions": 5
-    },
-    {
-      "offer_id": "660e8400-e29b-41d4-a716-446655440001",
-      "name_friendly": "Entrada al Cine 2D",
-      "description_friendly": "Boleto para cualquier película en formato 2D",
-      "lumis_cost": 150,
-      "category": "entertainment",
-      "merchant_name": "Cinépolis Panamá",
-      "image_url": "https://cdn.lumis.pa/offers/cinepolis-2d.jpg",
-      "terms_and_conditions": "Válido lunes a jueves. No aplica estrenos.",
-      "stock_available": true,
-      "user_can_redeem": true,
-      "user_redemptions_count": 1,
-      "max_redemptions": 5
-    }
-  ],
-  "pagination": {
-    "total": 25,
-    "limit": 10,
-    "offset": 0,
+  "data": {
+    "offers": [
+      {
+        "offer_id": "550e8400-e29b-41d4-a716-446655440000",
+        "name_friendly": "20% descuento en Pizza",
+        "description_friendly": "Válido en cualquier pizza grande",
+        "lumis_cost": 500,
+        "category": "restaurantes",
+        "merchant_name": "Pizza Hut",
+        "image_url": "https://cdn.lumis.pa/offers/pizza.jpg",
+        "is_available": true,
+        "stock_remaining": 45,
+        "max_redemptions_per_user": 3,
+        "user_redemptions_count": 1,
+        "expires_at": "2025-12-31T23:59:59Z"
+      }
+    ],
+    "total": 150,
     "has_more": true
   }
 }
 ```
 
-**Errores**:
-- `401 Unauthorized`: JWT inválido o expirado
-- `500 Internal Server Error`: Error de base de datos
-
 ---
 
-### 2. Detalle de Oferta
+### `GET /rewards/offers/:offer_id`
+Detalle de una oferta específica.
 
-```http
-GET /api/v1/rewards/offers/:offer_id
-```
-
-**Autenticación**: ✅ JWT Required
-
-**Path Parameters**:
-| Parámetro | Tipo | Descripción |
-|-----------|------|-------------|
-| `offer_id` | UUID | ID de la oferta |
-
-**Ejemplo Request**:
-```bash
-curl -X GET "https://api.lumis.pa/api/v1/rewards/offers/550e8400-e29b-41d4-a716-446655440000" \
-  -H "Authorization: Bearer eyJ..."
-```
-
-**Response 200 OK**:
+**Response:**
 ```json
 {
   "success": true,
-  "offer": {
-    "offer_id": "550e8400-e29b-41d4-a716-446655440000",
-    "name_friendly": "Café Americano",
-    "description_friendly": "Disfruta un delicioso café americano caliente o frío",
-    "lumis_cost": 55,
-    "category": "food",
-    "merchant_id": "a1726cd2-dd94-45c6-b996-3c89fa927a0c",
-    "merchant_name": "Starbucks Panamá",
-    "merchant_type": "cafe",
-    "image_url": "https://cdn.lumis.pa/offers/starbucks-cafe.jpg",
-    "terms_and_conditions": "Válido solo en sucursales participantes. No acumulable con otras promociones. El café debe ser consumido en el local.",
-    "valid_from": "2025-01-01T00:00:00Z",
-    "valid_to": "2026-12-31T23:59:59Z",
-    "stock_available": true,
-    "is_active": true,
-    "user_balance": 945,
-    "user_can_afford": true,
-    "user_redemptions_count": 0,
-    "max_redemptions_per_user": 5,
-    "user_can_redeem": true
+  "data": {
+    "offer": {
+      "offer_id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "PIZZA_20_OFF",
+      "name_friendly": "20% descuento en Pizza",
+      "description_friendly": "Válido en cualquier pizza grande. No acumulable con otras ofertas.",
+      "lumis_cost": 500,
+      "offer_category": "restaurantes",
+      "merchant_id": "123e4567-e89b-12d3-a456-426614174000",
+      "merchant_name": "Pizza Hut",
+      "valid_from": "2025-01-01T00:00:00Z",
+      "valid_to": "2025-12-31T23:59:59Z",
+      "is_active": true,
+      "stock_quantity": 45,
+      "max_redemptions_per_user": 3,
+      "img": "https://cdn.lumis.pa/offers/pizza.jpg",
+      "terms_and_conditions": "Válido solo en restaurantes participantes..."
+    },
+    "user_can_redeem": true,
+    "user_redemptions": 1,
+    "user_balance": 2500
   }
 }
 ```
 
-**Errores**:
-- `404 Not Found`: Oferta no existe
-- `401 Unauthorized`: JWT inválido
-
 ---
 
-### 3. Crear Redención (Canjear Oferta)
+### `POST /rewards/redeem`
+Redimir una oferta (genera código QR).
 
-```http
-POST /api/v1/rewards/redeem
-```
-
-**Autenticación**: ✅ JWT Required
-
-**Headers**:
-```http
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-Content-Type: application/json
-```
-
-**Request Body**:
+**Request:**
 ```json
 {
   "offer_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
-**Ejemplo Request**:
-```bash
-curl -X POST "https://api.lumis.pa/api/v1/rewards/redeem" \
-  -H "Authorization: Bearer eyJ..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "offer_id": "550e8400-e29b-41d4-a716-446655440000"
-  }'
-```
-
-**Response 200 OK**:
+**Response (201 Created):**
 ```json
 {
   "success": true,
-  "redemption": {
-    "redemption_id": "969b8c90-57f8-421d-9db9-4627456b19b7",
-    "redemption_code": "LUMS-967E-F893-7EC2",
-    "offer_name": "Café Americano",
-    "lumis_spent": 55,
-    "qr_landing_url": "https://app.lumis.pa/redeem/LUMS-967E-F893-7EC2",
-    "qr_image_url": "https://cdn.lumis.pa/qr/LUMS-967E-F893-7EC2.png",
-    "code_expires_at": "2025-10-18T18:42:25Z",
-    "expires_at": "2025-10-18T18:42:25Z",
-    "status": "pending",
-    "merchant_name": "Starbucks Panamá",
-    "message": "¡Redención creada! Presenta este código en el comercio.",
-    "new_balance": 890
+  "data": {
+    "redemption_id": "789e0123-e89b-12d3-a456-426614174000",
+    "redemption_code": "LUMS-A1B2C3",
+    "qr_code_base64": "data:image/png;base64,iVBORw0KGgo...",
+    "qr_image_url": "https://api.lumis.pa/api/v1/rewards/qr/LUMS-A1B2C3.png",
+    "qr_landing_url": "https://lumis.pa/redeem?code=LUMS-A1B2C3&token=eyJhbG...",
+    "expires_at": "2025-12-11T10:30:00Z",
+    "offer_name": "20% descuento en Pizza",
+    "lumis_spent": 500,
+    "new_balance": 2000,
+    "status": "pending"
   }
 }
 ```
 
-**Errores**:
-
-**400 Bad Request - Saldo insuficiente**:
-```json
-{
-  "error": "Insufficient balance",
-  "message": "No tienes suficientes Lümis. Necesitas 55 pero tienes 30.",
-  "details": {
-    "required": 55,
-    "current_balance": 30,
-    "missing": 25
-  }
-}
-```
-
-**404 Not Found - Oferta no existe**:
-```json
-{
-  "error": "Offer not found",
-  "message": "La oferta solicitada no existe o no está disponible"
-}
-```
-
-**400 Bad Request - Stock agotado**:
-```json
-{
-  "error": "Out of stock",
-  "message": "Esta oferta ya no tiene stock disponible"
-}
-```
-
-**400 Bad Request - Límite alcanzado**:
-```json
-{
-  "error": "Redemption limit reached",
-  "message": "Ya alcanzaste el límite máximo de redenciones para esta oferta (5/5)"
-}
-```
+**Errores posibles:**
+| Código | Error | Descripción |
+|--------|-------|-------------|
+| 400 | `INSUFFICIENT_BALANCE` | No tiene suficientes Lumis |
+| 400 | `OFFER_NOT_AVAILABLE` | Oferta inactiva o expirada |
+| 400 | `OUT_OF_STOCK` | Sin stock disponible |
+| 400 | `MAX_REDEMPTIONS_REACHED` | Límite por usuario alcanzado |
+| 429 | `TOO_MANY_REQUESTS` | Rate limit excedido |
 
 ---
 
-### 4. Historial de Redenciones
+### `GET /rewards/history`
+Lista las redenciones del usuario.
 
-```http
-GET /api/v1/rewards/history
-```
+**Query Parameters:**
+| Param | Tipo | Descripción |
+|-------|------|-------------|
+| `status` | string | `pending`, `used`, `expired`, `cancelled` |
+| `limit` | int | Default: 20 |
+| `offset` | int | Default: 0 |
 
-**Autenticación**: ✅ JWT Required
-
-**Query Parameters**:
-| Parámetro | Tipo | Descripción |
-|-----------|------|-------------|
-| `status` | string | Filtrar por estado: pending, confirmed, cancelled, expired |
-| `limit` | integer | Límite de resultados (default: 20) |
-| `offset` | integer | Offset para paginación |
-
-**Ejemplo Request**:
-```bash
-curl -X GET "https://api.lumis.pa/api/v1/rewards/history?status=pending&limit=10" \
-  -H "Authorization: Bearer eyJ..."
-```
-
-**Response 200 OK**:
+**Response:**
 ```json
 {
   "success": true,
-  "redemptions": [
-    {
-      "redemption_id": "969b8c90-57f8-421d-9db9-4627456b19b7",
-      "redemption_code": "LUMS-967E-F893-7EC2",
-      "offer_name": "Café Americano",
-      "merchant_name": "Starbucks Panamá",
-      "lumis_spent": 55,
-      "status": "confirmed",
-      "created_at": "2025-10-18T18:27:25Z",
-      "code_expires_at": "2025-10-18T18:42:25Z",
-      "validated_at": "2025-10-18T18:32:49Z",
-      "qr_landing_url": "https://app.lumis.pa/redeem/LUMS-967E-F893-7EC2",
-      "qr_image_url": "https://cdn.lumis.pa/qr/LUMS-967E-F893-7EC2.png"
-    },
-    {
-      "redemption_id": "12bd8782-9e63-4d29-9cba-17494201ae67",
-      "redemption_code": "LUMS-0B2E-F885-610D",
-      "offer_name": "Café Americano",
-      "merchant_name": "Starbucks Panamá",
-      "lumis_spent": 55,
-      "status": "pending",
-      "created_at": "2025-10-18T18:11:32Z",
-      "code_expires_at": "2025-10-18T18:26:32Z",
-      "validated_at": null,
-      "qr_landing_url": "https://app.lumis.pa/redeem/LUMS-0B2E-F885-610D",
-      "qr_image_url": "https://cdn.lumis.pa/qr/LUMS-0B2E-F885-610D.png"
-    }
-  ],
-  "pagination": {
-    "total": 5,
-    "limit": 10,
-    "offset": 0,
-    "has_more": false
-  }
-}
-```
-
----
-
-### 5. Detalle de Redención
-
-```http
-GET /api/v1/rewards/history/:redemption_id
-```
-
-**Autenticación**: ✅ JWT Required
-
-**Ejemplo Request**:
-```bash
-curl -X GET "https://api.lumis.pa/api/v1/rewards/history/969b8c90-57f8-421d-9db9-4627456b19b7" \
-  -H "Authorization: Bearer eyJ..."
-```
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "redemption": {
-    "redemption_id": "969b8c90-57f8-421d-9db9-4627456b19b7",
-    "redemption_code": "LUMS-967E-F893-7EC2",
-    "offer": {
-      "offer_id": "550e8400-e29b-41d4-a716-446655440000",
-      "name_friendly": "Café Americano",
-      "description_friendly": "Disfruta un delicioso café americano",
-      "image_url": "https://cdn.lumis.pa/offers/starbucks-cafe.jpg"
-    },
-    "merchant_name": "Starbucks Panamá",
-    "lumis_spent": 55,
-    "status": "confirmed",
-    "created_at": "2025-10-18T18:27:25Z",
-    "code_expires_at": "2025-10-18T18:42:25Z",
-    "validated_at": "2025-10-18T18:32:49Z",
-    "qr_landing_url": "https://app.lumis.pa/redeem/LUMS-967E-F893-7EC2",
-    "qr_image_url": "https://cdn.lumis.pa/qr/LUMS-967E-F893-7EC2.png",
-    "can_cancel": false
-  }
-}
-```
-
----
-
-### 6. Cancelar Redención
-
-```http
-DELETE /api/v1/rewards/history/:redemption_id
-```
-
-**Autenticación**: ✅ JWT Required
-
-**Ejemplo Request**:
-```bash
-curl -X DELETE "https://api.lumis.pa/api/v1/rewards/history/969b8c90-57f8-421d-9db9-4627456b19b7" \
-  -H "Authorization: Bearer eyJ..."
-```
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "message": "Redención cancelada. Tus Lümis han sido devueltos.",
-  "refunded_lumis": 55,
-  "new_balance": 945
-}
-```
-
-**Errores**:
-
-**400 Bad Request - Ya confirmada**:
-```json
-{
-  "error": "Cannot cancel",
-  "message": "No puedes cancelar una redención que ya fue confirmada por el comercio"
-}
-```
-
-**400 Bad Request - Ya expirada**:
-```json
-{
-  "error": "Already expired",
-  "message": "Esta redención ya expiró y no puede ser cancelada"
-}
-```
-
----
-
-### 7. Estadísticas del Usuario
-
-```http
-GET /api/v1/rewards/stats
-```
-
-**Autenticación**: ✅ JWT Required
-
-**Ejemplo Request**:
-```bash
-curl -X GET "https://api.lumis.pa/api/v1/rewards/stats" \
-  -H "Authorization: Bearer eyJ..."
-```
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "balance": 890,
-  "total_redemptions": 2,
-  "pending_redemptions": 1,
-  "confirmed_redemptions": 1,
-  "cancelled_redemptions": 0,
-  "expired_redemptions": 0,
-  "total_lumis_spent": 110
-}
-```
-
----
-
-## 🏪 API Endpoints - Merchant
-
-### Base URL
-```
-https://api.lumis.pa/api/v1/merchant
-```
-
----
-
-### 1. Login de Merchant
-
-```http
-POST /api/v1/merchant/auth/login
-```
-
-**Autenticación**: ❌ No requiere (endpoint público)
-
-**Headers**:
-```http
-Content-Type: application/json
-```
-
-**Request Body**:
-```json
-{
-  "merchant_name": "Starbucks Test",
-  "api_key": "test_merchant_key_12345"
-}
-```
-
-**Ejemplo Request**:
-```bash
-curl -X POST "https://api.lumis.pa/api/v1/merchant/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "merchant_name": "Starbucks Test",
-    "api_key": "test_merchant_key_12345"
-  }'
-```
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjA4NDAzNzUsImlhdCI6MTc2MDgxMTU3NSwibWVyY2hhbnRfbmFtZSI6IlN0YXJidWNrcyBUZXN0Iiwicm9sZSI6Im1lcmNoYW50Iiwic3ViIjoiYTE3MjZjZDItZGQ5NC00NWM2LWI5OTYtM2M4OWZhOTI3YTBjIn0.zosCGq4RslPPExgWwkVJp1Z9CirpkoKZ9BQtdEVTRLk",
-  "merchant": {
-    "merchant_id": "a1726cd2-dd94-45c6-b996-3c89fa927a0c",
-    "merchant_name": "Starbucks Test",
-    "expires_in": 28800
-  }
-}
-```
-
-**JWT Token Payload**:
-```json
-{
-  "sub": "a1726cd2-dd94-45c6-b996-3c89fa927a0c",
-  "merchant_name": "Starbucks Test",
-  "role": "merchant",
-  "exp": 1760840375,
-  "iat": 1760811575
-}
-```
-
-**Errores**:
-
-**401 Unauthorized - Credenciales inválidas**:
-```json
-{
-  "error": "Invalid credentials",
-  "message": "Credenciales inválidas"
-}
-```
-
-**404 Not Found - Merchant no existe**:
-```json
-{
-  "error": "Merchant not found",
-  "message": "Comercio no encontrado"
-}
-```
-
-**403 Forbidden - Merchant inactivo**:
-```json
-{
-  "error": "Merchant inactive",
-  "message": "Comercio desactivado. Contacta soporte."
-}
-```
-
----
-
-### 2. Validar Código de Redención
-
-```http
-POST /api/v1/merchant/validate
-```
-
-**Autenticación**: ✅ JWT Required (Merchant Token)
-
-**Headers**:
-```http
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-Content-Type: application/json
-```
-
-**Request Body**:
-```json
-{
-  "code": "LUMS-967E-F893-7EC2"
-}
-```
-
-**Tipos aceptados para `code`**:
-- Código de redención: `"LUMS-967E-F893-7EC2"`
-- UUID redemption_id: `"969b8c90-57f8-421d-9db9-4627456b19b7"`
-
-**Ejemplo Request**:
-```bash
-curl -X POST "https://api.lumis.pa/api/v1/merchant/validate" \
-  -H "Authorization: Bearer eyJ0eXAiOiJKV1Q..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "code": "LUMS-967E-F893-7EC2"
-  }'
-```
-
-**Response 200 OK - Código válido**:
-```json
-{
-  "success": true,
-  "valid": true,
-  "redemption": {
-    "redemption_id": "969b8c90-57f8-421d-9db9-4627456b19b7",
-    "redemption_code": "LUMS-967E-F893-7EC2",
-    "offer_name": "Café Americano",
-    "lumis_spent": 55,
-    "status": "pending",
-    "created_at": "2025-10-18T18:27:25.950899+00:00",
-    "expires_at": "2025-10-18T18:42:25.950733+00:00",
-    "can_confirm": true
-  },
-  "message": "Código válido. Puedes confirmar la redención."
-}
-```
-
-**Response 200 OK - Código inválido**:
-```json
-{
-  "success": true,
-  "valid": false,
-  "redemption": null,
-  "message": "Código no encontrado o inválido"
-}
-```
-
-**Response 200 OK - Código expirado**:
-```json
-{
-  "success": true,
-  "valid": false,
-  "redemption": null,
-  "message": "Este código expiró"
-}
-```
-
-**Response 200 OK - Ya fue usado**:
-```json
-{
-  "success": true,
-  "valid": false,
-  "redemption": {
-    "redemption_id": "969b8c90-57f8-421d-9db9-4627456b19b7",
-    "redemption_code": "LUMS-967E-F893-7EC2",
-    "offer_name": "Café Americano",
-    "lumis_spent": 55,
-    "status": "confirmed",
-    "created_at": "2025-10-18T18:27:25.950899+00:00",
-    "expires_at": "2025-10-18T18:42:25.950733+00:00",
-    "can_confirm": false
-  },
-  "message": "Este código ya fue usado"
-}
-```
-
-**Errores**:
-- `401 Unauthorized`: JWT de merchant inválido o expirado
-- `403 Forbidden`: Token no tiene role="merchant"
-
----
-
-### 3. Confirmar Redención
-
-```http
-POST /api/v1/merchant/confirm/:redemption_id
-```
-
-**Autenticación**: ✅ JWT Required (Merchant Token)
-
-**Headers**:
-```http
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-Content-Type: application/json
-```
-
-**Path Parameters**:
-| Parámetro | Tipo | Descripción |
-|-----------|------|-------------|
-| `redemption_id` | UUID | ID de la redención |
-
-**Ejemplo Request**:
-```bash
-curl -X POST "https://api.lumis.pa/api/v1/merchant/confirm/969b8c90-57f8-421d-9db9-4627456b19b7" \
-  -H "Authorization: Bearer eyJ0eXAiOiJKV1Q..." \
-  -H "Content-Type: application/json"
-```
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "message": "Redención confirmada exitosamente",
-  "redemption_id": "969b8c90-57f8-421d-9db9-4627456b19b7",
-  "confirmed_at": "2025-10-18T18:32:49.977009201+00:00"
-}
-```
-
-**Errores**:
-
-**404 Not Found**:
-```json
-{
-  "error": "Redemption not found",
-  "message": "Redención no encontrada"
-}
-```
-
-**400 Bad Request - Ya confirmada**:
-```json
-{
-  "error": "Already confirmed",
-  "message": "Esta redención ya fue confirmada"
-}
-```
-
-**400 Bad Request - Ya cancelada**:
-```json
-{
-  "error": "Already cancelled",
-  "message": "Esta redención fue cancelada por el usuario"
-}
-```
-
-**400 Bad Request - Expirada**:
-```json
-{
-  "error": "Expired",
-  "message": "Código expirado"
-}
-```
-
----
-
-### 4. Estadísticas del Merchant
-
-```http
-GET /api/v1/merchant/stats
-```
-
-**Autenticación**: ✅ JWT Required (Merchant Token)
-
-**Headers**:
-```http
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-```
-
-**Ejemplo Request**:
-```bash
-curl -X GET "https://api.lumis.pa/api/v1/merchant/stats" \
-  -H "Authorization: Bearer eyJ0eXAiOiJKV1Q..."
-```
-
-**Response 200 OK**:
-```json
-{
-  "success": true,
-  "stats": {
-    "total_redemptions": 2,
-    "pending_redemptions": 1,
-    "confirmed_redemptions": 1,
-    "today_redemptions": 2,
-    "this_week_redemptions": 2,
-    "this_month_redemptions": 2,
-    "total_lumis_redeemed": 55,
-    "recent_redemptions": [
+  "data": {
+    "redemptions": [
       {
-        "redemption_id": "969b8c90-57f8-421d-9db9-4627456b19b7",
-        "redemption_code": "LUMS-967E-F893-7EC2",
-        "offer_name": "Café Americano",
-        "lumis_spent": 55,
-        "status": "confirmed",
-        "created_at": "2025-10-18T18:27:25.950899+00:00",
-        "validated_at": "2025-10-18T18:32:49.974960+00:00"
+        "redemption_id": "789e0123-e89b-12d3-a456-426614174000",
+        "offer_name": "20% descuento en Pizza",
+        "merchant_name": "Pizza Hut",
+        "lumis_cost": 500,
+        "status": "pending",
+        "redemption_code": "LUMS-A1B2C3",
+        "qr_landing_url": "https://lumis.pa/redeem?code=LUMS-A1B2C3&token=...",
+        "qr_visible": true,
+        "status_message": "Muestra este código en el comercio",
+        "created_at": "2025-12-10T10:00:00Z",
+        "expires_at": "2025-12-11T10:00:00Z",
+        "used_at": null
       },
       {
-        "redemption_id": "12bd8782-9e63-4d29-9cba-17494201ae67",
-        "redemption_code": "LUMS-0B2E-F885-610D",
-        "offer_name": "Café Americano",
-        "lumis_spent": 55,
-        "status": "pending",
-        "created_at": "2025-10-18T18:11:32.783191+00:00",
-        "validated_at": null
+        "redemption_id": "456e7890-e89b-12d3-a456-426614174000",
+        "offer_name": "Café gratis",
+        "merchant_name": "Starbucks",
+        "lumis_cost": 200,
+        "status": "used",
+        "redemption_code": null,
+        "qr_landing_url": null,
+        "qr_visible": false,
+        "status_message": "Usado el 09/12/2025 en Starbucks Multiplaza",
+        "created_at": "2025-12-08T14:00:00Z",
+        "expires_at": "2025-12-09T14:00:00Z",
+        "used_at": "2025-12-09T11:30:00Z"
       }
+    ],
+    "total": 25
+  }
+}
+```
+
+> **Nota:** Los códigos `used` o `expired` tienen `qr_visible: false` y los campos sensibles (`redemption_code`, `qr_landing_url`) son `null` para evitar reutilización.
+
+---
+
+### `GET /rewards/history/:redemption_id`
+Detalle de una redención específica.
+
+---
+
+### `DELETE /rewards/history/:redemption_id`
+Cancelar una redención pendiente (devuelve Lumis).
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Redención cancelada exitosamente",
+    "lumis_refunded": 500,
+    "new_balance": 2500
+  }
+}
+```
+
+---
+
+### `GET /rewards/stats`
+Estadísticas de redención del usuario.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total_redemptions": 25,
+    "total_lumis_redeemed": 12500,
+    "pending_redemptions": 2,
+    "used_redemptions": 20,
+    "expired_redemptions": 3,
+    "favorite_category": "restaurantes",
+    "favorite_merchant": "Pizza Hut"
+  }
+}
+```
+
+---
+
+## 🏪 Endpoints de Comercio
+
+### Autenticación
+Los endpoints de comercio requieren headers:
+```
+X-Merchant-Code: MERCHANT_CODE
+X-Api-Key: api_key_secreto
+```
+
+---
+
+### `POST /merchant/validate`
+Validar un código de redención (sin marcarlo como usado).
+
+**Request:**
+```json
+{
+  "redemption_code": "LUMS-A1B2C3",
+  "validation_token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "redemption_id": "789e0123-e89b-12d3-a456-426614174000",
+    "redemption_code": "LUMS-A1B2C3",
+    "offer_id": "550e8400-e29b-41d4-a716-446655440000",
+    "offer_name": "20% descuento en Pizza",
+    "lumis_cost": 500,
+    "user_name": "Juan Pérez",
+    "status": "pending",
+    "expires_at": "2025-12-11T10:00:00Z",
+    "can_confirm": true
+  }
+}
+```
+
+**Errores posibles:**
+| Código | Error | Descripción |
+|--------|-------|-------------|
+| 400 | `INVALID_CODE` | Código no existe |
+| 400 | `CODE_EXPIRED` | Código expirado |
+| 400 | `CODE_ALREADY_USED` | Ya fue utilizado |
+| 400 | `INVALID_TOKEN` | Token JWT inválido/expirado |
+| 401 | `INVALID_CREDENTIALS` | Credenciales de comercio inválidas |
+
+---
+
+### `POST /merchant/confirm/:redemption_id`
+Confirmar uso de una redención (marcar como usado).
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Redención confirmada exitosamente",
+    "redemption_id": "789e0123-e89b-12d3-a456-426614174000",
+    "redemption_code": "LUMS-A1B2C3",
+    "confirmed_at": "2025-12-10T11:30:00Z",
+    "offer_name": "20% descuento en Pizza",
+    "lumis_value": 500
+  }
+}
+```
+
+**Errores posibles:**
+| Código | Error | Descripción |
+|--------|-------|-------------|
+| 400 | `ALREADY_CONFIRMED` | Ya fue confirmado |
+| 400 | `CODE_EXPIRED` | Código expirado |
+| 404 | `NOT_FOUND` | Redención no encontrada |
+
+---
+
+### `GET /merchant/redemptions`
+Lista redenciones del comercio.
+
+**Query Parameters:**
+| Param | Tipo | Descripción |
+|-------|------|-------------|
+| `status` | string | `pending`, `used`, `expired` |
+| `date_from` | date | Fecha inicio (YYYY-MM-DD) |
+| `date_to` | date | Fecha fin |
+| `limit` | int | Default: 50 |
+| `offset` | int | Default: 0 |
+
+---
+
+### `GET /merchant/analytics`
+Estadísticas del comercio.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total_redemptions": 1250,
+    "total_lumis_processed": 625000,
+    "today_redemptions": 15,
+    "this_week_redemptions": 89,
+    "this_month_redemptions": 312,
+    "average_redemption_value": 500,
+    "top_offers": [
+      {
+        "offer_id": "550e8400-...",
+        "offer_name": "20% descuento Pizza",
+        "total_redemptions": 450
+      }
+    ],
+    "redemptions_by_day": [
+      {"date": "2025-12-09", "count": 45},
+      {"date": "2025-12-10", "count": 38}
     ]
   }
 }
@@ -1126,466 +421,606 @@ curl -X GET "https://api.lumis.pa/api/v1/merchant/stats" \
 
 ---
 
-## 🔐 Autenticación y Seguridad
+## 👨‍💼 Endpoints de Administración
 
-### JWT Tokens - Usuarios
+### Autenticación
+Requiere JWT de usuario con rol admin (`ADMIN_USER_IDS` env var).
 
-**Header**:
-```http
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
+---
 
-**Payload**:
+### `GET /rewards/admin/offers`
+Lista todas las ofertas con estadísticas.
+
+**Query Parameters:**
+| Param | Tipo | Descripción |
+|-------|------|-------------|
+| `category` | string | Filtrar por categoría |
+| `merchant_id` | uuid | Filtrar por comercio |
+| `is_active` | bool | Solo activas/inactivas |
+| `search` | string | Búsqueda por nombre |
+| `sort_by` | string | `name`, `lumis_cost`, `created_at`, `total_redemptions` |
+| `sort_order` | string | `ASC`, `DESC` |
+| `limit` | int | Default: 20 |
+| `offset` | int | Default: 0 |
+
+**Response:**
 ```json
 {
-  "sub": "12345",
-  "email": "test@example.com",
-  "name": "Test User",
-  "iat": 1760812027,
-  "exp": 1760819227
+  "success": true,
+  "data": {
+    "offers": [
+      {
+        "offer_id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "PIZZA_20_OFF",
+        "name_friendly": "20% descuento en Pizza",
+        "description_friendly": "Válido en cualquier pizza grande",
+        "lumis_cost": 500,
+        "offer_category": "restaurantes",
+        "merchant_id": "123e4567-...",
+        "merchant_name": "Pizza Hut",
+        "stock_quantity": 45,
+        "max_redemptions_per_user": 3,
+        "valid_from": "2025-01-01T00:00:00Z",
+        "valid_to": "2025-12-31T23:59:59Z",
+        "is_active": true,
+        "img": "https://cdn.lumis.pa/offers/pizza.jpg",
+        "terms_and_conditions": "...",
+        "created_at": "2025-01-01T00:00:00Z",
+        "updated_at": "2025-06-15T14:30:00Z",
+        "total_redemptions": 1250,
+        "pending_redemptions": 12,
+        "used_redemptions": 1200,
+        "total_lumis_redeemed": 625000
+      }
+    ],
+    "total": 45,
+    "limit": 20,
+    "offset": 0,
+    "has_more": true
+  }
 }
 ```
 
-**Campos**:
-- `sub`: User ID como string
-- `email`: Email del usuario
-- `name`: Nombre del usuario
-- `iat`: Issued at timestamp
-- `exp`: Expiration timestamp
+---
 
-**Algoritmo**: HS256 (HMAC with SHA-256)  
-**Secret**: Configurado en variable de entorno `JWT_SECRET`
+### `GET /rewards/admin/offers/:offer_id`
+Detalle de una oferta con estadísticas completas.
 
-### JWT Tokens - Merchants
+---
 
-**Header**:
-```http
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-```
+### `POST /rewards/admin/offers`
+Crear nueva oferta.
 
-**Payload**:
+**Request:**
 ```json
 {
-  "sub": "a1726cd2-dd94-45c6-b996-3c89fa927a0c",
-  "merchant_name": "Starbucks Test",
-  "role": "merchant",
-  "exp": 1760840375,
-  "iat": 1760811575
+  "name": "COFFEE_FREE",
+  "name_friendly": "Café Gratis",
+  "description_friendly": "Un café americano o espresso gratis",
+  "lumis_cost": 200,
+  "offer_category": "cafeterias",
+  "merchant_id": "123e4567-e89b-12d3-a456-426614174000",
+  "merchant_name": "Starbucks",
+  "stock_quantity": 500,
+  "max_redemptions_per_user": 5,
+  "valid_from": "2025-01-01T00:00:00Z",
+  "valid_to": "2025-12-31T23:59:59Z",
+  "img": "https://cdn.lumis.pa/offers/coffee.jpg",
+  "terms_and_conditions": "Válido en todas las sucursales...",
+  "is_active": true
 }
 ```
 
-**Campos**:
-- `sub`: Merchant ID (UUID)
-- `merchant_name`: Nombre del comercio
-- `role`: Siempre "merchant"
-- `iat`: Issued at timestamp
-- `exp`: Expiration timestamp (8 horas después de iat)
+**Response (201):** Retorna la oferta creada con estadísticas iniciales en 0.
 
-**Validación**:
-- Middleware verifica que `role === "merchant"`
-- Valida firma con el mismo secret que usuarios
-- Verifica expiración
+---
 
-### API Keys - Merchants
+### `PUT /rewards/admin/offers/:offer_id`
+Actualizar oferta existente.
 
-**Formato**: String arbitrario (ej: `test_merchant_key_12345`)
-
-**Almacenamiento**: Hasheado con bcrypt en columna `api_key_hash`
-
-**Validación**:
-```rust
-let is_valid = bcrypt::verify(&payload.api_key, &merchant.api_key_hash)
-    .unwrap_or(false);
+**Request:** Cualquier campo del modelo (parcial).
+```json
+{
+  "lumis_cost": 250,
+  "stock_quantity": 1000,
+  "is_active": true
+}
 ```
 
-**Best Practices**:
-- Nunca almacenar API keys en texto plano
-- Usar bcrypt con cost factor 12
-- Rotar keys periódicamente
-- Un merchant = un API key único
+---
 
-### Rate Limiting
+### `DELETE /rewards/admin/offers/:offer_id`
+Soft delete (desactiva la oferta).
 
-**Usuarios**:
-- 100 requests por minuto por IP
-- 1000 requests por hora por user_id
+> ⚠️ **Protección:** No se puede eliminar si tiene redenciones pendientes.
 
-**Merchants**:
-- 500 requests por minuto por merchant_id
-- Sin límite de confirmaciones (operación crítica)
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Oferta eliminada",
+    "offer_id": "550e8400-..."
+  }
+}
+```
 
-### HTTPS
+---
 
-**Obligatorio en producción**:
-- Todos los endpoints deben usar HTTPS
-- Certificado SSL/TLS válido
-- HSTS habilitado
+### `POST /rewards/admin/offers/:offer_id/activate`
+Activar una oferta desactivada.
+
+---
+
+### `POST /rewards/admin/offers/:offer_id/deactivate`
+Desactivar una oferta activa.
+
+---
+
+## 📱 PWA Scanner para Comercios
+
+### Acceso
+```
+https://api.lumis.pa/merchant-scanner/
+```
+
+### Características
+
+| Feature | Descripción |
+|---------|-------------|
+| **Instalable** | PWA que se puede instalar en dispositivo móvil |
+| **Offline** | Service Worker para funcionamiento básico offline |
+| **Cámara** | Escaneo de QR usando cámara trasera |
+| **Manual** | Input manual de código si cámara no funciona |
+| **Historial** | Últimas 10 validaciones guardadas en localStorage |
+| **Responsive** | Diseño optimizado para móviles |
+
+### Flujo de Uso
+
+1. **Login**
+   - Ingresar código de comercio
+   - Ingresar API Key
+   - Credenciales guardadas en localStorage
+
+2. **Escaneo**
+   - Apuntar cámara al QR del cliente
+   - O ingresar código manualmente (LUMS-XXXXXX)
+
+3. **Validación**
+   - Ver detalles de la redención
+   - Confirmar nombre de oferta y cliente
+   - Presionar "Confirmar Uso"
+
+4. **Confirmación**
+   - Toast de éxito
+   - Se agrega al historial local
+
+### Manifest
+```json
+{
+  "name": "Lum Scanner",
+  "short_name": "LumScan",
+  "display": "standalone",
+  "theme_color": "#6B46C1",
+  "background_color": "#1a1a2e"
+}
+```
+
+---
+
+## 📦 Modelos de Datos
+
+### RedemptionOffer
+```typescript
+interface RedemptionOffer {
+  id: number;
+  offer_id: UUID;
+  name: string;
+  name_friendly: string;
+  description_friendly?: string;
+  points?: number;           // Legacy
+  lumis_cost: number;
+  offer_category?: string;
+  merchant_id?: UUID;
+  merchant_name?: string;
+  valid_from?: DateTime;
+  valid_to?: DateTime;
+  is_active: boolean;
+  stock_quantity?: number;   // null = unlimited
+  max_redemptions_per_user: number;
+  img?: string;
+  terms_and_conditions?: string;
+  created_at: DateTime;
+  updated_at: DateTime;
+}
+```
+
+### UserRedemption
+```typescript
+interface UserRedemption {
+  redemption_id: UUID;
+  user_id: number;
+  offer_id: UUID;
+  lumis_cost: number;
+  redemption_code: string;           // LUMS-XXXXXX
+  validation_token_hash?: string;    // SHA256 del JWT
+  qr_code_base64?: string;
+  qr_image_url?: string;
+  status: 'pending' | 'used' | 'expired' | 'cancelled';
+  expires_at: DateTime;
+  created_at: DateTime;
+  used_at?: DateTime;
+  confirmed_by_merchant_id?: UUID;
+}
+```
+
+### Merchant
+```typescript
+interface Merchant {
+  merchant_id: UUID;
+  merchant_code: string;
+  merchant_name: string;
+  api_key_hash: string;
+  webhook_url?: string;
+  webhook_secret?: string;
+  is_active: boolean;
+  created_at: DateTime;
+}
+```
 
 ---
 
 ## ❌ Códigos de Error
 
-### Códigos HTTP
+### Errores de Usuario (4xx)
+| Código | Error Code | Descripción |
+|--------|------------|-------------|
+| 400 | `BAD_REQUEST` | Request mal formado |
+| 400 | `VALIDATION_ERROR` | Datos inválidos |
+| 400 | `INSUFFICIENT_BALANCE` | Lumis insuficientes |
+| 400 | `OFFER_NOT_AVAILABLE` | Oferta no disponible |
+| 400 | `OUT_OF_STOCK` | Sin stock |
+| 400 | `MAX_REDEMPTIONS_REACHED` | Límite alcanzado |
+| 400 | `INVALID_CODE` | Código inválido |
+| 400 | `CODE_EXPIRED` | Código expirado |
+| 400 | `CODE_ALREADY_USED` | Código ya usado |
+| 401 | `UNAUTHORIZED` | No autenticado |
+| 401 | `INVALID_TOKEN` | Token inválido |
+| 403 | `FORBIDDEN` | Sin permisos |
+| 404 | `NOT_FOUND` | Recurso no encontrado |
+| 429 | `TOO_MANY_REQUESTS` | Rate limit excedido |
 
-| Código | Significado | Cuándo ocurre |
-|--------|-------------|---------------|
-| 200 | OK | Request exitoso |
-| 400 | Bad Request | Datos inválidos, saldo insuficiente, límite alcanzado |
-| 401 | Unauthorized | JWT inválido, expirado o faltante |
-| 403 | Forbidden | Permisos insuficientes, merchant inactivo |
-| 404 | Not Found | Recurso no encontrado (oferta, redención) |
-| 409 | Conflict | Race condition en confirmación |
-| 500 | Internal Server Error | Error de base de datos o servidor |
+### Errores de Servidor (5xx)
+| Código | Error Code | Descripción |
+|--------|------------|-------------|
+| 500 | `INTERNAL_SERVER_ERROR` | Error interno |
+| 500 | `DATABASE_ERROR` | Error de base de datos |
+| 503 | `SERVICE_UNAVAILABLE` | Servicio no disponible |
 
-### Estructura de Errores
-
+### Formato de Error
 ```json
 {
-  "error": "error_code",
-  "message": "Mensaje legible para el usuario",
-  "details": {
-    "campo_adicional": "información extra"
-  }
-}
-```
-
-**Ejemplos**:
-
-**Saldo insuficiente**:
-```json
-{
-  "error": "Insufficient balance",
-  "message": "No tienes suficientes Lümis. Necesitas 55 pero tienes 30.",
-  "details": {
-    "required": 55,
-    "current_balance": 30,
-    "missing": 25
-  }
-}
-```
-
-**Token expirado**:
-```json
-{
-  "error": "Token expired",
-  "message": "Your session has expired. Please log in again.",
-  "details": "JWT error: ExpiredSignature"
-}
-```
-
-**Oferta no encontrada**:
-```json
-{
-  "error": "Offer not found",
-  "message": "La oferta solicitada no existe o no está disponible"
-}
-```
-
----
-
-## 📱 Ejemplos de Integración
-
-### Flujo Completo - App de Usuario
-
-```javascript
-// 1. Login del usuario (obtener JWT)
-const loginResponse = await fetch('https://api.lumis.pa/api/v1/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    email: 'user@example.com',
-    password: 'password123'
-  })
-});
-const { token } = await loginResponse.json();
-
-// 2. Listar ofertas disponibles
-const offersResponse = await fetch('https://api.lumis.pa/api/v1/rewards/offers?category=food&limit=10', {
-  headers: { 'Authorization': `Bearer ${token}` }
-});
-const { offers } = await offersResponse.json();
-
-// 3. Usuario selecciona una oferta y la canjea
-const redeemResponse = await fetch('https://api.lumis.pa/api/v1/rewards/redeem', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    offer_id: '550e8400-e29b-41d4-a716-446655440000'
-  })
-});
-
-const redemption = await redeemResponse.json();
-
-if (redemption.success) {
-  // 4. Mostrar QR al usuario
-  console.log('Código:', redemption.redemption.redemption_code);
-  console.log('QR Image:', redemption.redemption.qr_image_url);
-  console.log('Nuevo balance:', redemption.redemption.new_balance);
-  
-  // Mostrar UI con QR y countdown hasta expiración
-  showQRCode(redemption.redemption.qr_image_url);
-  startCountdown(redemption.redemption.code_expires_at);
-}
-```
-
-### Flujo Completo - App de Merchant
-
-```javascript
-// 1. Login del merchant (obtener JWT)
-const merchantLoginResponse = await fetch('https://api.lumis.pa/api/v1/merchant/auth/login', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    merchant_name: 'Starbucks Test',
-    api_key: 'test_merchant_key_12345'
-  })
-});
-const { token: merchantToken } = await merchantLoginResponse.json();
-
-// 2. Escanear QR del usuario (obtener código)
-const scannedCode = 'LUMS-967E-F893-7EC2';
-
-// 3. Validar el código (preview)
-const validateResponse = await fetch('https://api.lumis.pa/api/v1/merchant/validate', {
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${merchantToken}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({ code: scannedCode })
-});
-
-const validation = await validateResponse.json();
-
-if (validation.valid && validation.redemption.can_confirm) {
-  // 4. Mostrar preview al merchant
-  console.log('Oferta:', validation.redemption.offer_name);
-  console.log('Lümis:', validation.redemption.lumis_spent);
-  
-  // 5. Merchant confirma
-  const confirmResponse = await fetch(
-    `https://api.lumis.pa/api/v1/merchant/confirm/${validation.redemption.redemption_id}`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${merchantToken}`,
-        'Content-Type': 'application/json'
-      }
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "INSUFFICIENT_BALANCE",
+    "message": "No tienes suficientes Lumis. Necesitas 500, tienes 300.",
+    "details": {
+      "required": 500,
+      "available": 300
     }
-  );
-  
-  const confirmation = await confirmResponse.json();
-  
-  if (confirmation.success) {
-    console.log('✅ Redención confirmada!');
-    playSuccessSound();
-    showSuccessMessage();
-  }
-} else {
-  // Mostrar mensaje de error
-  console.error('❌', validation.message);
-  showErrorMessage(validation.message);
+  },
+  "request_id": "req_abc123"
 }
 ```
 
-### Manejo de Errores
+---
 
-```javascript
-async function redeemOffer(offerId, userToken) {
-  try {
-    const response = await fetch('https://api.lumis.pa/api/v1/rewards/redeem', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${userToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ offer_id: offerId })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      // Manejar errores específicos
-      switch (response.status) {
-        case 400:
-          if (data.error === 'Insufficient balance') {
-            alert(`No tienes suficientes Lümis. Te faltan ${data.details.missing} Lümis.`);
-          } else if (data.error === 'Redemption limit reached') {
-            alert('Ya alcanzaste el límite de redenciones para esta oferta.');
-          }
-          break;
-        
-        case 401:
-          // Token expirado, redirigir a login
-          redirectToLogin();
-          break;
-        
-        case 404:
-          alert('Esta oferta ya no está disponible.');
-          break;
-        
-        case 500:
-          alert('Error del servidor. Intenta nuevamente.');
-          logError(data);
-          break;
-      }
-      
-      return null;
+## 🚦 Rate Limiting
+
+### Límites por Usuario
+| Período | Límite | Scope |
+|---------|--------|-------|
+| Por hora | 10 redenciones | Por user_id |
+| Por día | 30 redenciones | Por user_id |
+
+### Headers de Respuesta
+```
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 7
+X-RateLimit-Reset: 1702209600
+```
+
+### Implementación
+- Backend: Redis con `INCR` y `EXPIRE`
+- Keys: `rate:redeem:hour:{user_id}`, `rate:redeem:day:{user_id}`
+- TTL: 3600s (hora), 86400s (día)
+
+### Error 429
+```json
+{
+  "success": false,
+  "error": {
+    "code": "TOO_MANY_REQUESTS",
+    "message": "Has superado el límite de redenciones. Intenta de nuevo en 45 minutos.",
+    "details": {
+      "retry_after": 2700
     }
-    
-    return data.redemption;
-    
-  } catch (error) {
-    console.error('Network error:', error);
-    alert('Error de conexión. Verifica tu internet.');
-    return null;
   }
 }
 ```
 
 ---
 
-## 🔄 Triggers y Lógica de Negocio
+## 🔔 Webhooks
 
-### Trigger: `fun_update_balance_points()`
+### Eventos
+| Evento | Trigger |
+|--------|---------|
+| `redemption.created` | Usuario crea redención |
+| `redemption.confirmed` | Comercio confirma uso |
+| `redemption.expired` | Código expira automáticamente |
+| `redemption.cancelled` | Usuario cancela redención |
 
-**Cuándo se dispara**: AFTER INSERT OR DELETE OR UPDATE en `fact_accumulations`
+### Payload
+```json
+{
+  "event": "redemption.confirmed",
+  "timestamp": "2025-12-10T11:30:00Z",
+  "data": {
+    "redemption_id": "789e0123-...",
+    "redemption_code": "LUMS-A1B2C3",
+    "offer_id": "550e8400-...",
+    "offer_name": "20% descuento en Pizza",
+    "user_id": 12345,
+    "lumis_value": 500,
+    "confirmed_at": "2025-12-10T11:30:00Z",
+    "confirmed_by": "PIZZA_HUT_001"
+  }
+}
+```
 
-**Función**:
+### Firma HMAC
+```
+X-Webhook-Signature: sha256=abc123...
+```
+
+Verificación:
+```python
+import hmac
+expected = hmac.new(
+    webhook_secret.encode(),
+    payload.encode(),
+    'sha256'
+).hexdigest()
+assert signature == f"sha256={expected}"
+```
+
+### Retry Policy
+| Intento | Delay |
+|---------|-------|
+| 1 | Inmediato |
+| 2 | 5 segundos |
+| 3 | 30 segundos |
+| 4 | 2 minutos |
+| 5 | 10 minutos |
+
+---
+
+## 🔒 Seguridad
+
+### Token JWT en QR
+```json
+{
+  "redemption_code": "LUMS-A1B2C3",
+  "user_id": 12345,
+  "redemption_id": "789e0123-...",
+  "exp": 1702209660,
+  "jti": "unique-token-id"
+}
+```
+
+- **Algoritmo:** HS256
+- **Expiración:** 60 segundos
+- **Secret:** `LUMIS_JWT_SECRET` env var
+- **Hash almacenado:** SHA256 del token en DB
+
+### Validación de QR
+1. Extraer código y token de URL
+2. Verificar firma JWT y expiración
+3. Comparar hash del token con DB
+4. Verificar estado `pending` y no expirado
+5. Verificar que no fue usado previamente
+
+### Protecciones Implementadas
+- ✅ Rate limiting por usuario
+- ✅ Token JWT con expiración corta
+- ✅ Hash de token en DB (previene replay)
+- ✅ Validación de merchant con API key hasheada
+- ✅ HTTPS obligatorio
+- ✅ CORS configurado
+- ✅ Headers de seguridad (X-Content-Type-Options, etc.)
+
+---
+
+## 📊 Métricas Prometheus
+
+### Métricas Disponibles
+```
+# Redenciones creadas
+redemptions_created_total{category="restaurantes", success="true"}
+
+# Redenciones confirmadas
+redemptions_confirmed_total{merchant="PIZZA_HUT", offer="PIZZA_20_OFF"}
+
+# Validaciones de comercio
+merchant_validations_total{merchant="PIZZA_HUT", valid="true"}
+
+# Latencia de redención
+redemption_duration_seconds_bucket{le="0.5"}
+
+# Códigos expirados
+redemptions_expired_total
+```
+
+---
+
+## 🗄️ Tablas de Base de Datos
+
+### rewards.redemption_offers
 ```sql
-CREATE OR REPLACE FUNCTION rewards.fun_update_balance_points()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $function$
-BEGIN
-  -- Calculate balance from fact_accumulations only
-  UPDATE rewards.fact_balance_points rs
-  SET balance = (
-    SELECT COALESCE(
-      SUM(CASE 
-        WHEN accum_type = 'earn' THEN quantity
-        WHEN accum_type = 'spend' THEN -quantity
-        ELSE 0
-      END),
-      0
-    )
-    FROM rewards.fact_accumulations 
-    WHERE user_id = NEW.user_id AND dtype = 'points'
-  ),
-  latest_update = NOW()
-  WHERE rs.user_id = NEW.user_id;
-  
-  -- If the record didn't exist, insert it
-  IF NOT FOUND THEN
-    INSERT INTO rewards.fact_balance_points (user_id, balance, latest_update)
-    VALUES (
-      NEW.user_id,
-      (SELECT COALESCE(SUM(...), 0) FROM rewards.fact_accumulations ...),
-      NOW()
-    );
-  END IF;
-  
-  RETURN NEW;
-END;
-$function$;
+CREATE TABLE rewards.redemption_offers (
+    id SERIAL PRIMARY KEY,
+    offer_id UUID DEFAULT gen_random_uuid() UNIQUE,
+    name VARCHAR(255),
+    name_friendly VARCHAR(255) NOT NULL,
+    description_friendly TEXT,
+    points INTEGER,
+    lumis_cost INTEGER,
+    offer_category VARCHAR(50),
+    merchant_id UUID REFERENCES rewards.merchants(merchant_id),
+    merchant_name VARCHAR(255),
+    stock_quantity INTEGER,
+    max_redemptions_per_user INTEGER DEFAULT 5,
+    is_active BOOLEAN DEFAULT true,
+    valid_from TIMESTAMPTZ DEFAULT NOW(),
+    valid_to TIMESTAMPTZ,
+    img TEXT,
+    terms_and_conditions TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
 
-### Trigger: `update_merchant_stats()`
-
-**Cuándo se dispara**: AFTER UPDATE en `user_redemptions`
-
-**Función**:
+### rewards.user_redemptions
 ```sql
-CREATE OR REPLACE FUNCTION rewards.update_merchant_stats()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $function$
-BEGIN
-    IF NEW.redemption_status = 'confirmed' AND OLD.redemption_status != 'confirmed' THEN
-        UPDATE rewards.merchants
-        SET total_redemptions = total_redemptions + 1,
-            total_lumis_redeemed = total_lumis_redeemed + NEW.lumis_spent,
-            updated_at = NOW()
-        WHERE merchant_id = NEW.validated_by_merchant_id;
-    END IF;
-    
-    RETURN NEW;
-END;
-$function$;
+CREATE TABLE rewards.user_redemptions (
+    redemption_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id BIGINT NOT NULL,
+    offer_id UUID NOT NULL REFERENCES rewards.redemption_offers(offer_id),
+    lumis_cost INTEGER NOT NULL,
+    redemption_code VARCHAR(20) UNIQUE NOT NULL,
+    validation_token_hash VARCHAR(64),
+    qr_code_base64 TEXT,
+    qr_image_url TEXT,
+    status VARCHAR(20) DEFAULT 'pending',
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    used_at TIMESTAMPTZ,
+    confirmed_by_merchant_id UUID REFERENCES rewards.merchants(merchant_id)
+);
+
+CREATE INDEX idx_redemptions_user ON rewards.user_redemptions(user_id);
+CREATE INDEX idx_redemptions_code ON rewards.user_redemptions(redemption_code);
+CREATE INDEX idx_redemptions_status ON rewards.user_redemptions(status, expires_at);
 ```
 
-### Trigger: `refund_lumis_on_cancel()`
-
-**Cuándo se dispara**: AFTER UPDATE en `user_redemptions`
-
-**Función**: Devuelve Lümis al usuario cuando cancela una redención
-
----
-
-## 📊 Métricas y Monitoreo
-
-### KPIs Recomendados
-
-1. **Conversion Rate**: % de ofertas vistas que se convierten en redenciones
-2. **Redemption Confirmation Rate**: % de redenciones pending que llegan a confirmed
-3. **Expiration Rate**: % de redenciones que expiran sin usar
-4. **Average Redemption Value**: Promedio de Lümis por redención
-5. **Top Offers**: Ofertas más redimidas
-6. **Merchant Performance**: Velocidad de confirmación por merchant
-
-### Logs Importantes
-
-```
-✅ Redemption created: user_id=12345, offer_id=550e8400, code=LUMS-967E
-✅ Redemption confirmed: redemption_id=969b8c90, merchant=Starbucks Test
-❌ Insufficient balance: user_id=12345, required=55, current=30
-❌ Validation failed: code=LUMS-INVALID, reason=not_found
-🔐 JWT authentication successful: user_id=12345, email=test@example.com
-🏪 Merchant authentication successful: Starbucks Test (a1726cd2...)
+### rewards.merchants
+```sql
+CREATE TABLE rewards.merchants (
+    merchant_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    merchant_code VARCHAR(50) UNIQUE NOT NULL,
+    merchant_name VARCHAR(255) NOT NULL,
+    api_key_hash VARCHAR(64) NOT NULL,
+    webhook_url TEXT,
+    webhook_secret VARCHAR(64),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
 ```
 
 ---
 
-## 🚀 Próximos Pasos
+## 🧪 Tests Unitarios
 
-### Funcionalidades Planificadas
+### Tests Implementados
 
-1. **Webhooks para Merchants**
-   - Notificar a merchants cuando se crea una redención
-   - POST a `merchant.webhook_url` con datos de redención
+| Test | Descripción |
+|------|-------------|
+| `test_redemption_code_format` | Valida formato LUMS-XXXXXX |
+| `test_qr_url_format` | Estructura de URL con token |
+| `test_offer_exists_and_active` | Oferta activa existe |
+| `test_offer_inactive_rejected` | Oferta inactiva rechazada |
+| `test_offer_out_of_stock` | Sin stock disponible |
+| `test_redemption_status_pending` | Estado inicial pending |
+| `test_redemption_confirm_updates_status` | Confirmación cambia a used |
+| `test_expired_redemption_not_confirmable` | Expiradas no confirmables |
+| `test_prevent_double_confirmation` | Prevenir doble uso |
+| `test_user_redemption_count` | Contador por usuario |
+| `test_stock_decrement` | Decremento de stock |
+| `test_expire_old_redemptions` | Job de expiración |
+| `test_token_hash_consistency` | Hash SHA256 consistente |
 
-2. **Push Notifications**
-   - Notificar usuario cuando redención es confirmada
-   - Alertas de expiración próxima
-
-3. **Analytics Dashboard**
-   - Panel para merchants con estadísticas en tiempo real
-   - Gráficos de redenciones por día/semana/mes
-
-4. **Scheduled Jobs**
-   - Expiración automática de códigos vencidos
-   - Recordatorios antes de expiración
-
-5. **Fraud Detection**
-   - Detectar patrones de uso sospechoso
-   - Rate limiting más sofisticado
-
----
-
-## 📞 Soporte
-
-**Equipo de Desarrollo**:
-- API Issues: api@lumis.pa
-- Merchant Onboarding: merchants@lumis.pa
-- Documentación: docs@lumis.pa
-
-**Status Page**: https://status.lumis.pa
+### Ejecutar Tests
+```bash
+cargo test --test redemption_system_tests
+```
 
 ---
 
-**Última actualización**: 2025-10-18  
-**Versión del documento**: 2.0  
-**Estado**: ✅ Producción
+## 📝 Changelog
+
+### v2.0 (Diciembre 2025)
+- ✅ QR con logo de Lum overlay (800x800px, 15% centro)
+- ✅ Token JWT en URL del QR con expiración 60s
+- ✅ Rate limiting Redis (10/hora, 30/día)
+- ✅ Ocultamiento de códigos usados/expirados
+- ✅ PWA Scanner para comercios
+- ✅ API Admin CRUD completa
+- ✅ Tests unitarios del sistema
+- ✅ Webhook confirm arreglado (bug ownership)
+- ✅ Endpoint estático para imágenes QR
+
+### v1.0 (Octubre 2025)
+- Sistema inicial de redención
+- Generación básica de QR
+- Validación y confirmación de comercios
+- Notificaciones push y webhooks
+
+---
+
+## 🔗 Links Relacionados
+
+- [Repositorio](https://github.com/andresv-qr/lum_rust_backend)
+- [PWA Scanner](https://api.lumis.pa/merchant-scanner/)
+- [Métricas Prometheus](https://api.lumis.pa/metrics)
+- [Health Check](https://api.lumis.pa/health)
+
+---
+
+## 📁 Archivos Relacionados
+
+### Backend Rust
+| Archivo | Descripción |
+|---------|-------------|
+| `src/api/rewards/mod.rs` | Router principal de rewards |
+| `src/api/rewards/offers.rs` | Endpoints de ofertas |
+| `src/api/rewards/redeem.rs` | Endpoint de redención + rate limiting |
+| `src/api/rewards/user.rs` | Endpoints de usuario (historial, stats) |
+| `src/api/rewards/qr_static.rs` | Servir imágenes QR estáticas |
+| `src/api/rewards/admin_offers.rs` | CRUD admin de ofertas |
+| `src/api/merchant/validate.rs` | Validación y confirmación de comercio |
+| `src/api/merchant/analytics.rs` | Estadísticas de comercio |
+| `src/domains/rewards/models.rs` | Modelos de datos |
+| `src/domains/rewards/redemption_service.rs` | Servicio de redención |
+| `src/domains/rewards/offer_service.rs` | Servicio de ofertas |
+| `src/domains/rewards/qr_generator.rs` | Generación de QR + JWT |
+
+### PWA Scanner
+| Archivo | Descripción |
+|---------|-------------|
+| `static/merchant-scanner/index.html` | Aplicación PWA |
+| `static/merchant-scanner/manifest.json` | Manifest PWA |
+| `static/merchant-scanner/sw.js` | Service Worker |
+| `static/merchant-scanner/icons/` | Iconos de la app |
+
+### Tests
+| Archivo | Descripción |
+|---------|-------------|
+| `tests/redemption_system_tests.rs` | Tests unitarios completos |
+
+### Assets
+| Archivo | Descripción |
+|---------|-------------|
+| `assets/logoqr.png` | Logo para overlay en QR |
+| `assets/qr/` | Carpeta de QRs generados |

@@ -11,7 +11,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 use crate::{
@@ -19,6 +19,7 @@ use crate::{
     state::AppState,
     observability::metrics::{record_merchant_validation, record_redemption_confirmed},
     services::get_push_service,
+    domains::rewards::qr_generator::QrGenerator,
 };
 
 /// Request body for validating a redemption
@@ -26,6 +27,8 @@ use crate::{
 pub struct ValidateRedemptionRequest {
     /// Can be either redemption_code (e.g., "LUMS-A1B2-C3D4-E5F6") or redemption_id (UUID)
     pub code: String,
+    /// Optional: JWT token from QR for extra security verification
+    pub token: Option<String>,
 }
 
 /// Response for validation
@@ -71,6 +74,13 @@ pub struct ConfirmationResponse {
     pub confirmed_at: String,
 }
 
+/// Request body for confirmation (optional, enhances security)
+#[derive(Debug, Deserialize, Default)]
+pub struct ConfirmRedemptionRequest {
+    /// Optional: JWT token from QR for jti verification
+    pub token: Option<String>,
+}
+
 /// Validate a redemption code
 /// 
 /// # Endpoint
@@ -82,7 +92,8 @@ pub struct ConfirmationResponse {
 /// # Request Body
 /// ```json
 /// {
-///   "code": "LUMS-A1B2-C3D4-E5F6"
+///   "code": "LUMS-A1B2-C3D4-E5F6",
+///   "token": "optional_jwt_from_qr"
 /// }
 /// ```
 /// 
@@ -97,6 +108,55 @@ pub async fn validate_redemption(
 ) -> Result<Json<ValidationResponse>, ApiError> {
     info!("Merchant {} validating redemption code: {}", 
           merchant.merchant_name, payload.code);
+    
+    // Verificar token JWT si se proporciona (seguridad extra)
+    if let Some(ref token) = payload.token {
+        let qr_config = crate::domains::rewards::qr_generator::QrConfig::default();
+        let qr_generator = QrGenerator::new(qr_config);
+        
+        match qr_generator.verify_validation_token(token) {
+            Ok(claims) => {
+                // Verificar que el código coincide
+                if claims.redemption_code != payload.code {
+                    warn!("Token mismatch: token code {} != request code {}", 
+                          claims.redemption_code, payload.code);
+                    return Ok(Json(ValidationResponse {
+                        success: true,
+                        valid: false,
+                        redemption: None,
+                        message: "Token no coincide con el código proporcionado".to_string(),
+                    }));
+                }
+                
+                // Verificar si el jti ya fue usado
+                let jti_used: Option<bool> = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM rewards.used_validation_tokens WHERE jti = $1)"
+                )
+                .bind(&claims.jti)
+                .fetch_optional(&state.db_pool)
+                .await
+                .ok()
+                .flatten();
+                
+                if jti_used == Some(true) {
+                    warn!("Token jti already used: {}", claims.jti);
+                    return Ok(Json(ValidationResponse {
+                        success: true,
+                        valid: false,
+                        redemption: None,
+                        message: "Este código QR ya fue escaneado. Solicite uno nuevo.".to_string(),
+                    }));
+                }
+                
+                info!("Token validated successfully for code {} with jti {}", payload.code, claims.jti);
+            }
+            Err(e) => {
+                warn!("Invalid token provided: {}", e);
+                // No bloqueamos, pero avisamos
+                // En producción podrías hacer esto más estricto
+            }
+        }
+    }
     
     // Query the redemption - check if it's a UUID or a code string
     let redemption_opt: Option<RedemptionQueryResult> = match Uuid::parse_str(&payload.code) {
@@ -256,19 +316,67 @@ pub async fn validate_redemption(
 /// # Path Parameters
 /// - id: UUID of the redemption to confirm
 /// 
+/// # Request Body (optional)
+/// ```json
+/// {
+///   "token": "jwt_from_qr_for_jti_verification"
+/// }
+/// ```
+/// 
 /// # Returns
 /// - 200 OK: Redemption confirmed successfully
 /// - 400 Bad Request: Cannot confirm (already used, expired, etc.)
 /// - 401 Unauthorized: Invalid merchant token
+/// - 403 Forbidden: Merchant not authorized for this offer
 /// - 404 Not Found: Redemption not found
 /// - 500 Internal Server Error: Database error
 pub async fn confirm_redemption(
     State(state): State<Arc<AppState>>,
     Extension(merchant): Extension<MerchantClaims>,
     Path(redemption_id): Path<Uuid>,
+    body: Option<Json<ConfirmRedemptionRequest>>,
 ) -> Result<Json<ConfirmationResponse>, ApiError> {
-    info!("Merchant {} confirming redemption: {}", 
-          merchant.merchant_name, redemption_id);
+    info!("Merchant {} (id: {:?}) confirming redemption: {}", 
+          merchant.merchant_name, merchant.get_merchant_id(), redemption_id);
+    
+    let request = body.map(|b| b.0).unwrap_or_default();
+    
+    // Verificar jti si se proporciona token
+    let mut token_jti: Option<String> = None;
+    if let Some(ref token) = request.token {
+        let qr_config = crate::domains::rewards::qr_generator::QrConfig::default();
+        let qr_generator = QrGenerator::new(qr_config);
+        
+        match qr_generator.verify_validation_token(token) {
+            Ok(claims) => {
+                // Verificar si el jti ya fue usado
+                let jti_used: Option<bool> = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM rewards.used_validation_tokens WHERE jti = $1)"
+                )
+                .bind(&claims.jti)
+                .fetch_optional(&state.db_pool)
+                .await
+                .ok()
+                .flatten();
+                
+                if jti_used == Some(true) {
+                    warn!("Token jti already used in confirm: {}", claims.jti);
+                    return Err(ApiError::BadRequest(
+                        "Este código QR ya fue utilizado. Solicite uno nuevo.".to_string()
+                    ));
+                }
+                
+                token_jti = Some(claims.jti);
+            }
+            Err(e) => {
+                warn!("Invalid token in confirm: {}", e);
+                // Token inválido o expirado
+                return Err(ApiError::BadRequest(
+                    "Token de validación inválido o expirado".to_string()
+                ));
+            }
+        }
+    }
     
     // Start transaction
     let mut tx = state.db_pool.begin().await.map_err(|e| {
@@ -276,17 +384,19 @@ pub async fn confirm_redemption(
         ApiError::InternalError("Error al iniciar transacción".to_string())
     })?;
     
-    // Get redemption with lock
+    // Get redemption with lock - including merchant validation
     let redemption = sqlx::query!(
         r#"
         SELECT 
-            redemption_id,
-            redemption_code,
-            redemption_status,
-            code_expires_at
-        FROM rewards.user_redemptions
-        WHERE redemption_id = $1
-        FOR UPDATE
+            ur.redemption_id,
+            ur.redemption_code,
+            ur.redemption_status,
+            ur.code_expires_at,
+            ro.merchant_id as offer_merchant_id
+        FROM rewards.user_redemptions ur
+        JOIN rewards.redemption_offers ro ON ur.offer_id = ro.offer_id
+        WHERE ur.redemption_id = $1
+        FOR UPDATE OF ur
         "#,
         redemption_id
     )
@@ -300,6 +410,20 @@ pub async fn confirm_redemption(
         error!("Redemption not found: {}", redemption_id);
         ApiError::NotFound("Redención no encontrada".to_string())
     })?;
+    
+    // Validar que el merchant está autorizado para esta oferta
+    if let Some(offer_merchant_id) = redemption.offer_merchant_id {
+        if let Some(claiming_merchant_id) = merchant.get_merchant_id() {
+            if offer_merchant_id != claiming_merchant_id {
+                warn!("Merchant {} attempted to confirm redemption for merchant {}", 
+                      claiming_merchant_id, offer_merchant_id);
+                return Err(ApiError::Forbidden(
+                    "No estás autorizado para confirmar esta redención".to_string()
+                ));
+            }
+        }
+        // Si el merchant no tiene ID en el token, permitimos (backward compatibility)
+    }
     
     // Validate status
     if redemption.redemption_status != "pending" {
@@ -315,17 +439,39 @@ pub async fn confirm_redemption(
         return Err(ApiError::BadRequest("Código expirado".to_string()));
     }
     
-    // Update status to confirmed
-    sqlx::query!(
+    // Si hay un jti, guardarlo como usado ANTES de confirmar
+    if let Some(ref jti) = token_jti {
+        sqlx::query(
+            r#"
+            INSERT INTO rewards.used_validation_tokens (jti, redemption_id, used_by_merchant_id)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (jti) DO NOTHING
+            "#
+        )
+        .bind(jti)
+        .bind(redemption_id)
+        .bind(merchant.get_merchant_id())
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            error!("Failed to save used token: {}", e);
+            ApiError::InternalError("Error al registrar token usado".to_string())
+        })?;
+    }
+    
+    // Update status to confirmed with merchant info
+    sqlx::query(
         r#"
         UPDATE rewards.user_redemptions
         SET 
             redemption_status = 'confirmed',
-            validated_at = NOW()
+            validated_at = NOW(),
+            validated_by_merchant_id = $2
         WHERE redemption_id = $1
-        "#,
-        redemption_id
+        "#
     )
+    .bind(redemption_id)
+    .bind(merchant.get_merchant_id())
     .execute(&mut *tx)
     .await
     .map_err(|e| {
@@ -362,15 +508,16 @@ pub async fn confirm_redemption(
     .ok()
     .flatten();
     
-    // Extraer datos para uso en spawns
-    let (user_id_opt, offer_name_opt, _merchant_id_opt) = redemption_data
-        .map(|d| (Some(d.user_id), d.offer_name.clone(), Some(d.merchant_id)))
-        .unwrap_or((None, None, None));
+    // Extraer datos para uso en spawns - fix: clone explícito antes de mover
+    let user_id_opt = redemption_data.as_ref().map(|d| d.user_id);
+    let offer_name_opt = redemption_data.as_ref().and_then(|d| d.offer_name.clone());
+    let merchant_id_opt = redemption_data.as_ref().and_then(|d| d.merchant_id);
     
     // Enviar push notification al usuario (asíncrono)
-    if let (Some(user_id), Some(offer_name)) = (user_id_opt, offer_name_opt.as_ref()) {
+    if let (Some(user_id), Some(ref offer_name)) = (user_id_opt, &offer_name_opt) {
         if let Some(push_service) = get_push_service() {
             let offer_name = offer_name.clone();
+            let user_id = user_id;
             
             tokio::spawn(async move {
                 if let Err(e) = push_service.notify_redemption_confirmed(
@@ -384,36 +531,26 @@ pub async fn confirm_redemption(
         }
     }
     
-    // TODO: Enviar webhook al merchant (temporalmente deshabilitado por bug de compilación)
-    // Bug: Rust no infiere correctamente el tipo de merchant_id_opt dentro del closure async
-    // Solución temporal: Comentado para permitir compilación
-    // Solución definitiva: Investigar ownership en closures async con Uuid
-    // Ver: ULTIMO_ERROR_COMPILACION.md para detalles
-    
-    /*
-    match (merchant_id_opt, offer_name_opt) {
-        (Some(mid), Some(oname)) if get_webhook_service().is_some() => {
-            let webhook_service = get_webhook_service().unwrap();
-            let merchant_id_copy: uuid::Uuid = mid;
-            let offer_name_copy = oname.clone();
+    // Enviar webhook al merchant (asíncrono)
+    if let Some(merchant_id) = merchant_id_opt {
+        if let Some(webhook_service) = crate::services::get_webhook_service() {
+            let offer_name = offer_name_opt.clone().unwrap_or_default();
             let code = redemption.redemption_code.clone();
             let confirmed_by = merchant.merchant_name.clone();
             
             tokio::spawn(async move {
                 if let Err(e) = webhook_service.notify_redemption_confirmed(
-                    merchant_id_copy,
+                    merchant_id,
                     redemption_id,
                     &code,
-                    &offer_name_copy,
+                    &offer_name,
                     &confirmed_by,
                 ).await {
                     error!("Failed to send confirmation webhook: {}", e);
                 }
             });
         }
-        _ => {}
     }
-    */
     
     Ok(Json(ConfirmationResponse {
         success: true,
@@ -427,6 +564,7 @@ pub async fn confirm_redemption(
 pub enum ApiError {
     BadRequest(String),
     Unauthorized(String),
+    Forbidden(String),
     NotFound(String),
     InternalError(String),
 }
@@ -436,6 +574,7 @@ impl IntoResponse for ApiError {
         let (status, message) = match self {
             ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             ApiError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
+            ApiError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
             ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             ApiError::InternalError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
         };

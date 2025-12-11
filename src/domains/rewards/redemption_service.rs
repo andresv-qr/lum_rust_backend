@@ -38,7 +38,7 @@ impl RedemptionService {
         let start_time = std::time::Instant::now();
         let user_id = request.user_id;
         
-        // 1. Validar oferta
+        // 1. Validar oferta (lectura inicial sin lock)
         let offer = self
             .offer_service
             .get_offer_details(request.offer_id, user_id)
@@ -48,13 +48,14 @@ impl RedemptionService {
             return Err(RedemptionError::OfferInactive);
         }
 
+        // Verificación inicial de stock (sin lock, para fail-fast)
         if !offer.has_stock() {
             return Err(RedemptionError::OutOfStock);
         }
 
         let lumis_cost = offer.get_cost();
 
-        // 2. Verificar balance del usuario
+        // 2. Verificar balance del usuario (lectura inicial)
         let user_balance = self.offer_service.get_user_balance(user_id).await?;
         if user_balance < lumis_cost as i64 {
             return Err(RedemptionError::InsufficientBalance {
@@ -63,31 +64,118 @@ impl RedemptionService {
             });
         }
 
-        // 3. Generar código y QR
+        // 3. Generar código único
         let redemption_code = self.qr_generator.generate_redemption_code();
         let code_expires_at = Utc::now() + Duration::minutes(15);
-        let landing_url = format!(
-            "https://app.lumis.pa/redeem/{}",
-            redemption_code
-        );
-        let qr_image_url = format!(
-            "https://cdn.lumis.pa/qr/{}.png",
-            redemption_code
-        );
-
-        // 4. Iniciar transacción
-        let mut tx = self.db.begin().await?;
-
         let redemption_id = Uuid::new_v4();
 
-        // 5. Insertar redención
+        // 4. Generar token de validación JWT (para QR seguro)
+        let validation_token = self.qr_generator
+            .generate_validation_token(&redemption_code, user_id, &redemption_id)
+            .map_err(|e| RedemptionError::QRGenerationFailed(e.to_string()))?;
+        
+        // 5. Generar hash del token para almacenar en DB
+        let token_hash = super::qr_generator::QrGenerator::hash_token(&validation_token);
+
+        // 6. Generar QR con logo
+        let qr_image_bytes = match self.qr_generator.generate_qr_with_logo(&redemption_code, &validation_token).await {
+            Ok(bytes) => Some(bytes),
+            Err(e) => {
+                tracing::warn!("Failed to generate QR with logo, using simple QR: {}", e);
+                // Fallback a QR simple sin logo
+                self.qr_generator.generate_qr_simple(&redemption_code).ok()
+            }
+        };
+
+        // 7. Guardar QR en storage local (o subir a CDN en producción)
+        let qr_image_url = if let Some(ref bytes) = qr_image_bytes {
+            // Por ahora guardamos en sistema de archivos local
+            // TODO: Integrar con S3 o CDN en producción
+            let qr_filename = format!("{}.png", redemption_code);
+            let qr_path = format!("assets/qr/{}", qr_filename);
+            
+            // Crear directorio si no existe
+            let _ = std::fs::create_dir_all("assets/qr");
+            
+            if std::fs::write(&qr_path, bytes).is_ok() {
+                Some(format!("https://api.lumis.pa/static/qr/{}", qr_filename))
+            } else {
+                tracing::warn!("Failed to save QR image to disk");
+                None
+            }
+        } else {
+            None
+        };
+
+        // Landing URL para el QR
+        let landing_url = self.qr_generator.generate_landing_url(&redemption_code, Some(&validation_token));
+
+        // 8. Iniciar transacción
+        let mut tx = self.db.begin().await?;
+
+        // 8.1. CRITICAL: Re-verificar stock con SELECT FOR UPDATE para evitar race condition
+        let current_stock: Option<Option<i32>> = sqlx::query_scalar(
+            r#"
+            SELECT stock_quantity 
+            FROM rewards.redemption_offers 
+            WHERE offer_id = $1 
+            FOR UPDATE
+            "#
+        )
+        .bind(request.offer_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+        
+        // Verificar que hay stock disponible (NULL = ilimitado, Some(n) = n disponibles)
+        if let Some(Some(stock)) = current_stock {
+            if stock <= 0 {
+                // Rollback implícito al dropear tx
+                return Err(RedemptionError::OutOfStock);
+            }
+            
+            // Decrementar stock
+            sqlx::query(
+                r#"
+                UPDATE rewards.redemption_offers 
+                SET stock_quantity = stock_quantity - 1 
+                WHERE offer_id = $1
+                "#
+            )
+            .bind(request.offer_id)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        // 8.2. Verificar balance con lock para evitar race condition en balance
+        let locked_balance: Option<i64> = sqlx::query_scalar(
+            r#"
+            SELECT COALESCE(balance::bigint, 0)
+            FROM rewards.fact_balance_points
+            WHERE user_id = $1
+            FOR UPDATE
+            "#
+        )
+        .bind(user_id)
+        .fetch_optional(&mut *tx)
+        .await?
+        .flatten();
+        
+        if locked_balance.unwrap_or(0) < lumis_cost as i64 {
+            return Err(RedemptionError::InsufficientBalance {
+                current: locked_balance.unwrap_or(0),
+                required: lumis_cost,
+            });
+        }
+
+        // 9. Insertar redención con token hash
         sqlx::query(
             r#"
             INSERT INTO rewards.user_redemptions (
                 redemption_id, user_id, offer_id, lumis_spent,
-                redemption_code, code_expires_at
+                redemption_code, code_expires_at, qr_landing_url, 
+                qr_image_url, validation_token_hash
             )
-            VALUES ($1, $2, $3, $4, $5, $6)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             "#,
         )
         .bind(redemption_id)
@@ -96,10 +184,13 @@ impl RedemptionService {
         .bind(lumis_cost)
         .bind(&redemption_code)
         .bind(code_expires_at)
+        .bind(&landing_url)
+        .bind(&qr_image_url)
+        .bind(&token_hash)
         .execute(&mut *tx)
         .await?;
 
-        // 6. Insertar transacción negativa en fact_accumulations
+        // 10. Insertar transacción negativa en fact_accumulations
         sqlx::query(
             r#"
             INSERT INTO rewards.fact_accumulations (
@@ -119,7 +210,7 @@ impl RedemptionService {
         .execute(&mut *tx)
         .await?;
 
-        // 7. Actualizar balance
+        // 11. Actualizar balance
         sqlx::query(
             r#"
             UPDATE rewards.fact_balance_points
@@ -132,15 +223,17 @@ impl RedemptionService {
         .execute(&mut *tx)
         .await?;
 
-        // 8. Commit
+        // 12. Commit
         tx.commit().await?;
 
-        // 9. Obtener nuevo balance
+        // 13. Obtener nuevo balance
         let new_balance = self.offer_service.get_user_balance(user_id).await?;
 
-        // 10. Registrar métricas
+        // 14. Registrar métricas
         record_redemption_created("standard", true, lumis_cost as f64);
-        record_qr_generated("png");
+        if qr_image_bytes.is_some() {
+            record_qr_generated("png_with_logo");
+        }
         REDEMPTION_PROCESSING_DURATION
             .with_label_values(&["create_redemption"])
             .observe(start_time.elapsed().as_secs_f64());
@@ -148,7 +241,7 @@ impl RedemptionService {
         // ✨ OPTIMIZATION: Calculate offer_name once to avoid multiple clones
         let offer_name = offer.name_friendly.unwrap_or(offer.name);
 
-        // 11. Enviar push notification (asíncrono, no bloqueante)
+        // 15. Enviar push notification (asíncrono, no bloqueante)
         if let Some(push_service) = get_push_service() {
             let push_user_id = user_id;
             let push_redemption_id = redemption_id;
@@ -167,7 +260,7 @@ impl RedemptionService {
             });
         }
 
-        // 12. Enviar webhook si merchant lo tiene configurado
+        // 16. Enviar webhook si merchant lo tiene configurado
         if let Some(merchant_id) = offer.merchant_id {
             if let Some(webhook_service) = get_webhook_service() {
                 let webhook_merchant_id = merchant_id;
@@ -189,14 +282,14 @@ impl RedemptionService {
             }
         }
 
-        // 13. Retornar respuesta
+        // 17. Retornar respuesta
         Ok(RedemptionCreatedResponse {
             redemption_id,
             redemption_code,
             offer_name,
             lumis_spent: lumis_cost,
             qr_landing_url: landing_url,
-            qr_image_url: Some(qr_image_url),
+            qr_image_url,
             code_expires_at,
             expires_at: code_expires_at,
             status: "pending".to_string(),
@@ -259,18 +352,18 @@ impl RedemptionService {
 
         let items = rows
             .into_iter()
-            .map(|row| UserRedemptionItem {
-                redemption_id: row.redemption_id,
-                offer_name: row.offer_name,
-                merchant_name: Some(row.merchant_name),
-                lumis_spent: row.lumis_spent,
-                redemption_code: row.redemption_code,
-                redemption_status: row.redemption_status,
-                code_expires_at: row.code_expires_at,
-                qr_landing_url: row.qr_landing_url.unwrap_or_default(),
-                created_at: row.created_at,
-                validated_at: row.validated_at,
-            })
+            .map(|row| UserRedemptionItem::new(
+                row.redemption_id,
+                row.offer_name,
+                Some(row.merchant_name),
+                row.lumis_spent,
+                row.redemption_code,
+                row.qr_landing_url.unwrap_or_default(),
+                row.redemption_status,
+                row.code_expires_at,
+                row.created_at,
+                row.validated_at,
+            ))
             .collect();
 
         Ok(items)
@@ -418,18 +511,18 @@ impl RedemptionService {
         .await?
         .ok_or(RedemptionError::RedemptionNotFound)?;
 
-        Ok(UserRedemptionItem {
-            redemption_id: row.redemption_id,
-            offer_name: row.offer_name,
-            merchant_name: Some(row.merchant_name),
-            lumis_spent: row.lumis_spent,
-            redemption_code: row.redemption_code,
-            redemption_status: row.redemption_status,
-            code_expires_at: row.code_expires_at,
-            qr_landing_url: row.qr_landing_url.unwrap_or_default(),
-            created_at: row.created_at,
-            validated_at: row.validated_at,
-        })
+        Ok(UserRedemptionItem::new(
+            row.redemption_id,
+            row.offer_name,
+            Some(row.merchant_name),
+            row.lumis_spent,
+            row.redemption_code,
+            row.qr_landing_url.unwrap_or_default(),
+            row.redemption_status,
+            row.code_expires_at,
+            row.created_at,
+            row.validated_at,
+        ))
     }
 }
 
