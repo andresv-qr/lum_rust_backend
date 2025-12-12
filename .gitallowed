@@ -1,0 +1,18 @@
+# Git-secrets allowed patterns
+# Este archivo contiene patrones que son falsos positivos y están permitidos en el repositorio
+
+# Placeholders y ejemplos en documentación
+sk-or-v1-\.\.\.
+sk-or-v1-YOUR_ACTUAL_KEY_HERE
+sk-or-v1-x{64,}
+
+# API keys antiguas usadas como ejemplo en documentación de limpieza de historial
+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
+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
+
+# Ejemplos genéricos de credenciales en documentación
+usuario:password@
+username:password@
+
+# Comandos de git-secrets en documentación (no son secretos reales)
+git secrets --add 'OPENROUTER_API_KEY

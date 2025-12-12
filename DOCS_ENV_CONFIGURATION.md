@@ -53,7 +53,7 @@ Agregar al archivo `.env`:
 
 ```bash
 # OpenRouter API Key para OCR
-OPENROUTER_API_KEY="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"
+OPENROUTER_API_KEY="sk-or-v1-..."
 ```
 
 **⚠️ IMPORTANTE:** El archivo `.env` está en `.gitignore` - nunca será commiteado.
@@ -90,10 +90,10 @@ echo ".env.local" >> .gitignore
 ssh usuario@servidor-produccion
 
 # Exportar variable de entorno
-export OPENROUTER_API_KEY="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"
+export OPENROUTER_API_KEY="sk-or-v1-YOUR_ACTUAL_KEY_HERE"
 
 # Para que persista entre reinicios, agregar a ~/.bashrc o ~/.profile
-echo 'export OPENROUTER_API_KEY="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"' >> ~/.bashrc
+echo 'export OPENROUTER_API_KEY="sk-or-v1-YOUR_ACTUAL_KEY_HERE"' >> ~/.bashrc
 
 # Reiniciar el servicio
 sudo systemctl restart lum-rust-ws
@@ -107,7 +107,7 @@ cd /ruta/del/proyecto
 nano .env
 
 # Agregar la clave
-OPENROUTER_API_KEY="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"
+OPENROUTER_API_KEY="sk-or-v1-YOUR_ACTUAL_KEY_HERE"
 
 # Restringir permisos (solo lectura para el usuario)
 chmod 600 .env
@@ -128,7 +128,7 @@ Agregar en la sección `[Service]`:
 
 ```ini
 [Service]
-Environment="OPENROUTER_API_KEY=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"
+Environment="OPENROUTER_API_KEY=sk-or-v1-YOUR_ACTUAL_KEY_HERE"
 ```
 
 Recargar y reiniciar:
