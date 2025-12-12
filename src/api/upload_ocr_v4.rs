@@ -197,14 +197,20 @@ pub async fn upload_ocr_invoice(
             } else {
                 warn!("❌ OCR processing failed for user {}: {}", current_user.user_id, ocr_response.message);
                 
+                // Determine appropriate status code based on error type
                 let status_code = if ocr_response.message.contains("ya fue registrada") || ocr_response.message.contains("duplicada") {
                     StatusCode::CONFLICT
                 } else if ocr_response.message.contains("Saldo insuficiente") {
                     StatusCode::PAYMENT_REQUIRED
                 } else if ocr_response.message.contains("límite") {
                     StatusCode::TOO_MANY_REQUESTS
-                } else if ocr_response.message.contains("Validación fallida") || ocr_response.message.contains("campos requeridos") {
-                    StatusCode::UNPROCESSABLE_ENTITY
+                } else if ocr_response.message.contains("Validación fallida") 
+                    || ocr_response.message.contains("campos requeridos")
+                    || ocr_response.message.contains("Campos faltantes")
+                    || ocr_response.message.contains("campos obligatorios")
+                    || ocr_response.missing_fields.is_some() {
+                    // Missing fields is a client-side issue (bad image quality), not a server error
+                    StatusCode::OK  // Return 200 with success: false so frontend can handle gracefully
                 } else {
                     StatusCode::INTERNAL_SERVER_ERROR
                 };
@@ -230,13 +236,42 @@ pub async fn upload_ocr_invoice(
 
                 let error_code = if ocr_response.message.contains("ya fue registrada") || ocr_response.message.contains("duplicada") {
                     "DUPLICATE_INVOICE"
-                } else if ocr_response.message.contains("Validación fallida") || ocr_response.message.contains("campos requeridos") {
-                    "VALIDATION_FAILED"
+                } else if ocr_response.message.contains("Validación fallida") 
+                    || ocr_response.message.contains("campos requeridos")
+                    || ocr_response.message.contains("Campos faltantes")
+                    || ocr_response.message.contains("campos obligatorios")
+                    || ocr_response.missing_fields.is_some() {
+                    "MISSING_FIELDS"
                 } else if ocr_response.message.contains("límite") {
                     "RATE_LIMIT_EXCEEDED"
                 } else {
                     "OCR_PROCESSING_FAILED"
                 };
+
+                // For missing fields, return success response with success:false so frontend handles it gracefully
+                if error_code == "MISSING_FIELDS" {
+                    let response_data = json!({
+                        "success": false,
+                        "cufe": ocr_response.cufe,
+                        "invoice_number": ocr_response.invoice_number,
+                        "issuer_name": ocr_response.issuer_name,
+                        "issuer_ruc": ocr_response.issuer_ruc,
+                        "issuer_dv": ocr_response.issuer_dv,
+                        "issuer_address": ocr_response.issuer_address,
+                        "date": ocr_response.date,
+                        "total": ocr_response.total,
+                        "tot_itbms": ocr_response.tot_itbms,
+                        "products": ocr_response.products,
+                        "products_count": ocr_response.products.as_ref().map(|p| p.len()).unwrap_or(0),
+                        "cost_lumis": ocr_response.cost_lumis,
+                        "status": "missing_fields",
+                        "message": ocr_response.message,
+                        "missing_fields": ocr_response.missing_fields,
+                        "extracted_data": ocr_response.extracted_data
+                    });
+                    let request_id = Uuid::new_v4().to_string();
+                    return Ok(Json(ApiResponse::success(response_data, request_id, None, false)));
+                }
 
                 let request_id = Uuid::new_v4().to_string();
                 Err((status_code, Json(ApiResponse::<()>::error(

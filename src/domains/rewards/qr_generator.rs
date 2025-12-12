@@ -31,8 +31,9 @@ impl Default for QrConfig {
             logo_percentage: 0.15,
             logo_path: "assets/logoqr.png".to_string(),
             landing_base_url: "https://lumis.pa".to_string(),
-            expiration_days: 7,
-            token_expiration_seconds: 60,
+            expiration_days: 30,
+            // 30 días en segundos - el código es de UN SOLO USO, screenshot no es riesgo
+            token_expiration_seconds: 2_592_000,
         }
     }
 }
@@ -47,19 +48,19 @@ impl QrGenerator {
         Self { config }
     }
 
-    /// Genera un código de redención único
+    /// Genera un código de redención único con alta entropía
     pub fn generate_redemption_code(&self) -> String {
         let mut rng = rand::thread_rng();
         
-        // Usar timestamp para primeros 2 segmentos
-        let timestamp = Utc::now().timestamp_millis();
-        let hex1 = format!("{:04X}", (timestamp & 0xFFFF) as u16);
-        let hex2 = format!("{:04X}", ((timestamp >> 16) & 0xFFFF) as u16);
-        
-        // Random para último segmento
+        // SEGURIDAD: Usar componentes completamente random para máxima entropía
+        // 4 segmentos de 16 bits = 64 bits de entropía (vs 16 bits anterior)
+        let hex1 = format!("{:04X}", rng.gen::<u16>());
+        let hex2 = format!("{:04X}", rng.gen::<u16>());
         let hex3 = format!("{:04X}", rng.gen::<u16>());
+        let hex4 = format!("{:04X}", rng.gen::<u16>());
         
-        format!("LUMS-{}-{}-{}", hex1, hex2, hex3)
+        // Formato: LUMS-XXXX-XXXX-XXXX-XXXX (19 caracteres + prefijo)
+        format!("LUMS-{}-{}-{}-{}", hex1, hex2, hex3, hex4)
     }
 
     /// Genera QR code con logo overlay
@@ -201,7 +202,7 @@ impl QrGenerator {
         redemption_id: &Uuid,
     ) -> Result<String> {
         let secret = std::env::var("JWT_SECRET")
-            .unwrap_or_else(|_| "lumis_jwt_secret_super_seguro_production_2024_rust_server_key".to_string());
+            .context("CRITICAL: JWT_SECRET environment variable must be set for QR token generation")?;
         
         let claims = ValidationTokenClaims::new(
             redemption_code.to_string(),
@@ -229,7 +230,7 @@ impl QrGenerator {
     /// Verifica un token de validación JWT
     pub fn verify_validation_token(&self, token: &str) -> Result<ValidationTokenClaimsExtended> {
         let secret = std::env::var("JWT_SECRET")
-            .unwrap_or_else(|_| "lumis_jwt_secret_super_seguro_production_2024_rust_server_key".to_string());
+            .context("CRITICAL: JWT_SECRET environment variable must be set for token verification")?;
         
         let mut validation = Validation::new(Algorithm::HS256);
         validation.validate_exp = true;

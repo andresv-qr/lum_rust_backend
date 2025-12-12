@@ -466,10 +466,13 @@ impl PushNotificationService {
         redemption_id: uuid::Uuid,
         offer_name: &str,
     ) -> Result<()> {
+        // Personalizar el mensaje según el tipo de oferta
+        let (title, body) = Self::get_confirmation_message(offer_name);
+        
         let notification = PushNotification {
             user_id,
-            title: "¡Redención confirmada!".to_string(),
-            body: format!("Tu redención de {} fue confirmada exitosamente", offer_name),
+            title,
+            body,
             data: json!({
                 "type": "redemption_confirmed",
                 "redemption_id": redemption_id.to_string(),
@@ -479,6 +482,29 @@ impl PushNotificationService {
         };
 
         self.send_notification(notification).await
+    }
+    
+    /// Genera mensajes personalizados según el tipo de oferta
+    fn get_confirmation_message(offer_name: &str) -> (String, String) {
+        let offer_lower = offer_name.to_lowercase();
+        
+        // Detectar categorías para mensajes personalizados
+        if offer_lower.contains("café") || offer_lower.contains("coffee") {
+            ("☕ ¡Disfruta tu café!".to_string(), 
+             "Tu cupón ha sido canjeado exitosamente. ¡Que lo disfrutes!".to_string())
+        } else if offer_lower.contains("comida") || offer_lower.contains("almuerzo") || offer_lower.contains("cena") {
+            ("🍽️ ¡Buen provecho!".to_string(),
+             "Tu cupón ha sido canjeado exitosamente. ¡Disfruta tu comida!".to_string())
+        } else if offer_lower.contains("descuento") || offer_lower.contains("%") {
+            ("🎉 ¡Descuento aplicado!".to_string(),
+             "Tu cupón ha sido canjeado exitosamente. ¡Aprovecha tu descuento!".to_string())
+        } else if offer_lower.contains("gratis") || offer_lower.contains("free") {
+            ("🎁 ¡Es tuyo!".to_string(),
+             format!("¡Disfruta tu {}! Tu cupón ha sido canjeado exitosamente.", offer_name))
+        } else {
+            ("✅ ¡Cupón canjeado!".to_string(),
+             format!("¡Disfruta tu {}! Tu redención fue confirmada exitosamente.", offer_name))
+        }
     }
 
     /// Notify when a redemption is about to expire

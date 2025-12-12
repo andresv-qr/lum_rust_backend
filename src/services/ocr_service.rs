@@ -6,6 +6,8 @@ use base64::{Engine as _, engine::general_purpose};
 use serde_json::{json, Value};
 use reqwest::Client;
 use chrono::{DateTime, Utc};
+use sqlx::types::Decimal;
+use std::str::FromStr;
 
 use crate::{
     services::{user_service, redis_service},
@@ -147,6 +149,31 @@ pub struct PartialOcrData {
     pub tot_itbms: Option<f64>,
 }
 
+/// Log structure for OCR API calls
+#[derive(Debug)]
+struct OcrApiLog {
+    user_id: i32,  // Cast from i64 to i32 for database INTEGER field
+    image_size_bytes: i64,
+    model_name: String,
+    provider: String,
+    endpoint_type: String,  // "upload" or "retry"
+    success: bool,
+    response_time_ms: i64,
+    error_message: Option<String>,
+    tokens_prompt: Option<i32>,
+    tokens_completion: Option<i32>,
+    tokens_total: Option<i32>,
+    cost_prompt_usd: Option<Decimal>,
+    cost_completion_usd: Option<Decimal>,
+    cost_total_usd: Option<Decimal>,
+    generation_id: Option<String>,
+    model_used: Option<String>,
+    finish_reason: Option<String>,
+    extracted_fields: Option<Value>,
+    raw_response: Option<Value>,
+}
+
+
 /// Request para retry de OCR con campos específicos y datos previos
 #[derive(Debug, serde::Deserialize)]
 pub struct OcrRetryRequest {
@@ -160,6 +187,50 @@ pub struct OcrRetryRequest {
 pub struct OcrService;
 
 impl OcrService {
+    /// Log OCR API call to database
+    async fn log_ocr_api_call(state: &AppState, log: &OcrApiLog) {
+        let result = sqlx::query!(
+            r#"
+            INSERT INTO public.ocr_test_logs (
+                user_id, image_path, image_size_bytes, model_name, provider, endpoint_type,
+                success, response_time_ms, error_message,
+                tokens_prompt, tokens_completion, tokens_total,
+                cost_prompt_usd, cost_completion_usd, cost_total_usd,
+                generation_id, model_used, finish_reason,
+                extracted_fields, raw_response, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+            "#,
+            log.user_id,
+            "api_call", // image_path not available in production, use placeholder
+            log.image_size_bytes,
+            log.model_name,
+            log.provider,
+            log.endpoint_type,
+            log.success,
+            log.response_time_ms,
+            log.error_message,
+            log.tokens_prompt,
+            log.tokens_completion,
+            log.tokens_total,
+            log.cost_prompt_usd,
+            log.cost_completion_usd,
+            log.cost_total_usd,
+            log.generation_id,
+            log.model_used,
+            log.finish_reason,
+            log.extracted_fields,
+            log.raw_response,
+            Utc::now()
+        )
+        .execute(&state.db_pool)
+        .await;
+
+        match result {
+            Ok(_) => info!("✅ OCR API call logged to database ({})", log.endpoint_type),
+            Err(e) => warn!("⚠️ Failed to log OCR API call: {}", e),
+        }
+    }
+
     /// Process OCR for any source (WhatsApp or API)
     pub async fn process_ocr_invoice(
         state: Arc<AppState>,
@@ -241,8 +312,8 @@ impl OcrService {
         // 4. OCR sin costo en Lümis (por ahora)
         let ocr_cost = 0;
 
-        // 6. Process with OCR (Gemini primary, OpenRouter fallback)
-        let ocr_response = match Self::process_image_with_ocr(&request.image_bytes, &request.mode).await {
+        // 6. Process with OCR (OpenRouter cascade with full logging)
+        let ocr_response = match Self::process_image_with_ocr(&state, user.id, &request.image_bytes, &request.mode).await {
             Ok(response) => response,
             Err(e) => {
                 error!("Error en procesamiento OCR para {}: {}", request.user_identifier, e);
@@ -483,7 +554,8 @@ impl OcrService {
         Ok(())
     }
 
-    /// Process image with Gemini OCR
+    // Deprecated: Replaced by process_with_openrouter_logged with cascade system
+    #[allow(dead_code)]
     async fn process_image_with_gemini(image_bytes: &[u8], mode: &OcrMode) -> Result<OcrResponse> {
         info!("🤖 Iniciando procesamiento con Gemini OCR (mode: {:?})", mode);
         
@@ -592,6 +664,223 @@ impl OcrService {
         Ok(ocr_response)
     }
 
+    /// Get OCR prompt based on mode
+    fn get_ocr_prompt(mode: &OcrMode) -> String {
+        let base_prompt = "Analiza esta imagen de una factura de Panamá y extrae TODA la información visible en formato JSON exacto:\n\n{\n  \"issuer_name\": \"nombre completo del comercio/empresa emisora (busca nombres grandes arriba de la factura)\",\n  \"ruc\": \"número RUC completo (busca 'RUC:', 'RUC', números cerca del nombre del comercio, puede tener formato 1234567-1-123456 o similar)\",\n  \"dv\": \"dígito verificador que viene después del RUC (ej: si dice 'RUC: 123456-1-654321 DV: 89', extrae '89')\",\n  \"address\": \"dirección completa del establecimiento\",\n  \"invoice_number\": \"número de factura completo (busca 'Factura', 'Fact', números con guiones como 001-002-123456)\",\n  \"date\": \"fecha de emisión en formato YYYY-MM-DD (busca 'Fecha:', fechas en formato DD/MM/YYYY o similar)\",\n  \"total\": valor_total_numerico (busca 'Total', 'Total a Pagar', el número más grande al final),\n  \"products\": [\n    {\n      \"name\": \"descripción completa del producto/ítem\",\n      \"quantity\": cantidad_numerica (si no está, usa 1),\n      \"unit_price\": precio_unitario_numerico,\n      \"total_price\": precio_total_del_item_numerico\n    }\n  ]\n}\n\nINSTRUCCIONES IMPORTANTES:\n1. Extrae TODOS los productos visibles en la factura, no omitas ninguno\n2. Para el RUC, busca números largos cerca del nombre del comercio o en la parte superior\n3. La fecha puede estar en varios formatos (DD/MM/YYYY, DD-MM-YYYY, etc), conviértela a YYYY-MM-DD\n4. Si no encuentras algún campo opcional (DV, dirección), usa null\n5. Los campos CRÍTICOS son: issuer_name, ruc, date, total, products (al menos 1)\n6. Solo responde con el JSON, sin texto adicional ni explicaciones";
+        
+        match mode {
+            OcrMode::Normal => base_prompt.to_string(),
+            OcrMode::Combined => format!("{}\n\nTen en cuenta que esta imagen es una combinación de varias imágenes, por lo que puede contener datos duplicados. Por favor, elimina los duplicados y construye una única factura consolidada, sin información repetida.", base_prompt)
+        }
+    }
+
+    /// Process image with OpenRouter with full logging
+    async fn process_with_openrouter_logged(
+        state: &AppState,
+        user_id: i32,  // Already cast from i64
+        image_bytes: &[u8],
+        model: &str,
+        mode: &OcrMode
+    ) -> Result<OcrResponse> {
+        let start_time = std::time::Instant::now();
+        
+        let api_key = std::env::var("OPENROUTER_API_KEY")
+            .unwrap_or_else(|_| "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".to_string());
+
+        let image_base64 = general_purpose::STANDARD.encode(image_bytes);
+        let prompt = Self::get_ocr_prompt(mode);
+
+        let payload = json!({
+            "model": model,
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": format!("data:image/jpeg;base64,{}", image_base64)
+                        }
+                    }
+                ]
+            }],
+            "temperature": 0.1,
+            "max_tokens": 8192
+        });
+
+        let client = Client::new();
+        let response = client
+            .post("https://openrouter.ai/api/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await;
+
+        let response_time_ms = start_time.elapsed().as_millis() as i64;
+
+        let response = match response {
+            Ok(r) => r,
+            Err(e) => {
+                let error_msg = format!("Request error: {}", e);
+                
+                // Log failed attempt
+                let log = OcrApiLog {
+                    user_id,
+                    image_size_bytes: image_bytes.len() as i64,
+                    model_name: model.to_string(),
+                    provider: "openrouter".to_string(),
+                    endpoint_type: "upload".to_string(),
+                    success: false,
+                    response_time_ms,
+                    error_message: Some(error_msg.clone()),
+                    tokens_prompt: None,
+                    tokens_completion: None,
+                    tokens_total: None,
+                    cost_prompt_usd: None,
+                    cost_completion_usd: None,
+                    cost_total_usd: None,
+                    generation_id: None,
+                    model_used: None,
+                    finish_reason: None,
+                    extracted_fields: None,
+                    raw_response: None,
+                };
+                Self::log_ocr_api_call(state, &log).await;
+                
+                return Err(anyhow!(error_msg));
+            }
+        };
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            let error_msg = format!("OpenRouter API error: {}", error_text);
+            
+            // Log failed attempt
+            let log = OcrApiLog {
+                user_id,
+                image_size_bytes: image_bytes.len() as i64,
+                model_name: model.to_string(),
+                provider: "openrouter".to_string(),
+                endpoint_type: "upload".to_string(),
+                success: false,
+                response_time_ms,
+                error_message: Some(error_msg.clone()),
+                tokens_prompt: None,
+                tokens_completion: None,
+                tokens_total: None,
+                cost_prompt_usd: None,
+                cost_completion_usd: None,
+                cost_total_usd: None,
+                generation_id: None,
+                model_used: None,
+                finish_reason: None,
+                extracted_fields: None,
+                raw_response: None,
+            };
+            Self::log_ocr_api_call(state, &log).await;
+            
+            return Err(anyhow!(error_msg));
+        }
+
+        let response_text = response.text().await?;
+        let response_json: Value = serde_json::from_str(&response_text)?;
+
+        // Extract metadata and usage
+        let tokens_prompt = response_json["usage"]["prompt_tokens"].as_i64().map(|t| t as i32);
+        let tokens_completion = response_json["usage"]["completion_tokens"].as_i64().map(|t| t as i32);
+        let tokens_total = response_json["usage"]["total_tokens"].as_i64().map(|t| t as i32);
+        
+        let cost_total_usd = response_json["usage"]["cost"].as_f64()
+            .and_then(|v| Decimal::from_str(&format!("{:.8}", v)).ok());
+        let cost_prompt_usd = response_json["usage"]["cost_details"]["upstream_inference_prompt_cost"].as_f64()
+            .and_then(|v| Decimal::from_str(&format!("{:.8}", v)).ok());
+        let cost_completion_usd = response_json["usage"]["cost_details"]["upstream_inference_completions_cost"].as_f64()
+            .and_then(|v| Decimal::from_str(&format!("{:.8}", v)).ok());
+        
+        let generation_id = response_json["id"].as_str().map(|s| s.to_string());
+        let model_used = response_json["model"].as_str().map(|s| s.to_string());
+        let finish_reason = response_json["choices"][0]["finish_reason"].as_str().map(|s| s.to_string());
+
+        info!("🎫 Tokens: {} (prompt: {}, completion: {})", 
+              tokens_total.unwrap_or(0),
+              tokens_prompt.unwrap_or(0),
+              tokens_completion.unwrap_or(0));
+        if let Some(cost) = &cost_total_usd {
+            info!("💰 Cost: ${}", cost);
+        }
+
+        let text = response_json["choices"][0]["message"]["content"]
+            .as_str()
+            .ok_or_else(|| anyhow!("No content in OpenRouter response"))?;
+
+        let cleaned_text = Self::extract_json_from_markdown(text);
+        
+        let ocr_response: OcrResponse = match serde_json::from_str(&cleaned_text) {
+            Ok(r) => r,
+            Err(e) => {
+                let error_msg = format!("Error parsing OCR JSON: {} - Text: {}", e, cleaned_text);
+                
+                // Log failed attempt
+                let log = OcrApiLog {
+                    user_id,
+                    image_size_bytes: image_bytes.len() as i64,
+                    model_name: model.to_string(),
+                    provider: "openrouter".to_string(),
+                    endpoint_type: "upload".to_string(),
+                    success: false,
+                    response_time_ms,
+                    error_message: Some(error_msg.clone()),
+                    tokens_prompt,
+                    tokens_completion,
+                    tokens_total,
+                    cost_prompt_usd,
+                    cost_completion_usd,
+                    cost_total_usd,
+                    generation_id: generation_id.clone(),
+                    model_used: model_used.clone(),
+                    finish_reason: finish_reason.clone(),
+                    extracted_fields: None,
+                    raw_response: Some(response_json),
+                };
+                Self::log_ocr_api_call(state, &log).await;
+                
+                return Err(anyhow!(error_msg));
+            }
+        };
+
+        // Log successful attempt
+        let extracted_json = serde_json::to_value(&ocr_response).ok();
+        let log = OcrApiLog {
+            user_id,
+            image_size_bytes: image_bytes.len() as i64,
+            model_name: model.to_string(),
+            provider: "openrouter".to_string(),
+            endpoint_type: "upload".to_string(),
+            success: true,
+            response_time_ms,
+            error_message: None,
+            tokens_prompt,
+            tokens_completion,
+            tokens_total,
+            cost_prompt_usd,
+            cost_completion_usd,
+            cost_total_usd,
+            generation_id,
+            model_used,
+            finish_reason,
+            extracted_fields: extracted_json,
+            raw_response: Some(response_json),
+        };
+        Self::log_ocr_api_call(state, &log).await;
+
+        info!("✅ OCR {} exitoso: {:?}", model, ocr_response.issuer_name);
+        Ok(ocr_response)
+    }
+
     /// Extract JSON from markdown code blocks
     fn extract_json_from_markdown(text: &str) -> String {
         let text = text.trim();
@@ -613,7 +902,8 @@ impl OcrService {
         }
     }
 
-    /// Process image with OpenRouter as fallback (Qwen3-VL-30B model)
+    // Deprecated: Replaced by process_with_openrouter_logged with full logging
+    #[allow(dead_code)]
     async fn process_image_with_openrouter(image_bytes: &[u8], mode: &OcrMode) -> Result<OcrResponse> {
         info!("🔄 FALLBACK: Iniciando procesamiento con OpenRouter (Qwen3-VL-30B)");
         
@@ -718,30 +1008,42 @@ impl OcrService {
         Ok(ocr_response)
     }
 
-    /// Process image with OCR - tries Gemini first, falls back to OpenRouter
-    async fn process_image_with_ocr(image_bytes: &[u8], mode: &OcrMode) -> Result<OcrResponse> {
-        // Try Gemini first
-        match Self::process_image_with_gemini(image_bytes, mode).await {
-            Ok(response) => {
-                info!("✅ OCR procesado exitosamente con Gemini");
-                Ok(response)
-            }
-            Err(gemini_error) => {
-                warn!("⚠️ Gemini OCR falló: {}. Intentando fallback con OpenRouter...", gemini_error);
-                
-                // Try OpenRouter as fallback
-                match Self::process_image_with_openrouter(image_bytes, mode).await {
-                    Ok(response) => {
-                        info!("✅ OCR procesado exitosamente con OpenRouter (fallback)");
-                        Ok(response)
-                    }
-                    Err(openrouter_error) => {
-                        error!("❌ Ambos proveedores OCR fallaron. Gemini: {} | OpenRouter: {}", gemini_error, openrouter_error);
-                        Err(anyhow!("OCR falló en todos los proveedores. Gemini: {} | OpenRouter: {}", gemini_error, openrouter_error))
+    /// Process image with OCR - uses OpenRouter models in cascade
+    /// Models: qwen3-vl-8b -> qwen3-vl-30b -> qwen2.5-vl-72b
+    async fn process_image_with_ocr(
+        state: &AppState,
+        user_id: i64,
+        image_bytes: &[u8],
+        mode: &OcrMode
+    ) -> Result<OcrResponse> {
+        let models = vec![
+            "qwen/qwen3-vl-8b-instruct",
+            "qwen/qwen3-vl-30b-a3b-instruct",
+            "qwen/qwen2.5-vl-72b-instruct",
+        ];
+
+        for (i, model) in models.iter().enumerate() {
+            info!("🔄 Intentando OCR con modelo {} ({}/{})...", model, i + 1, models.len());
+            
+            // Cast user_id from i64 to i32 for database
+            match Self::process_with_openrouter_logged(state, user_id as i32, image_bytes, model, mode).await {
+                Ok(response) => {
+                    info!("✅ OCR procesado exitosamente con {}", model);
+                    return Ok(response);
+                }
+                Err(e) => {
+                    warn!("⚠️ {} OCR falló: {}", model, e);
+                    if i < models.len() - 1 {
+                        info!("➡️ Intentando con siguiente modelo en cascada...");
+                    } else {
+                        error!("❌ Todos los modelos OCR fallaron");
+                        return Err(anyhow!("OCR falló en todos los modelos. Último error: {}", e));
                     }
                 }
             }
         }
+
+        Err(anyhow!("OCR falló en todos los modelos"))
     }
 
     /// Validate required fields and collect all missing fields
@@ -1194,8 +1496,14 @@ impl OcrService {
             });
         }
 
-        // 2. Build specialized prompt for missing fields
-        let ocr_result = Self::process_image_for_specific_fields(&image_bytes, &retry_request.missing_fields).await;
+        // 2. Build specialized prompt for missing fields with OpenRouter cascade
+        let ocr_result = Self::process_image_for_specific_fields_logged(
+            &state,
+            user_id as i32,
+            &image_bytes, 
+            &retry_request.missing_fields,
+            retry_request.previous_data.as_ref(),
+        ).await;
 
         match ocr_result {
             Ok(new_ocr_response) => {
@@ -1413,7 +1721,350 @@ impl OcrService {
         }
     }
 
-    /// Process image focusing only on specific fields
+    /// Process image focusing only on specific fields with OpenRouter cascade and logging
+    async fn process_image_for_specific_fields_logged(
+        state: &AppState,
+        user_id: i32,
+        image_bytes: &[u8],
+        missing_fields: &[String],
+        previous_data: Option<&ExtractedOcrData>,
+    ) -> Result<OcrResponse> {
+        info!("🎯 Procesando imagen RETRY para campos específicos: {:?}", missing_fields);
+        
+        // Use OpenRouter cascade (same as main OCR flow)
+        let models = vec![
+            "qwen/qwen3-vl-8b-instruct",
+            "qwen/qwen3-vl-30b-a3b-instruct",
+            "qwen/qwen2.5-vl-72b-instruct",
+        ];
+
+        for (i, model) in models.iter().enumerate() {
+            info!("🔄 RETRY: Intentando con modelo {} ({}/{})...", model, i + 1, models.len());
+            
+            match Self::process_retry_with_openrouter_logged(
+                state, user_id, image_bytes, model, missing_fields, previous_data
+            ).await {
+                Ok(response) => {
+                    info!("✅ RETRY OCR procesado exitosamente con {}", model);
+                    return Ok(response);
+                }
+                Err(e) => {
+                    warn!("⚠️ RETRY {} falló: {}", model, e);
+                    if i < models.len() - 1 {
+                        info!("➡️ Intentando con siguiente modelo en cascada...");
+                    } else {
+                        error!("❌ Todos los modelos RETRY fallaron");
+                        return Err(e);
+                    }
+                }
+            }
+        }
+        
+        Err(anyhow!("Todos los modelos de OCR RETRY fallaron"))
+    }
+
+    /// Process retry with OpenRouter and full logging
+    async fn process_retry_with_openrouter_logged(
+        state: &AppState,
+        user_id: i32,
+        image_bytes: &[u8],
+        model: &str,
+        missing_fields: &[String],
+        previous_data: Option<&ExtractedOcrData>,
+    ) -> Result<OcrResponse> {
+        let start_time = std::time::Instant::now();
+        
+        let api_key = std::env::var("OPENROUTER_API_KEY")
+            .unwrap_or_else(|_| "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".to_string());
+
+        let image_base64 = general_purpose::STANDARD.encode(image_bytes);
+
+        // Build focused prompt with previous data context
+        let prompt = Self::build_retry_prompt(missing_fields, previous_data);
+
+        let payload = json!({
+            "model": model,
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": format!("data:image/jpeg;base64,{}", image_base64)
+                        }
+                    }
+                ]
+            }],
+            "temperature": 0.1,
+            "max_tokens": 4096
+        });
+
+        let client = Client::new();
+        let response = client
+            .post("https://openrouter.ai/api/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await;
+
+        let response_time_ms = start_time.elapsed().as_millis() as i64;
+
+        let response = match response {
+            Ok(r) => r,
+            Err(e) => {
+                let error_msg = format!("RETRY Request error: {}", e);
+                
+                // Log failed attempt
+                let log = OcrApiLog {
+                    user_id,
+                    image_size_bytes: image_bytes.len() as i64,
+                    model_name: model.to_string(),
+                    provider: "openrouter".to_string(),
+                    endpoint_type: "retry".to_string(),
+                    success: false,
+                    response_time_ms,
+                    error_message: Some(error_msg.clone()),
+                    tokens_prompt: None,
+                    tokens_completion: None,
+                    tokens_total: None,
+                    cost_prompt_usd: None,
+                    cost_completion_usd: None,
+                    cost_total_usd: None,
+                    generation_id: None,
+                    model_used: None,
+                    finish_reason: None,
+                    extracted_fields: None,
+                    raw_response: None,
+                };
+                Self::log_ocr_api_call(state, &log).await;
+                
+                return Err(anyhow!(error_msg));
+            }
+        };
+
+        if !response.status().is_success() {
+            let error_text = response.text().await.unwrap_or_default();
+            let error_msg = format!("RETRY OpenRouter API error: {}", error_text);
+            
+            // Log failed attempt
+            let log = OcrApiLog {
+                user_id,
+                image_size_bytes: image_bytes.len() as i64,
+                model_name: model.to_string(),
+                provider: "openrouter".to_string(),
+                endpoint_type: "retry".to_string(),
+                success: false,
+                response_time_ms,
+                error_message: Some(error_msg.clone()),
+                tokens_prompt: None,
+                tokens_completion: None,
+                tokens_total: None,
+                cost_prompt_usd: None,
+                cost_completion_usd: None,
+                cost_total_usd: None,
+                generation_id: None,
+                model_used: None,
+                finish_reason: None,
+                extracted_fields: None,
+                raw_response: None,
+            };
+            Self::log_ocr_api_call(state, &log).await;
+            
+            return Err(anyhow!(error_msg));
+        }
+
+        let response_text = response.text().await?;
+        let response_json: Value = serde_json::from_str(&response_text)?;
+
+        // Extract metadata and usage
+        let tokens_prompt = response_json["usage"]["prompt_tokens"].as_i64().map(|t| t as i32);
+        let tokens_completion = response_json["usage"]["completion_tokens"].as_i64().map(|t| t as i32);
+        let tokens_total = response_json["usage"]["total_tokens"].as_i64().map(|t| t as i32);
+        
+        let cost_total_usd = response_json["usage"]["cost"].as_f64()
+            .and_then(|v| Decimal::from_str(&format!("{:.8}", v)).ok());
+        let cost_prompt_usd = response_json["usage"]["cost_details"]["upstream_inference_prompt_cost"].as_f64()
+            .and_then(|v| Decimal::from_str(&format!("{:.8}", v)).ok());
+        let cost_completion_usd = response_json["usage"]["cost_details"]["upstream_inference_completions_cost"].as_f64()
+            .and_then(|v| Decimal::from_str(&format!("{:.8}", v)).ok());
+        
+        let generation_id = response_json["id"].as_str().map(|s| s.to_string());
+        let model_used = response_json["model"].as_str().map(|s| s.to_string());
+        let finish_reason = response_json["choices"][0]["finish_reason"].as_str().map(|s| s.to_string());
+
+        info!("🎫 RETRY Tokens: {} (prompt: {}, completion: {})", 
+              tokens_total.unwrap_or(0),
+              tokens_prompt.unwrap_or(0),
+              tokens_completion.unwrap_or(0));
+        if let Some(cost) = &cost_total_usd {
+            info!("💰 RETRY Cost: ${}", cost);
+        }
+
+        let text = response_json["choices"][0]["message"]["content"]
+            .as_str()
+            .ok_or_else(|| anyhow!("No content in RETRY OpenRouter response"))?;
+
+        let cleaned_text = Self::extract_json_from_markdown(text);
+        
+        let ocr_response: OcrResponse = match serde_json::from_str(&cleaned_text) {
+            Ok(r) => r,
+            Err(e) => {
+                let error_msg = format!("Error parsing RETRY OCR JSON: {} - Text: {}", e, cleaned_text);
+                
+                // Log failed attempt
+                let log = OcrApiLog {
+                    user_id,
+                    image_size_bytes: image_bytes.len() as i64,
+                    model_name: model.to_string(),
+                    provider: "openrouter".to_string(),
+                    endpoint_type: "retry".to_string(),
+                    success: false,
+                    response_time_ms,
+                    error_message: Some(error_msg.clone()),
+                    tokens_prompt,
+                    tokens_completion,
+                    tokens_total,
+                    cost_prompt_usd,
+                    cost_completion_usd,
+                    cost_total_usd,
+                    generation_id: generation_id.clone(),
+                    model_used: model_used.clone(),
+                    finish_reason: finish_reason.clone(),
+                    extracted_fields: None,
+                    raw_response: Some(response_json),
+                };
+                Self::log_ocr_api_call(state, &log).await;
+                
+                return Err(anyhow!(error_msg));
+            }
+        };
+
+        // Log successful attempt
+        let extracted_json = serde_json::to_value(&ocr_response).ok();
+        let log = OcrApiLog {
+            user_id,
+            image_size_bytes: image_bytes.len() as i64,
+            model_name: model.to_string(),
+            provider: "openrouter".to_string(),
+            endpoint_type: "retry".to_string(),
+            success: true,
+            response_time_ms,
+            error_message: None,
+            tokens_prompt,
+            tokens_completion,
+            tokens_total,
+            cost_prompt_usd,
+            cost_completion_usd,
+            cost_total_usd,
+            generation_id,
+            model_used,
+            finish_reason,
+            extracted_fields: extracted_json,
+            raw_response: Some(response_json),
+        };
+        Self::log_ocr_api_call(state, &log).await;
+
+        info!("✅ RETRY OCR {} exitoso: RUC={:?}, DV={:?}, Invoice={:?}", 
+              model, ocr_response.ruc, ocr_response.dv, ocr_response.invoice_number);
+        Ok(ocr_response)
+    }
+
+    /// Build specialized prompt for retry with previous data context
+    fn build_retry_prompt(missing_fields: &[String], previous_data: Option<&ExtractedOcrData>) -> String {
+        // Build field instructions
+        let field_instructions = missing_fields.iter().map(|f| {
+            match f.as_str() {
+                "ruc" => "- RUC: Número de RUC del comercio (formato: números con guiones como 1234567-1-654321, busca cerca del nombre del negocio, encabezado, o pie de factura)".to_string(),
+                "dv" => "- DV: Dígito Verificador que acompaña al RUC (usualmente 2 dígitos después de 'DV:' o al final del RUC)".to_string(),
+                "invoice_number" => "- invoice_number: Número de factura (busca 'Factura', 'Fact', 'No.', 'Nro', números con formato como 001-002-123456)".to_string(),
+                "total" => "- total: Monto total de la factura (busca 'Total', 'Total a Pagar', generalmente el número más grande al final)".to_string(),
+                "products" => "- products: Lista de productos/servicios con nombre, cantidad y precio (escanea todas las líneas de ítems)".to_string(),
+                _ => format!("- {}: valor correspondiente", f)
+            }
+        }).collect::<Vec<_>>().join("\n");
+
+        // Build previous data context if available
+        let previous_context = if let Some(data) = previous_data {
+            let mut context_parts = vec![];
+            
+            if let Some(ref name) = data.issuer_name {
+                context_parts.push(format!("- Comercio: {}", name));
+            }
+            if let Some(ref addr) = data.issuer_address {
+                context_parts.push(format!("- Dirección: {}", addr));
+            }
+            if let Some(ref date) = data.date {
+                context_parts.push(format!("- Fecha: {}", date));
+            }
+            if let Some(total) = data.total {
+                context_parts.push(format!("- Total: ${:.2}", total));
+            }
+            if let Some(ref ruc) = data.ruc {
+                context_parts.push(format!("- RUC: {}", ruc));
+            }
+            if let Some(ref dv) = data.dv {
+                context_parts.push(format!("- DV: {}", dv));
+            }
+            if let Some(ref inv) = data.invoice_number {
+                context_parts.push(format!("- Número de Factura: {}", inv));
+            }
+            if !data.products.is_empty() {
+                context_parts.push(format!("- Productos: {} items ya detectados", data.products.len()));
+            }
+            
+            if context_parts.is_empty() {
+                String::new()
+            } else {
+                format!("\n\n📋 DATOS YA CAPTURADOS (no necesitas buscarlos):\n{}\n", context_parts.join("\n"))
+            }
+        } else {
+            String::new()
+        };
+
+        format!(r#"Esta imagen es de una factura de Panamá. Esta es una imagen ADICIONAL para completar datos faltantes.
+{previous_context}
+🔍 SOLO NECESITO QUE BUSQUES ESTOS CAMPOS ESPECÍFICOS QUE FALTAN:
+
+{field_instructions}
+
+Responde ÚNICAMENTE con un JSON con esta estructura exacta:
+
+{{
+  "issuer_name": "nombre del comercio o null",
+  "ruc": "número RUC completo o null",
+  "dv": "dígito verificador o null",
+  "address": "dirección o null",
+  "invoice_number": "número de factura o null",
+  "date": "fecha en formato YYYY-MM-DD o null",
+  "total": valor_numerico_o_null,
+  "products": [
+    {{
+      "name": "descripción del producto",
+      "quantity": cantidad_numerica,
+      "unit_price": precio_unitario,
+      "total_price": precio_total
+    }}
+  ]
+}}
+
+INSTRUCCIONES IMPORTANTES:
+1. ENFÓCATE ESPECÍFICAMENTE en los campos listados como FALTANTES
+2. Para el RUC, busca en TODA la imagen: encabezado, pie de página, cerca del nombre del comercio
+3. El DV suele estar justo después del RUC o etiquetado como "DV:"
+4. Si el campo NO está visible en la imagen, usa null (NO INVENTES DATOS)
+5. Para productos, extrae TODOS los que sean visibles
+6. Solo responde con el JSON, sin texto adicional ni explicaciones"#, 
+        previous_context = previous_context, 
+        field_instructions = field_instructions)
+    }
+
+    // Deprecated: Old Gemini-based retry function - keeping for reference
+    #[allow(dead_code)]
     async fn process_image_for_specific_fields(image_bytes: &[u8], missing_fields: &[String]) -> Result<OcrResponse> {
         info!("🎯 Procesando imagen para campos específicos: {:?}", missing_fields);
         

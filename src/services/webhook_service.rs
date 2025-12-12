@@ -180,6 +180,9 @@ impl WebhookService {
             FROM rewards.merchants
             WHERE merchant_id = $1
               AND webhook_url IS NOT NULL
+              AND webhook_url != ''
+              AND webhook_secret IS NOT NULL
+              AND webhook_secret != ''
             "#,
         )
         .bind(merchant_id)

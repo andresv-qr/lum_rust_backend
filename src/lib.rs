@@ -6,7 +6,6 @@ use axum::{
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use tower_http::compression::{CompressionLayer, predicate::SizeAbove};  // PERFORMANCE: gzip compression
-use tower_http::services::ServeDir;  // STATIC FILES: Serve merchant scanner PWA
 
 pub mod api;
 pub mod webhook;
@@ -52,8 +51,8 @@ pub fn create_app_router(app_state: Arc<AppState>) -> Router {
         // Webhooks de WhatsApp
         .route("/webhookws", get(get_webhook))
         .route("/webhookws", post(post_webhook))
-        // 📱 Merchant Scanner PWA - archivos estáticos
-        .nest_service("/merchant-scanner", ServeDir::new("static/merchant-scanner"))
+        // 📱 Merchant Scanner PWA - MOVIDO A comercios.lumapp.org (servido por Nginx)
+        // .nest_service("/merchant-scanner", ServeDir::new("static/merchant-scanner"))
         // Endpoints de monitoreo (sin autenticación) - incluye /metrics de Prometheus
         .merge(monitoring_router())
         // API endpoints con estado

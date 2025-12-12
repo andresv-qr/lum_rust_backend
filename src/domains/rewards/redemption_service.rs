@@ -446,6 +446,29 @@ impl RedemptionService {
         .execute(&mut *tx)
         .await?;
 
+        // 5. CRÍTICO: Restaurar stock de la oferta
+        // Primero obtener offer_id de la redención
+        let offer_id_row: Option<(Uuid,)> = sqlx::query_as(
+            r#"SELECT offer_id FROM rewards.user_redemptions WHERE redemption_id = $1"#
+        )
+        .bind(redemption_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+        
+        if let Some((offer_id,)) = offer_id_row {
+            sqlx::query(
+                r#"
+                UPDATE rewards.redemption_offers
+                SET stock_quantity = COALESCE(stock_quantity, 0) + 1
+                WHERE offer_id = $1
+                  AND stock_quantity IS NOT NULL
+                "#,
+            )
+            .bind(offer_id)
+            .execute(&mut *tx)
+            .await?;
+        }
+
         tx.commit().await?;
 
         let new_balance = self.offer_service.get_user_balance(user_id).await?;

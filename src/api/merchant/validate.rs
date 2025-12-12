@@ -109,6 +109,9 @@ pub async fn validate_redemption(
     info!("Merchant {} validating redemption code: {}", 
           merchant.merchant_name, payload.code);
     
+    // 🔒 Rate limiting para prevenir ataques de fuerza bruta
+    check_merchant_validation_rate_limit(&state, &merchant.sub).await?;
+    
     // Verificar token JWT si se proporciona (seguridad extra)
     if let Some(ref token) = payload.token {
         let qr_config = crate::domains::rewards::qr_generator::QrConfig::default();
@@ -196,7 +199,20 @@ pub async fn validate_redemption(
             })
         }
         Err(_) => {
-            // Query by redemption_code (string)
+            // Query by redemption_code (string) - SOLO búsqueda exacta por seguridad
+            // Códigos parciales deshabilitados para prevenir ataques de fuerza bruta
+            let search_code = payload.code.trim().to_uppercase();
+            
+            // Validar formato mínimo del código
+            if search_code.len() < 10 {
+                return Ok(Json(ValidationResponse {
+                    success: true,
+                    valid: false,
+                    redemption: None,
+                    message: "Código de redención inválido. Escanea el QR completo.".to_string(),
+                }));
+            }
+
             let result = sqlx::query!(
                 r#"
                 SELECT 
@@ -210,8 +226,9 @@ pub async fn validate_redemption(
                 FROM rewards.user_redemptions ur
                 INNER JOIN rewards.redemption_offers ro ON ur.offer_id = ro.offer_id
                 WHERE ur.redemption_code = $1
+                LIMIT 1
                 "#,
-                payload.code
+                search_code
             )
             .fetch_optional(&state.db_pool)
             .await
@@ -586,4 +603,68 @@ impl IntoResponse for ApiError {
         
         (status, body).into_response()
     }
+}
+
+/// Rate limiting para validación de merchants (previene fuerza bruta)
+const VALIDATIONS_PER_MINUTE: i64 = 30;
+const VALIDATIONS_PER_HOUR: i64 = 300;
+
+async fn check_merchant_validation_rate_limit(state: &AppState, merchant_id: &str) -> Result<(), ApiError> {
+    let mut conn = match state.redis_pool.get().await {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!("Redis unavailable for rate limit, allowing request: {}", e);
+            return Ok(()); // Fail open si Redis no está disponible
+        }
+    };
+    
+    let now = chrono::Utc::now();
+    let minute_key = format!("merchant_validate:min:{}:{}", merchant_id, now.format("%Y%m%d%H%M"));
+    let hour_key = format!("merchant_validate:hour:{}:{}", merchant_id, now.format("%Y%m%d%H"));
+    
+    // Verificar límite por minuto (atómico)
+    let minute_count: i64 = redis::cmd("INCR")
+        .arg(&minute_key)
+        .query_async(&mut *conn)
+        .await
+        .unwrap_or(1);
+    
+    if minute_count == 1 {
+        let _: () = redis::cmd("EXPIRE")
+            .arg(&minute_key)
+            .arg(60)
+            .query_async(&mut *conn)
+            .await
+            .unwrap_or(());
+    }
+    
+    if minute_count > VALIDATIONS_PER_MINUTE {
+        return Err(ApiError::BadRequest(
+            "Demasiados intentos de validación. Espera un momento.".to_string()
+        ));
+    }
+    
+    // Verificar límite por hora
+    let hour_count: i64 = redis::cmd("INCR")
+        .arg(&hour_key)
+        .query_async(&mut *conn)
+        .await
+        .unwrap_or(1);
+    
+    if hour_count == 1 {
+        let _: () = redis::cmd("EXPIRE")
+            .arg(&hour_key)
+            .arg(3600)
+            .query_async(&mut *conn)
+            .await
+            .unwrap_or(());
+    }
+    
+    if hour_count > VALIDATIONS_PER_HOUR {
+        return Err(ApiError::BadRequest(
+            "Límite de validaciones por hora excedido.".to_string()
+        ));
+    }
+    
+    Ok(())
 }

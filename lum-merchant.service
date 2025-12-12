@@ -1,0 +1,25 @@
+[Unit]
+Description=Lüm Merchant Server - Portal de Comercios
+Documentation=https://github.com/andresv-qr/lum_rust_backend
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=client_1099_1
+Group=client_1099_1
+WorkingDirectory=/home/client_1099_1/scripts/lum_rust_ws
+Environment="RUST_LOG=info"
+Environment="MERCHANT_PORT=8001"
+ExecStart=/home/client_1099_1/scripts/lum_rust_ws/target/release/lum_merchant_ws
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Límites de recursos (servicio ligero)
+LimitNOFILE=65535
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

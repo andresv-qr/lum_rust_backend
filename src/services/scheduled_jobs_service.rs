@@ -40,6 +40,9 @@ impl ScheduledJobsService {
         // Job 4: Enviar alertas de redenciones próximas a expirar (cada 5 minutos)
         self.add_expiration_alerts_job().await?;
 
+        // Job 5: Enviar reportes semanales a comercios (domingos a las 9 AM)
+        self.add_weekly_merchant_reports_job().await?;
+
         // Iniciar el scheduler
         self.scheduler.start().await?;
 
@@ -157,6 +160,27 @@ impl ScheduledJobsService {
         Ok(())
     }
 
+    /// Job 5: Enviar reportes semanales a comercios (domingos a las 9 AM UTC)
+    async fn add_weekly_merchant_reports_job(&self) -> Result<()> {
+        let db = self.db.clone();
+
+        let job = Job::new_async("0 0 9 * * SUN", move |_uuid, _l| {
+            let db = db.clone();
+            Box::pin(async move {
+                info!("📧 Running weekly merchant reports job...");
+
+                match crate::services::send_weekly_reports_task(db.clone()).await {
+                    Ok(_) => info!("✅ Weekly merchant reports sent successfully"),
+                    Err(e) => error!("❌ Error sending weekly merchant reports: {}", e),
+                }
+            })
+        })?;
+
+        self.scheduler.add(job).await?;
+        info!("Added weekly_merchant_reports job (Sundays at 9 AM)");
+        Ok(())
+    }
+
     /// Detener el scheduler
     pub async fn shutdown(&mut self) -> Result<()> {
         info!("Shutting down scheduled jobs...");
@@ -189,8 +213,8 @@ async fn expire_old_redemptions(db: &PgPool) -> Result<u64> {
 
 /// Limpiar códigos QR antiguos (opcional: si se almacenan imágenes)
 async fn cleanup_old_qr_codes(db: &PgPool) -> Result<u64> {
-    // Si tienes una tabla separada para QR codes
-    let result = sqlx::query(
+    // 1. Limpiar tabla de cache si existe
+    let db_result = sqlx::query(
         r#"
         DELETE FROM rewards.qr_code_cache
         WHERE created_at < NOW() - INTERVAL '30 days'
@@ -199,17 +223,46 @@ async fn cleanup_old_qr_codes(db: &PgPool) -> Result<u64> {
     .execute(db)
     .await;
 
-    match result {
-        Ok(r) => Ok(r.rows_affected()),
+    let db_count = match db_result {
+        Ok(r) => r.rows_affected(),
         Err(e) => {
             // Si la tabla no existe, no es un error
             if e.to_string().contains("does not exist") {
-                Ok(0)
+                0
             } else {
-                Err(e.into())
+                return Err(e.into());
             }
         }
+    };
+    
+    // 2. Limpiar archivos QR del sistema de archivos (assets/qr/)
+    let qr_dir = std::path::Path::new("assets/qr");
+    let mut files_deleted = 0u64;
+    
+    if qr_dir.exists() {
+        let thirty_days_ago = chrono::Utc::now() - chrono::Duration::days(30);
+        
+        if let Ok(entries) = std::fs::read_dir(qr_dir) {
+            for entry in entries.flatten() {
+                if let Ok(metadata) = entry.metadata() {
+                    if let Ok(modified) = metadata.modified() {
+                        let modified_time: chrono::DateTime<chrono::Utc> = modified.into();
+                        if modified_time < thirty_days_ago {
+                            if std::fs::remove_file(entry.path()).is_ok() {
+                                files_deleted += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if files_deleted > 0 {
+            info!("🗑️ Cleaned up {} old QR image files", files_deleted);
+        }
     }
+    
+    Ok(db_count + files_deleted)
 }
 
 /// Recalcular estadísticas de merchants

@@ -41,9 +41,11 @@ pub mod push_notification_service;
 pub mod webhook_service;
 pub mod rate_limiter_service;
 pub mod scheduled_jobs_service;
+pub mod merchant_email_service;
 
 // Re-export new services
 pub use push_notification_service::{PushNotificationService, init_push_service, get_push_service, start_push_queue_worker, QueueProcessResult};
 pub use webhook_service::{WebhookService, init_webhook_service, get_webhook_service};
 pub use rate_limiter_service::{RateLimiter, RateLimitConfig, init_rate_limiter, get_rate_limiter};
 pub use scheduled_jobs_service::{ScheduledJobsService, init_scheduled_jobs, get_scheduled_jobs};
+pub use merchant_email_service::{send_weekly_reports_task};

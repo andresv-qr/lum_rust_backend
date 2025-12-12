@@ -120,54 +120,59 @@ async fn check_redemption_rate_limit(state: &AppState, user_id: i32) -> Result<(
     let hour_key = format!("redemption_rate:hour:{}:{}", user_id, now.format("%Y%m%d%H"));
     let day_key = format!("redemption_rate:day:{}:{}", user_id, now.format("%Y%m%d"));
     
-    // Verificar límite por hora
-    let hour_count: i64 = redis::cmd("GET")
+    // ATÓMICO: Incrementar primero, luego verificar (evita race conditions)
+    // Usar INCR que es atómico - si el resultado excede el límite, rechazar
+    let hour_count: i64 = redis::cmd("INCR")
         .arg(&hour_key)
         .query_async(&mut *conn)
         .await
-        .unwrap_or(0);
+        .unwrap_or(1);
     
-    if hour_count >= REDEMPTIONS_PER_HOUR {
+    // Establecer expiración solo si es el primer incremento
+    if hour_count == 1 {
+        let _: () = redis::cmd("EXPIRE")
+            .arg(&hour_key)
+            .arg(3600)
+            .query_async(&mut *conn)
+            .await
+            .unwrap_or(());
+    }
+    
+    if hour_count > REDEMPTIONS_PER_HOUR {
         return Err(ApiError::TooManyRequests(format!(
             "Límite de redenciones por hora alcanzado ({}/{}). Intenta en la próxima hora.",
-            hour_count, REDEMPTIONS_PER_HOUR
+            hour_count - 1, REDEMPTIONS_PER_HOUR
         )));
     }
     
-    // Verificar límite por día
-    let day_count: i64 = redis::cmd("GET")
+    // Verificar límite por día (también atómico)
+    let day_count: i64 = redis::cmd("INCR")
         .arg(&day_key)
         .query_async(&mut *conn)
         .await
-        .unwrap_or(0);
+        .unwrap_or(1);
     
-    if day_count >= REDEMPTIONS_PER_DAY {
+    if day_count == 1 {
+        let _: () = redis::cmd("EXPIRE")
+            .arg(&day_key)
+            .arg(86400)
+            .query_async(&mut *conn)
+            .await
+            .unwrap_or(());
+    }
+    
+    if day_count > REDEMPTIONS_PER_DAY {
+        // Decrementar hour_count ya que no se usará
+        let _: () = redis::cmd("DECR")
+            .arg(&hour_key)
+            .query_async(&mut *conn)
+            .await
+            .unwrap_or(());
         return Err(ApiError::TooManyRequests(format!(
             "Límite de redenciones diarias alcanzado ({}/{}). Intenta mañana.",
-            day_count, REDEMPTIONS_PER_DAY
+            day_count - 1, REDEMPTIONS_PER_DAY
         )));
     }
-    
-    // Incrementar contadores
-    let _: () = redis::cmd("INCR")
-        .arg(&hour_key)
-        .query_async(&mut *conn)
-        .await
-        .unwrap_or(());
-    
-    // Establecer expiración de 1 hora para el contador horario
-    let _: () = redis::cmd("EXPIRE")
-        .arg(&hour_key)
-        .arg(3600)
-        .query_async(&mut *conn)
-        .await
-        .unwrap_or(());
-    
-    let _: () = redis::cmd("INCR")
-        .arg(&day_key)
-        .query_async(&mut *conn)
-        .await
-        .unwrap_or(());
     
     // Establecer expiración de 24 horas para el contador diario
     let _: () = redis::cmd("EXPIRE")

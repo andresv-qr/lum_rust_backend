@@ -157,3 +157,11 @@ path = "test_webscrappy.rs"
 [[bin]]
 name = "test_cufe"
 path = "test_cufe.rs"
+
+[[bin]]
+name = "test_ocr"
+path = "test_ocr.rs"
+
+[[bin]]
+name = "lum_merchant_ws"
+path = "src/bin/merchant_server.rs"

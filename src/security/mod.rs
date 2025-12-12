@@ -118,9 +118,11 @@ pub async fn security_headers_middleware(
     );
     
     // Enhanced CSP for APIs
+    // Added 'unsafe-inline' to script-src to allow inline event handlers (onclick) in merchant portal
+    // Added 'unsafe-eval' to script-src for some JS libraries
     headers.insert(
         HeaderName::from_static("content-security-policy"),
-        HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; media-src 'self'; frame-src 'none';"),
+        HeaderValue::from_static("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https:; connect-src 'self'; font-src 'self' https://cdnjs.cloudflare.com; object-src 'none'; media-src 'self'; frame-src 'none';"),
     );
 
     // Additional security headers

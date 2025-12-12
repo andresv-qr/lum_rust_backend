@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - Lümis</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #6B46C1; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #553C9A; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 5px; display: none; }
+        .success { background: #C6F6D5; color: #22543D; }
+        .error { background: #FED7D7; color: #822727; }
+        #loading { display: none; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔐 Test Login Comercio</h1>
+    
+    <div class="form-group">
+        <label>Nombre del Comercio</label>
+        <input type="text" id="merchant-name" value="Demo Store">
+    </div>
+    
+    <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="api-key" value="lumis123">
+    </div>
+    
+    <button onclick="testLogin()">Probar Login</button>
+    
+    <div id="loading">⏳ Conectando...</div>
+    
+    <div id="result"></div>
+
+    <script>
+        async function testLogin() {
+            const name = document.getElementById('merchant-name').value;
+            const key = document.getElementById('api-key').value;
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            console.log('Testing login with:', name, key);
+            
+            try {
+                const response = await fetch('/api/v1/merchant/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ merchant_name: name, api_key: key })
+                });
+                
+                const data = await response.json();
+                console.log('Response:', response.status, data);
+                
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                
+                if (response.ok && data.success) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ LOGIN EXITOSO!</strong><br><br>
+                        <strong>Token:</strong> ${data.token.substring(0, 50)}...<br>
+                        <strong>Merchant ID:</strong> ${data.merchant.merchant_id}<br>
+                        <strong>Nombre:</strong> ${data.merchant.merchant_name}
+                    `;
+                } else {
+                    resultDiv.className = 'error';
+                    resultDiv.innerHTML = `<strong>❌ Error:</strong> ${data.message || JSON.stringify(data)}`;
+                }
+            } catch (err) {
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'error';
+                resultDiv.innerHTML = `<strong>❌ Error de conexión:</strong> ${err.message}`;
+                console.error('Error:', err);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -60,7 +60,7 @@ pub async fn merchant_login(
 ) -> Result<Json<MerchantLoginResponse>, ApiError> {
     info!("Merchant login attempt for: {}", payload.merchant_name);
     
-    // Query merchant from database
+    // Query merchant from database (case insensitive)
     let merchant = sqlx::query!(
         r#"
         SELECT 
@@ -69,7 +69,7 @@ pub async fn merchant_login(
             api_key_hash,
             is_active
         FROM rewards.merchants
-        WHERE merchant_name = $1
+        WHERE LOWER(merchant_name) = LOWER($1)
         "#,
         payload.merchant_name
     )

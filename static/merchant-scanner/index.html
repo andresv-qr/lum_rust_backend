@@ -529,14 +529,14 @@
         <div class="login-container">
             <form id="login-form">
                 <div class="form-group">
-                    <label for="merchant-code">Código de comercio</label>
-                    <input type="text" id="merchant-code" placeholder="Ingresa tu código" required autocomplete="off">
+                    <label for="merchant-code">Nombre del Comercio</label>
+                    <input type="text" id="merchant-code" placeholder="Ej: Demo Store" required autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label for="api-key">Clave API</label>
                     <input type="password" id="api-key" placeholder="Tu clave secreta" required autocomplete="off">
                 </div>
-                <button type="submit" class="btn btn-primary" id="login-btn">
+                <button type="button" class="btn btn-primary" id="login-btn" onclick="handleLogin(event)">
                     Iniciar Sesión
                 </button>
             </form>
@@ -654,7 +654,8 @@
     
     <script>
         // Configuration
-        const API_BASE_URL = window.location.origin;
+        // API Backend is hosted on webh.lumapp.org, Frontend on comercios.lumapp.org
+        const API_BASE_URL = 'https://comercios.lumapp.org';
         
         // State
         let merchantCredentials = null;
@@ -669,6 +670,60 @@
         const errorModal = document.getElementById('error-modal');
         const loading = document.getElementById('loading');
         const toast = document.getElementById('toast');
+
+        // 🔊 Audio Context for success sounds
+        let audioContext = null;
+        
+        function playSuccessSound() {
+            try {
+                // Create audio context on first use (browsers require user interaction)
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Create a pleasant success chime (two ascending tones)
+                const now = audioContext.currentTime;
+                
+                // First tone (lower)
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(523.25, now); // C5
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.2);
+                
+                // Second tone (higher)
+                const osc2 = audioContext.createOscillator();
+                const gain2 = audioContext.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                gain2.gain.setValueAtTime(0.3, now + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc2.connect(gain2);
+                gain2.connect(audioContext.destination);
+                osc2.start(now + 0.1);
+                osc2.stop(now + 0.35);
+                
+                // Third tone (highest)
+                const osc3 = audioContext.createOscillator();
+                const gain3 = audioContext.createGain();
+                osc3.type = 'sine';
+                osc3.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                gain3.gain.setValueAtTime(0.3, now + 0.2);
+                gain3.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc3.connect(gain3);
+                gain3.connect(audioContext.destination);
+                osc3.start(now + 0.2);
+                osc3.stop(now + 0.5);
+                
+            } catch (e) {
+                console.log('Audio not available:', e);
+            }
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -696,19 +751,22 @@
             }
 
             // Login form
-            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            // document.getElementById('login-form').addEventListener('submit', handleLogin);
         });
 
         // Login
         async function handleLogin(e) {
-            e.preventDefault();
+            // Prevent default form submission which causes page reload
+            if (e) e.preventDefault();
             
             const merchantCode = document.getElementById('merchant-code').value.trim();
             const apiKey = document.getElementById('api-key').value.trim();
 
+            console.log('Attempting login for:', merchantCode); // Debug log
+
             if (!merchantCode || !apiKey) {
                 showToast('Completa todos los campos', true);
-                return;
+                return false;
             }
 
             showLoading();
@@ -727,6 +785,7 @@
                 });
 
                 const data = await response.json();
+                console.log('Login response:', data); // Debug log
 
                 if (!response.ok) {
                     throw new Error(data.message || 'Credenciales inválidas');
@@ -744,10 +803,13 @@
                 showToast('Sesión iniciada correctamente');
 
             } catch (error) {
+                console.error('Login error:', error); // Debug log
                 showError('Error de autenticación', error.message || 'No se pudo verificar las credenciales');
             } finally {
                 hideLoading();
             }
+            
+            return false; // Ensure form doesn't submit
         }
 
         // Show Scanner View
@@ -933,6 +995,9 @@
                     throw new Error(data.message || data.error || 'Error al confirmar');
                 }
 
+                // 🔊 Success sound feedback
+                playSuccessSound();
+                
                 // Success!
                 showToast('¡Redención confirmada exitosamente!');
                 
