@@ -685,7 +685,7 @@ impl OcrService {
         let start_time = std::time::Instant::now();
         
         let api_key = std::env::var("OPENROUTER_API_KEY")
-            .unwrap_or_else(|_| "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".to_string());
+            .expect("OPENROUTER_API_KEY must be set in environment variables");
 
         let image_base64 = general_purpose::STANDARD.encode(image_bytes);
         let prompt = Self::get_ocr_prompt(mode);
@@ -907,9 +907,9 @@ impl OcrService {
     async fn process_image_with_openrouter(image_bytes: &[u8], mode: &OcrMode) -> Result<OcrResponse> {
         info!("🔄 FALLBACK: Iniciando procesamiento con OpenRouter (Qwen3-VL-30B)");
         
-        // OpenRouter API key (fallback)
+        // OpenRouter API key
         let api_key = std::env::var("OPENROUTER_API_KEY")
-            .unwrap_or_else(|_| "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".to_string());
+            .expect("OPENROUTER_API_KEY must be set in environment variables");
 
         // Encode image to base64
         let image_base64 = general_purpose::STANDARD.encode(image_bytes);
@@ -1775,7 +1775,7 @@ impl OcrService {
         let start_time = std::time::Instant::now();
         
         let api_key = std::env::var("OPENROUTER_API_KEY")
-            .unwrap_or_else(|_| "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".to_string());
+            .expect("OPENROUTER_API_KEY must be set in environment variables");
 
         let image_base64 = general_purpose::STANDARD.encode(image_bytes);
 
