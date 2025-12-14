@@ -42,6 +42,7 @@ dump.rdb
 .env.*.local
 *.key
 secrets/
+firebase_account/*.json
 
 # Archivos binarios grandes
 lum_rust_ws
