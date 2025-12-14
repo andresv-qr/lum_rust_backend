@@ -198,7 +198,7 @@ FINAL RESULT
 
 El sistema usa la API key de OpenRouter configurada en `.env`:
 ```
-OPENROUTER_API_KEY=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
+OPENROUTER_API_KEY="sk-or-v1-..."
 ```
 
 Si no está en `.env`, usa la key hardcodeada en el código como fallback.

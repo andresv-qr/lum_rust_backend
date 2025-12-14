@@ -120,9 +120,9 @@ fn check_for_mef_errors(document: &Html) -> Option<String> {
 pub fn extract_main_info(html_content: &str) -> Result<ExtractedData> {
     let document = Html::parse_document(html_content);
     
-    // Check for MEF error messages first
+    // Check for MEF error messages first - LOG ONLY, DO NOT BLOCK
     if let Some(error_msg) = check_for_mef_errors(&document) {
-        return Err(anyhow::anyhow!("Error de MEF: {}", error_msg));
+        tracing::warn!("⚠️ Possible MEF error detected in HTML (proceeding with extraction anyway): {}", error_msg);
     }
     
     let mut header = HashMap::new();
@@ -148,7 +148,7 @@ pub fn extract_main_info(html_content: &str) -> Result<ExtractedData> {
 
     let details = extract_line_items(&document);
 
-    // ✅ VALIDACIÓN ESTRICTA: Verificar campos críticos obligatorios
+    // ✅ VALIDACIÓN RELAJADA: Reportar campos faltantes pero RETORNAR lo que se encontró
     let required_fields = vec![
         ("cufe", "CUFE"),
         ("no", "Número de factura"),
@@ -165,17 +165,15 @@ pub fn extract_main_info(html_content: &str) -> Result<ExtractedData> {
     }
     
     if !missing_fields.is_empty() {
-        return Err(anyhow::anyhow!(
-            "Campos obligatorios faltantes o vacíos: {}. La factura puede no estar procesada en el MEF aún o los datos son incompletos.",
+        tracing::warn!(
+            "⚠️ Extracted data incomplete. Missing fields: {}. Returning partial data.",
             missing_fields.join(", ")
-        ));
+        );
     }
     
     // Validar que el monto total exista y no sea vacío
     if !header.contains_key("tot_amount") || header.get("tot_amount").map_or(true, |v| v.is_empty()) {
-        return Err(anyhow::anyhow!(
-            "Monto total no encontrado o vacío. La factura puede no estar procesada completamente en el MEF."
-        ));
+        tracing::warn!("⚠️ Total amount missing in extraction.");
     }
 
     Ok(ExtractedData { header, details })

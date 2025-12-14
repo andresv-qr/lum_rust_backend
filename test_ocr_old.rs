@@ -101,7 +101,7 @@ async fn process_with_openrouter(
     let start_time = std::time::Instant::now();
     
     let openrouter_api_key = std::env::var("OPENROUTER_API_KEY")
-        .unwrap_or_else(|_| "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".to_string());
+        .expect("OPENROUTER_API_KEY must be set in environment variables");
 
     let base64_image = general_purpose::STANDARD.encode(image_bytes);
 
@@ -215,7 +215,7 @@ Reglas importantes:
 
 async fn process_with_openrouter(image_bytes: &[u8]) -> anyhow::Result<OcrResponse> {
     let openrouter_api_key = std::env::var("OPENROUTER_API_KEY")
-        .unwrap_or_else(|_| "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".to_string());
+        .expect("OPENROUTER_API_KEY must be set in environment variables");
 
     let base64_image = general_purpose::STANDARD.encode(image_bytes);
 

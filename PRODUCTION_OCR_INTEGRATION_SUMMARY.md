@@ -91,12 +91,12 @@ All logs go to existing table: `public.ocr_test_logs`
 
 ### OpenRouter API Key
 ```
-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
+sk-or-v1-... (configurar en variable de entorno .env)
 ```
 
 Configured via environment variable:
 ```bash
-export OPENROUTER_API_KEY="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"
+export OPENROUTER_API_KEY="sk-or-v1-..."
 ```
 
 ### Request Structure
