@@ -19,7 +19,7 @@ use crate::state::AppState;
 pub struct ResourceIntegritySummary {
     pub total_count: i64,
     pub global_hash: i64,
-    pub last_update: Option<chrono::NaiveDateTime>,
+    pub last_update: Option<chrono::DateTime<chrono::Utc>>,
     pub snapshot_time: chrono::DateTime<chrono::Utc>,
 }
 
@@ -54,7 +54,7 @@ pub async fn get_integrity_summary(
     info!("🔍 Fetching integrity summary for user_id: {} [{}]", user_id, request_id);
 
     // Query products integrity (< 5ms - index scan)
-    let products = sqlx::query_as::<_, (i64, i64, Option<chrono::NaiveDateTime>, chrono::DateTime<chrono::Utc>)>(
+    let products = sqlx::query_as::<_, (i64, i64, Option<chrono::DateTime<chrono::Utc>>, chrono::DateTime<chrono::Utc>)>(
         "SELECT total_count, global_hash, last_update, snapshot_time 
          FROM user_product_integrity_daily 
          WHERE user_id = $1"
@@ -69,7 +69,7 @@ pub async fn get_integrity_summary(
     .unwrap_or((0, 0, None, chrono::Utc::now()));
 
     // Query issuers integrity
-    let issuers = sqlx::query_as::<_, (i64, i64, Option<chrono::NaiveDateTime>, chrono::DateTime<chrono::Utc>)>(
+    let issuers = sqlx::query_as::<_, (i64, i64, Option<chrono::DateTime<chrono::Utc>>, chrono::DateTime<chrono::Utc>)>(
         "SELECT total_count, global_hash, last_update, snapshot_time 
          FROM user_issuer_integrity_daily 
          WHERE user_id = $1"
@@ -84,7 +84,7 @@ pub async fn get_integrity_summary(
     .unwrap_or((0, 0, None, chrono::Utc::now()));
 
     // Query headers integrity
-    let headers = sqlx::query_as::<_, (i64, i64, Option<chrono::NaiveDateTime>, chrono::DateTime<chrono::Utc>)>(
+    let headers = sqlx::query_as::<_, (i64, i64, Option<chrono::DateTime<chrono::Utc>>, chrono::DateTime<chrono::Utc>)>(
         "SELECT total_count, global_hash, last_update, snapshot_time 
          FROM user_header_integrity_daily 
          WHERE user_id = $1"
@@ -99,7 +99,7 @@ pub async fn get_integrity_summary(
     .unwrap_or((0, 0, None, chrono::Utc::now()));
 
     // Query details integrity
-    let details = sqlx::query_as::<_, (i64, i64, Option<chrono::NaiveDateTime>, chrono::DateTime<chrono::Utc>)>(
+    let details = sqlx::query_as::<_, (i64, i64, Option<chrono::DateTime<chrono::Utc>>, chrono::DateTime<chrono::Utc>)>(
         "SELECT total_count, global_hash, last_update, snapshot_time 
          FROM user_detail_integrity_daily 
          WHERE user_id = $1"

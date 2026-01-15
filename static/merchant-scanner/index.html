@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#6B46C1">
+    <meta name="theme-color" content="#7c3aed">
     <meta name="description" content="Scanner de códigos QR para validación de Lumis">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <title>Lum Scanner - Comercios</title>
+    <link rel="manifest" href="manifest.json?v=20251216">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <title>Lüm Comercios</title>
     <style>
         * {
             margin: 0;
@@ -17,7 +17,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #130f25 0%, #2d1b69 100%);
             min-height: 100vh;
             color: #fff;
         }
@@ -33,30 +33,43 @@
 
         header {
             text-align: center;
-            padding: 20px 0;
+            padding: 30px 0;
         }
 
-        .logo {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #6B46C1 0%, #9F7AEA 100%);
-            border-radius: 16px;
+        .logo-container {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 28px;
+            margin: 0 auto 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
         }
 
         h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 5px;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #fff, #e9d5ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .subtitle {
-            color: #9CA3AF;
-            font-size: 14px;
+            color: #a78bfa;
+            font-size: 15px;
+            font-weight: 500;
         }
 
         /* Login Form */
@@ -81,17 +94,20 @@
         .form-group input {
             width: 100%;
             padding: 14px 16px;
-            border: 2px solid #374151;
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            background: #1F2937;
+            background: rgba(255, 255, 255, 0.05);
             color: #fff;
             font-size: 16px;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
+            backdrop-filter: blur(5px);
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #6B46C1;
+            border-color: #8b5cf6;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
         }
 
         .btn {
@@ -106,13 +122,15 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #6B46C1 0%, #9F7AEA 100%);
+            background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
             color: #fff;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(107, 70, 193, 0.3);
+            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.5);
         }
 
         .btn-primary:disabled {
@@ -145,13 +163,15 @@
         }
 
         .merchant-info {
-            background: #1F2937;
-            border-radius: 12px;
-            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 15px 20px;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
         }
 
         .merchant-name {
@@ -207,9 +227,10 @@
         .scanner-frame {
             width: 70%;
             height: 70%;
-            border: 3px solid rgba(107, 70, 193, 0.8);
+            border: 3px solid rgba(139, 92, 246, 0.5);
             border-radius: 20px;
             position: relative;
+            box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.5);
         }
 
         .scanner-frame::before,
@@ -218,7 +239,7 @@
             position: absolute;
             width: 30px;
             height: 30px;
-            border-color: #6B46C1;
+            border-color: #8b5cf6;
             border-style: solid;
         }
 
@@ -240,8 +261,9 @@
             position: absolute;
             width: 100%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, #6B46C1, transparent);
+            background: linear-gradient(90deg, transparent, #8b5cf6, transparent);
             animation: scan 2s linear infinite;
+            box-shadow: 0 0 10px #8b5cf6;
         }
 
         @keyframes scan {
@@ -259,21 +281,24 @@
 
         /* Manual Input */
         .manual-input {
-            background: #1F2937;
-            border-radius: 12px;
-            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
         }
 
         .manual-input-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .manual-input-title {
             font-size: 14px;
-            color: #9CA3AF;
+            color: #d8b4fe;
+            font-weight: 500;
         }
 
         .manual-input-row {
@@ -284,17 +309,19 @@
         .manual-input-row input {
             flex: 1;
             padding: 12px;
-            border: 2px solid #374151;
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            background: #111827;
+            background: rgba(0, 0, 0, 0.2);
             color: #fff;
-            font-size: 14px;
+            font-size: 16px;
             font-family: monospace;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         .manual-input-row input:focus {
             outline: none;
-            border-color: #6B46C1;
+            border-color: #8b5cf6;
         }
 
         .btn-small {
@@ -479,13 +506,14 @@
         }
 
         .history-item {
-            background: #111827;
-            border-radius: 10px;
-            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 15px;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .history-code {
@@ -519,11 +547,14 @@
 </head>
 <body>
     <!-- Login View -->
+    <!-- Login View -->
     <div class="container" id="login-view">
         <header>
-            <div class="logo">💜</div>
-            <h1>Lum Scanner</h1>
-            <p class="subtitle">Validación de códigos QR para comercios</p>
+            <div class="logo-container">
+                <img src="icons/icon.svg" alt="Lüm" class="logo-img" onerror="this.style.display='none';this.parentElement.textContent='Lüm'">
+            </div>
+            <h1>Lüm Comercios</h1>
+            <p class="subtitle">Validación de Lümis</p>
         </header>
 
         <div class="login-container">
@@ -581,7 +612,7 @@
                 <span class="manual-input-title">O ingresa el código manualmente</span>
             </div>
             <div class="manual-input-row">
-                <input type="text" id="manual-code" placeholder="LUMS-XXXXXX">
+                <input type="text" id="manual-code" placeholder="LUMS-XXXXXX o Código Corto (6 chars)">
                 <button class="btn btn-primary btn-small" onclick="validateManualCode()">
                     Validar
                 </button>
@@ -660,6 +691,7 @@
         // State
         let merchantCredentials = null;
         let currentRedemptionId = null;
+        let currentValidationToken = null;
         let html5QrCode = null;
         let scanHistory = [];
 
@@ -857,15 +889,16 @@
                 await html5QrCode.pause(true);
             }
 
-            // Extract code from URL or use as-is
+            // Extract code/token from URL or use as-is
             let code = decodedText;
+            let token = null;
             
             // If it's a URL, extract the code from path or query
             if (decodedText.startsWith('http')) {
                 try {
                     const url = new URL(decodedText);
-                    // Try path: /redeem/LUMS-XXXXX
-                    const pathMatch = url.pathname.match(/LUMS-[A-Z0-9]+/i);
+                    // Try path: /r/LUMS-XXXXX
+                    const pathMatch = url.pathname.match(/LUMS-[A-Z0-9-]+/i);
                     if (pathMatch) {
                         code = pathMatch[0];
                     }
@@ -874,12 +907,18 @@
                     if (queryCode) {
                         code = queryCode;
                     }
+
+                    // Token: ?t=jwt
+                    const queryToken = url.searchParams.get('t');
+                    if (queryToken) {
+                        token = queryToken;
+                    }
                 } catch (e) {
                     // Not a valid URL, use as-is
                 }
             }
 
-            await validateCode(code);
+            await validateCode(code, token);
             
             // Resume scanner after a delay
             setTimeout(async () => {
@@ -905,13 +944,16 @@
                 return;
             }
 
-            await validateCode(code);
+            await validateCode(code, null);
             input.value = '';
         }
 
         // Validate Code
-        async function validateCode(code) {
+        async function validateCode(code, token = null) {
             showLoading();
+
+            // Keep token for confirm step (if provided by QR)
+            currentValidationToken = token || null;
 
             try {
                 const response = await fetch(`${API_BASE_URL}/api/v1/merchant/validate`, {
@@ -920,7 +962,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${merchantCredentials.token}`
                     },
-                    body: JSON.stringify({ code: code })
+                    body: JSON.stringify(token ? { code: code, token: token } : { code: code })
                 });
 
                 const data = await response.json();
@@ -986,7 +1028,8 @@
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${merchantCredentials.token}`
-                    }
+                    },
+                    body: currentValidationToken ? JSON.stringify({ token: currentValidationToken }) : undefined
                 });
 
                 const data = await response.json();
@@ -1009,6 +1052,7 @@
                 });
 
                 currentRedemptionId = null;
+                currentValidationToken = null;
 
             } catch (error) {
                 showError('Error al Confirmar', error.message);
@@ -1107,7 +1151,7 @@
 
         // Service Worker Registration (for PWA)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
+            navigator.serviceWorker.register('sw.js?v=20251216')
                 .then(reg => console.log('SW registered'))
                 .catch(err => console.log('SW registration failed'));
         }

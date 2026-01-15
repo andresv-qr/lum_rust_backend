@@ -1,5 +1,6 @@
 use sqlx::{PgPool, Row};
-use chrono::{DateTime, Utc, NaiveDateTime};
+use chrono::{DateTime, Utc, NaiveDateTime, TimeZone};
+use chrono_tz::America::Panama;
 use crate::api::invoice_processor::models::{
     FullInvoiceData,
     LogStatus, ErrorType
@@ -12,7 +13,12 @@ use tracing::{info, warn, error};
 // DATE CONVERSION UTILITIES
 // ============================================================================
 
-/// Converts DGI date string (DD/MM/YYYY HH:MM:SS) to DateTime<Utc>
+/// Converts DGI date string (DD/MM/YYYY HH:MM:SS) from Panama timezone to DateTime<Utc>
+/// 
+/// Las facturas de DGI/MEF de Panamá vienen en hora local de Panamá (UTC-5).
+/// Esta función interpreta la fecha como hora de Panamá y la convierte a UTC.
+/// 
+/// Example: "25/06/2025 14:30:00" (Panamá) → "2025-06-25 19:30:00+00" (UTC)
 pub fn parse_dgi_date(date_str: &str) -> Result<DateTime<Utc>, InvoiceProcessingError> {
     // Parse format: "15/05/2025 09:50:04"
     let naive_dt = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S")
@@ -23,8 +29,22 @@ pub fn parse_dgi_date(date_str: &str) -> Result<DateTime<Utc>, InvoiceProcessing
             }
         })?;
     
-    // Convert to UTC (assuming Panama timezone, but treating as UTC for now)
-    Ok(DateTime::from_naive_utc_and_offset(naive_dt, Utc))
+    // Interpret as Panama timezone and convert to UTC
+    match Panama.from_local_datetime(&naive_dt) {
+        chrono::LocalResult::Single(panama_dt) => {
+            Ok(panama_dt.with_timezone(&Utc))
+        }
+        chrono::LocalResult::Ambiguous(earliest, _) => {
+            warn!("⚠️ Ambiguous datetime for Panama: {}, using earliest", date_str);
+            Ok(earliest.with_timezone(&Utc))
+        }
+        chrono::LocalResult::None => {
+            error!("Invalid datetime for Panama timezone: {}", date_str);
+            Err(InvoiceProcessingError::ValidationError {
+                message: format!("Invalid datetime for Panama timezone: {}", date_str),
+            })
+        }
+    }
 }
 
 // ============================================================================
@@ -401,11 +421,26 @@ pub async fn count_invoice_details(
     Ok(count)
 }
 
-pub fn validate_and_parse_date(date_str: &str) -> Result<NaiveDateTime, InvoiceProcessingError> {
-    NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S")
+pub fn validate_and_parse_date(date_str: &str) -> Result<DateTime<Utc>, InvoiceProcessingError> {
+    let naive_dt = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S")
         .map_err(|e| InvoiceProcessingError::ValidationError{ 
             message: format!("Invalid date format '{}': {}", date_str, e) 
-        })
+        })?;
+    
+    // Interpret as Panama timezone and convert to UTC
+    match Panama.from_local_datetime(&naive_dt) {
+        chrono::LocalResult::Single(panama_dt) => {
+            Ok(panama_dt.with_timezone(&Utc))
+        }
+        chrono::LocalResult::Ambiguous(earliest, _) => {
+            Ok(earliest.with_timezone(&Utc))
+        }
+        chrono::LocalResult::None => {
+            Err(InvoiceProcessingError::ValidationError {
+                message: format!("Invalid datetime for Panama timezone: {}", date_str),
+            })
+        }
+    }
 }
 
 /// Checks if an invoice with the given CUFE already exists in the database.

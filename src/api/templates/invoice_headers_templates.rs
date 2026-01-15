@@ -21,15 +21,15 @@ impl InvoiceHeadersQueryTemplates {
 /// Response model for get_invoice_headers
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow, Clone)]
 pub struct InvoiceHeadersResponse {
-    pub date: Option<chrono::NaiveDateTime>,
+    pub date: Option<chrono::DateTime<chrono::Utc>>,
     pub tot_itbms: Option<String>,
     pub issuer_name: Option<String>,
     pub issuer_ruc: Option<String>,
     pub no: Option<String>,
     pub tot_amount: Option<String>,
     pub url: Option<String>,
-    pub process_date: Option<chrono::NaiveDateTime>,
-    pub reception_date: Option<chrono::NaiveDateTime>,
+    pub process_date: Option<chrono::DateTime<chrono::Utc>>,
+    pub reception_date: Option<chrono::DateTime<chrono::Utc>>,
     pub r#type: Option<String>,
     pub cufe: Option<String>,
 }

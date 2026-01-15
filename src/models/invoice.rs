@@ -1,11 +1,11 @@
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, FromRow)]
 pub struct InvoiceHeader {
     pub no: String,
-    pub date: Option<NaiveDateTime>,
+    pub date: Option<DateTime<Utc>>,
     pub cufe: String,
     pub issuer_name: String,
     pub issuer_ruc: String,
@@ -27,7 +27,7 @@ pub struct InvoiceHeader {
 pub struct InvoiceDetail {
     pub partkey: String,
     pub cufe: String,
-    pub date: Option<NaiveDateTime>,
+    pub date: Option<DateTime<Utc>>,
     pub quantity: String,
     pub code: String,
     pub description: String,

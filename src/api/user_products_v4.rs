@@ -17,10 +17,10 @@ use crate::{
         ApiResponse,
         IncrementalSyncResponse,
         calculate_checksum,
-        get_deleted_items_since,
+        get_deleted_items_since_utc,
         extract_max_update_date,
         extract_record_ids,
-        parse_date_to_naive,
+        parse_date_to_utc,
     },
     api::templates::user_products_templates::{
         UserProductsQueryTemplates, 
@@ -45,7 +45,7 @@ pub async fn get_user_products(
 ) -> Result<Json<ApiResponse<IncrementalSyncResponse<UserProductsResponse>>>, StatusCode> {
     let start_time = std::time::Instant::now();
     let request_id = Uuid::new_v4().to_string();
-    let server_timestamp = chrono::Utc::now().naive_utc();
+    let server_timestamp = chrono::Utc::now();
     
     info!("🛒 Fetching user products for user_id: {} [{}]", current_user.user_id, request_id);
 
@@ -54,12 +54,16 @@ pub async fn get_user_products(
     let offset = params.offset.unwrap_or(0).max(0); // Min 0
     let user_id = current_user.user_id;
 
-    // Validate and parse update_date_from if provided (must be NaiveDateTime for PostgreSQL)
-    let update_date_filter: Option<chrono::NaiveDateTime> = if let Some(date_str) = &params.update_date_from {
-        match parse_date_to_naive(date_str) {
-            Ok(naive_dt) => {
-                info!("🗓️ Using update_date filter: {} [{}]", naive_dt, request_id);
-                Some(naive_dt)
+    // Validate and parse update_date_from if provided (must be DateTime<Utc>)
+    // If full_sync=true, ignore update_date_from and return all records
+    let update_date_filter: Option<chrono::DateTime<chrono::Utc>> = if params.full_sync {
+        info!("🔄 Full sync requested, ignoring update_date_from [{}]", request_id);
+        None
+    } else if let Some(date_str) = &params.update_date_from {
+        match parse_date_to_utc(date_str) {
+            Ok(dt) => {
+                info!("🗓️ Using update_date filter: {} [{}]", dt, request_id);
+                Some(dt)
             },
             Err(e) => {
                 error!("❌ Invalid date format: {} [{}]", e, request_id);
@@ -119,12 +123,9 @@ pub async fn get_user_products(
     .unwrap_or(0);
 
     // Get deleted items if update_date_from was provided
-    let deleted_items = if let Some(since) = &update_date_filter {
-        // Convertir NaiveDateTime a string ISO para get_deleted_items_since
-        let since_str = since.format("%Y-%m-%dT%H:%M:%S%.6f").to_string();
-        get_deleted_items_since(&state.db_pool, "dim_product", "code", &since_str).await
-    } else {
-        vec![]
+    let deleted_items = match &update_date_filter {
+        Some(since) => get_deleted_items_since_utc(&state.db_pool, "dim_product", "code", since).await,
+        None => Vec::new(),
     };
 
     // Calculate checksum

@@ -1,8 +1,9 @@
-const CACHE_NAME = 'lum-scanner-v1';
+const CACHE_NAME = 'lum-comercios-v20251216-1';
 const ASSETS_TO_CACHE = [
     '/merchant-scanner/',
     '/merchant-scanner/index.html',
     '/merchant-scanner/manifest.json',
+    '/merchant-scanner/icons/icon.svg',
     'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
 ];
 
@@ -84,10 +85,10 @@ self.addEventListener('push', (event) => {
     if (event.data) {
         const data = event.data.json();
         
-        self.registration.showNotification(data.title || 'Lum Scanner', {
+        self.registration.showNotification(data.title || 'Lüm Comercios', {
             body: data.body || 'Nueva notificación',
-            icon: '/merchant-scanner/icons/icon-192.png',
-            badge: '/merchant-scanner/icons/icon-72.png',
+            icon: '/merchant-scanner/icons/icon.svg',
+            badge: '/merchant-scanner/icons/icon.svg',
             vibrate: [200, 100, 200],
             data: data.data
         });

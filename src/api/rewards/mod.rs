@@ -29,6 +29,8 @@ pub fn router() -> Router<Arc<AppState>> {
         // Offer endpoints
         .route("/offers", get(offers::list_offers))
         .route("/offers/:id", get(offers::get_offer_detail))
+        // My offers (user-centric view with status)
+        .route("/my-offers", get(user::list_my_offers))
         // Redemption creation
         .route("/redeem", post(redeem::create_redemption))
         // User redemptions management

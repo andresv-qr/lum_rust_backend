@@ -1,9 +1,97 @@
 # 📊 User Invoices Sync API - Incremental Synchronization
 ## Sistema de Sincronización Incremental con Integridad de Datos
 
-**Versión:** 2.1 (Production - Materialized Views)  
-**Fecha:** 2025-11-08  
+**Versión:** 3.0 (Production - UTC Timestamps + Full Sync + Sync Status)  
+**Fecha:** 2026-01-14  
 **Estado:** ✅ EN PRODUCCIÓN
+
+---
+
+## 🆕 Novedades v3.0
+
+| Feature | Descripción |
+|---------|-------------|
+| `full_sync` | Parámetro para forzar sincronización completa |
+| `sync-status` | Nuevo endpoint para verificar estado de sincronización |
+| `recovery` | Endpoints POST para sincronización por CUFE/IDs conocidos |
+| UTC unificado | Todos los timestamps en DateTime<Utc> |
+
+---
+
+## 📋 Resumen de Endpoints
+
+| # | Endpoint | Método | Descripción |
+|---|----------|--------|-------------|
+| 0 | `/api/v4/invoices/sync-status` | GET | ⭐ Estado de sincronización (count + max_date) |
+| 1 | `/api/v4/invoices/products` | GET | Productos del usuario |
+| 2 | `/api/v4/invoices/issuers` | GET | Emisores/tiendas del usuario |
+| 3 | `/api/v4/invoices/headers` | GET | Encabezados de facturas |
+| 3b | `/api/v4/invoices/headers/recovery` | **POST** | ⭐ Recovery por CUFE |
+| 4 | `/api/v4/invoices/details` | GET | Detalles/líneas de facturas |
+| 4b | `/api/v4/invoices/details/recovery` | **POST** | ⭐ Recovery por ID |
+| 5 | `/api/v4/invoices/integrity-summary` | GET | Validación de integridad |
+
+### Estrategias de Sincronización
+
+| Estrategia | Método | Endpoint | Cuándo usar |
+|------------|--------|----------|-------------|
+| **Incremental** | GET | `/headers?update_date_from=...` | Sync diario/frecuente |
+| **Full Sync** | GET | `/headers?full_sync=true` | Reinstalación, corrupción |
+| **Recovery** | POST | `/headers/recovery` | Verificación de consistencia |
+
+### Parámetros GET (Endpoints 1-4)
+
+| Parámetro | Tipo | Default | Descripción |
+|-----------|------|---------|-------------|
+| `update_date_from` | `string` | - | ISO 8601 UTC. Filtrar registros desde esta fecha |
+| `full_sync` | `boolean` | `false` | Si `true`, ignora `update_date_from` |
+| `limit` | `integer` | `20` | Max 100 registros por página |
+| `offset` | `integer` | `0` | Para paginación |
+
+### Body POST (Recovery Endpoints)
+
+```typescript
+// POST /api/v4/invoices/headers/recovery
+{
+  "known_cufes": ["CUFE1", "CUFE2", ...],  // CUFEs que el cliente ya tiene
+  "limit": 100                              // Máximo de faltantes a retornar
+}
+
+// POST /api/v4/invoices/details/recovery
+{
+  "known_ids": ["CUFE1_CODE1", "CUFE1_CODE2", ...],  // IDs compuestos
+  "limit": 100
+}
+```
+
+---
+
+## ⏰ Timestamps y Zonas Horarias (UTC)
+
+> **IMPORTANTE:** Todos los timestamps en el sistema de sincronización están en **UTC**.
+
+### Formato de timestamps:
+```
+2025-01-14T15:30:00Z
+```
+
+### Parámetros de filtrado:
+| Parámetro | Formato | Ejemplo |
+|-----------|---------|---------|
+| `update_date_from` | ISO 8601 UTC | `?update_date_from=2025-01-14T00:00:00Z` |
+| `since` | ISO 8601 UTC | `?since=2025-01-14T10:30:00Z` |
+
+### Campos de respuesta:
+| Campo | Descripción |
+|-------|-------------|
+| `max_update_date` | Timestamp UTC más reciente en el dataset |
+| `update_date` | Timestamp UTC de última modificación por registro |
+| `deleted_at` | Timestamp UTC de eliminación (soft delete) |
+
+### Notas para clientes:
+- Siempre enviar timestamps con sufijo `Z` (UTC)
+- Guardar `max_update_date` para la siguiente sincronización incremental
+- Panamá está en UTC-5 (convertir para mostrar al usuario)
 
 ---
 
@@ -186,7 +274,219 @@ if (serverVersion > localVersion) {
 
 ---
 
-## 📡 Endpoints API
+## � Estrategias de Sincronización
+
+El sistema soporta **3 estrategias** de sincronización:
+
+| Estrategia | Cuándo usar | Parámetros |
+|------------|-------------|------------|
+| **Incremental** | Sync diario/frecuente | `update_date_from=<timestamp>` |
+| **Full Sync** | Reinstalación, corrupción, soporte | `full_sync=true` |
+| **Verificación** | Antes de decidir estrategia | `GET /sync-status` |
+
+### Flujo Recomendado
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CLIENTE (Flutter)                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1. GET /api/v4/invoices/sync-status                        │
+│     → Obtiene: headers_count, headers_max_update_date       │
+│                                                              │
+│  2. Comparar con estado local:                              │
+│     ┌────────────────────────────────────────────────────┐  │
+│     │ if (local_count == 0) {                            │  │
+│     │   // Primera vez → Full Sync                       │  │
+│     │   GET /headers?full_sync=true&limit=100            │  │
+│     │ }                                                  │  │
+│     │ else if (local_count == server_count &&            │  │
+│     │          local_max_date >= server_max_date) {      │  │
+│     │   // Sincronizado → No hacer nada                  │  │
+│     │ }                                                  │  │
+│     │ else {                                             │  │
+│     │   // Desactualizado → Incremental                  │  │
+│     │   GET /headers?update_date_from=<local_max_date>   │  │
+│     │ }                                                  │  │
+│     └────────────────────────────────────────────────────┘  │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## � Autenticación y Errores
+
+### JWT Token
+
+Todos los endpoints requieren un token JWT válido en el header `Authorization`:
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Estructura del JWT:**
+```typescript
+interface JwtPayload {
+  sub: string;      // User ID
+  email: string;    // Email del usuario (requerido)
+  exp: number;      // Timestamp de expiración
+  iat: number;      // Timestamp de emisión
+}
+```
+
+### Wrapper de Respuesta Estándar
+
+Todas las respuestas siguen esta estructura:
+
+```typescript
+interface ApiResponse<T> {
+  success: boolean;           // true si la operación fue exitosa
+  data: T | null;             // Datos de la respuesta (null si error)
+  error: string | null;       // Mensaje de error (null si success)
+  request_id: string;         // UUID único para debugging
+  timestamp: string;          // Timestamp UTC de la respuesta
+  execution_time_ms: number;  // Tiempo de ejecución en milisegundos
+  cached: boolean;            // Si la respuesta vino de cache
+}
+```
+
+### Códigos de Error HTTP
+
+| Código | Descripción | Causa típica |
+|--------|-------------|--------------|
+| `200` | ✅ OK | Operación exitosa |
+| `400` | ❌ Bad Request | Parámetros inválidos, formato de fecha incorrecto |
+| `401` | 🔒 Unauthorized | Token JWT faltante, expirado o inválido |
+| `403` | 🚫 Forbidden | Token válido pero sin permisos |
+| `404` | 🔍 Not Found | Recurso no existe |
+| `500` | 💥 Internal Error | Error del servidor, reportar con `request_id` |
+
+### Ejemplo Error 400 (Bad Request):
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": "Invalid date format. Expected ISO 8601 UTC (e.g., 2026-01-14T00:00:00Z)",
+  "request_id": "a1b2c3d4-...",
+  "timestamp": "2026-01-14T12:00:00Z",
+  "execution_time_ms": 1,
+  "cached": false
+}
+```
+
+### Ejemplo Error 401 (Unauthorized):
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": "Invalid or expired token",
+  "request_id": "...",
+  "timestamp": "2026-01-14T12:00:00Z",
+  "execution_time_ms": 0,
+  "cached": false
+}
+```
+
+---
+
+## �📡 Endpoints API
+
+### 0. GET /api/v4/invoices/sync-status ⭐ NUEVO
+
+**Descripción:** Obtener estado de sincronización del usuario. Endpoint ligero (~1-5ms) para determinar estrategia de sync.
+
+**Headers:**
+| Header | Requerido | Descripción |
+|--------|-----------|-------------|
+| `Authorization` | ✅ Sí | `Bearer <jwt_token>` |
+
+**Query Parameters:** Ninguno
+
+**Response Structure:**
+
+```typescript
+interface SyncStatusResponse {
+  headers_count: number;                    // Total de facturas del usuario
+  headers_max_update_date: string | null;   // Timestamp más reciente (UTC)
+  server_timestamp: string;                 // Hora del servidor (UTC)
+}
+```
+
+**Ejemplo Request:**
+
+```bash
+curl -X GET "http://localhost:8000/api/v4/invoices/sync-status" \
+     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+**Ejemplo Response - Usuario con facturas:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "headers_count": 1234,
+    "headers_max_update_date": "2026-01-14T10:30:00Z",
+    "server_timestamp": "2026-01-14T12:00:00Z"
+  },
+  "error": null,
+  "request_id": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-01-14T12:00:00Z",
+  "execution_time_ms": 3,
+  "cached": false
+}
+```
+
+**Ejemplo Response - Usuario sin facturas:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "headers_count": 0,
+    "headers_max_update_date": null,
+    "server_timestamp": "2026-01-14T12:00:00Z"
+  },
+  "error": null,
+  "request_id": "550e8400-e29b-41d4-a716-446655440001",
+  "timestamp": "2026-01-14T12:00:00Z",
+  "execution_time_ms": 2,
+  "cached": false
+}
+```
+
+**Uso en Flutter:**
+
+```dart
+class SyncService {
+  Future<SyncStrategy> determineSyncStrategy() async {
+    // 1. Obtener estado del servidor
+    final serverStatus = await api.getSyncStatus();
+    
+    // 2. Obtener estado local
+    final localCount = await localDb.getHeadersCount();
+    final localMaxDate = await localDb.getMaxUpdateDate();
+    
+    // 3. Decidir estrategia
+    if (localCount == 0) {
+      return SyncStrategy.fullSync;
+    }
+    
+    if (localCount == serverStatus.headersCount &&
+        localMaxDate != null &&
+        !localMaxDate.isBefore(serverStatus.headersMaxUpdateDate)) {
+      return SyncStrategy.alreadySynced;
+    }
+    
+    return SyncStrategy.incremental(since: localMaxDate);
+  }
+}
+```
+
+---
 
 ### 1. GET /api/v4/invoices/products
 
@@ -201,9 +501,20 @@ if (serverVersion > localVersion) {
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `update_date_from` | `string` | No | - | Filtrar productos actualizados desde esta fecha (ISO 8601) |
+| `update_date_from` | `string` | No | - | Filtrar productos actualizados desde esta fecha (ISO 8601 UTC) |
+| `full_sync` | `boolean` | No | `false` | ⭐ Si `true`, ignora `update_date_from` y retorna TODOS los registros |
 | `limit` | `integer` | No | `20` | Número máximo de items por página (max 100) |
 | `offset` | `integer` | No | `0` | Número de items a omitir (paginación) |
+
+**Ejemplos de uso:**
+
+```bash
+# Incremental sync (solo cambios desde fecha)
+GET /api/v4/invoices/products?update_date_from=2026-01-14T00:00:00Z&limit=50
+
+# Full sync (todos los registros)
+GET /api/v4/invoices/products?full_sync=true&limit=100
+```
 
 **Response Structure:**
 
@@ -437,9 +748,20 @@ curl -H "Authorization: Bearer eyJ0eXAiOiJKV1Q..." \
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `update_date_from` | `string` | No | - | Filtrar emisores actualizados desde esta fecha (ISO 8601) |
+| `update_date_from` | `string` | No | - | Filtrar emisores actualizados desde esta fecha (ISO 8601 UTC) |
+| `full_sync` | `boolean` | No | `false` | ⭐ Si `true`, ignora `update_date_from` y retorna TODOS los registros |
 | `limit` | `integer` | No | `20` | Número máximo de items por página (max 100) |
 | `offset` | `integer` | No | `0` | Número de items a omitir |
+
+**Ejemplos de uso:**
+
+```bash
+# Incremental sync
+GET /api/v4/invoices/issuers?update_date_from=2026-01-14T00:00:00Z&limit=50
+
+# Full sync
+GET /api/v4/invoices/issuers?full_sync=true&limit=100
+```
 
 **Issuer Response Fields:**
 
@@ -474,27 +796,71 @@ interface UserIssuersResponse {
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `update_date_from` | `string` | No | - | Filtrar facturas actualizadas desde esta fecha |
+| `update_date_from` | `string` | No | - | Filtrar facturas actualizadas desde esta fecha (ISO 8601 UTC) |
+| `full_sync` | `boolean` | No | `false` | ⭐ Si `true`, ignora `update_date_from` y retorna TODOS los registros |
 | `limit` | `integer` | No | `20` | Número máximo de items por página (max 100) |
 | `offset` | `integer` | No | `0` | Número de items a omitir |
+
+**Ejemplos de uso:**
+
+```bash
+# Incremental sync
+GET /api/v4/invoices/headers?update_date_from=2026-01-14T00:00:00Z&limit=50
+
+# Full sync
+GET /api/v4/invoices/headers?full_sync=true&limit=100
+```
 
 **Invoice Header Response Fields:**
 
 ```typescript
 interface InvoiceHeadersResponse {
-  cufe: string | null;                  // Código único de factura
-  issuer_name: string | null;          // Nombre del emisor
-  issuer_ruc: string | null;           // RUC del emisor
-  store_id: string | null;             // ID de la tienda
-  issue_date: string | null;           // Fecha de emisión
-  total_amount: number | null;         // Monto total
-  currency: string | null;             // Moneda (PAB, USD, etc.)
-  status: string | null;               // Estado de la factura
-  update_date: string | null;          // Fecha última actualización
+  cufe: string;                         // Código único de factura electrónica (PK)
+  issuer_name: string | null;           // Nombre del emisor
+  issuer_ruc: string | null;            // RUC del emisor
+  store_id: string | null;              // ID de la tienda/sucursal
+  no: string | null;                    // Número de factura
+  date: string | null;                  // Fecha de emisión (ISO 8601 UTC)
+  tot_amount: number | null;            // Monto total de la factura
+  tot_itbms: number | null;             // Total de impuestos ITBMS
+  url: string | null;                   // URL de verificación DGI
+  process_date: string | null;          // Fecha de procesamiento OCR/scraping (UTC)
+  reception_date: string | null;        // Fecha de recepción del documento (UTC)
+  type: string | null;                  // Tipo: "QR", "EMAIL", "MANUAL", etc.
+  update_date: string;                  // Fecha última actualización (UTC) - SIEMPRE presente
 }
 ```
 
-**Response:** Misma estructura `IncrementalSyncResponse<InvoiceHeadersResponse>`
+**Ejemplo Response Headers:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "cufe": "FE01200000000434-15-93796-2200512026010900000938190020318917814654",
+        "issuer_name": "IMPORTADORA RICAMAR S A",
+        "issuer_ruc": "434-15-93796",
+        "store_id": "0051",
+        "no": "0000093819",
+        "date": "2026-01-09T18:52:46Z",
+        "tot_amount": 34.11,
+        "tot_itbms": 2.24,
+        "url": "https://dgi-fep.mef.gob.pa/Consultas/FacturasPorQR?chFE=...",
+        "process_date": "2026-01-14T16:26:07.480828Z",
+        "reception_date": "2026-01-14T16:26:06.092100Z",
+        "type": "QR",
+        "update_date": "2026-01-14T21:26:07.483880Z"
+      }
+    ],
+    "pagination": { ... },
+    "sync_metadata": { ... }
+  }
+}
+```
+
+**Response:** Estructura `IncrementalSyncResponse<InvoiceHeadersResponse>`
 
 ---
 
@@ -509,31 +875,304 @@ interface InvoiceHeadersResponse {
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `update_date_from` | `string` | No | - | Filtrar detalles actualizados desde esta fecha |
+| `update_date_from` | `string` | No | - | Filtrar detalles actualizados desde esta fecha (ISO 8601 UTC) |
+| `full_sync` | `boolean` | No | `false` | ⭐ Si `true`, ignora `update_date_from` y retorna TODOS los registros |
 | `cufe` | `string` | No | - | Filtrar por CUFE de factura específica |
 | `limit` | `integer` | No | `20` | Número máximo de items por página (max 100) |
 | `offset` | `integer` | No | `0` | Número de items a omitir |
+
+**Ejemplos de uso:**
+
+```bash
+# Incremental sync
+GET /api/v4/invoices/details?update_date_from=2026-01-14T00:00:00Z&limit=50
+
+# Full sync
+GET /api/v4/invoices/details?full_sync=true&limit=100
+```
 
 **Invoice Detail Response Fields:**
 
 ```typescript
 interface InvoiceDetailsResponse {
-  id: number;                           // ID único del detalle
-  cufe: string | null;                  // CUFE de la factura
-  product_code: string | null;         // Código del producto
-  description: string | null;          // Descripción del item
-  quantity: number | null;              // Cantidad
-  unit_price: number | null;            // Precio unitario
-  total_price: number | null;           // Precio total línea
-  update_date: string | null;          // Fecha última actualización
+  cufe: string;                         // CUFE de la factura padre (FK)
+  code: string | null;                  // Código del producto
+  description: string | null;           // Descripción del item/producto
+  quantity: string | null;              // Cantidad (string para precisión decimal)
+  unit_price: string | null;            // Precio unitario
+  amount: string | null;                // Subtotal sin impuestos
+  itbms: string | null;                 // Impuesto ITBMS del item
+  total: string | null;                 // Total con impuestos
+  unit_discount: string | null;         // Descuento unitario aplicado
+  information_of_interest: string | null; // Información adicional del item
+  update_date: string;                  // Fecha última actualización (UTC)
 }
 ```
 
-**Response:** Misma estructura `IncrementalSyncResponse<InvoiceDetailsResponse>`
+**Nota:** El ID único de cada detalle es la combinación de `cufe` + `code`. En `sync_metadata.record_ids` se retorna como `"{cufe}_{code}"`.
+
+**Ejemplo Response Details:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "data": [
+      {
+        "cufe": "FE01200000000434-15-93796-2200512026010900000938190020318917814654",
+        "code": "7461323129244",
+        "description": "RON BARCELO ANEJO BO",
+        "quantity": "1",
+        "unit_price": "10.9900",
+        "amount": "10.99",
+        "itbms": "1.10",
+        "total": "12.09",
+        "unit_discount": "0.0000",
+        "information_of_interest": "",
+        "update_date": "2026-01-14T21:26:07.483880Z"
+      }
+    ],
+    "pagination": { ... },
+    "sync_metadata": { ... }
+  }
+}
+```
+
+**Response:** Estructura `IncrementalSyncResponse<InvoiceDetailsResponse>`
 
 ---
 
-### 5. GET /api/v4/invoices/{resource}/version
+### 5. POST /api/v4/invoices/headers/recovery ⭐ NUEVO
+
+**Descripción:** Recovery sync por comparación de CUFEs. El cliente envía los CUFEs que tiene localmente, el servidor retorna los faltantes y los eliminados.
+
+**Headers:**
+| Header | Requerido | Descripción |
+|--------|-----------|-------------|
+| `Authorization` | ✅ Sí | `Bearer <jwt_token>` |
+| `Content-Type` | ✅ Sí | `application/json` |
+
+**Request Body:**
+
+```typescript
+interface RecoveryRequest {
+  known_cufes: string[];  // CUFEs que el cliente ya tiene (max 10,000)
+  limit?: number;         // Max registros faltantes a retornar (default: 100, max: 500)
+}
+```
+
+**Response:**
+
+```typescript
+interface RecoveryResponse<InvoiceHeader> {
+  missing_records: InvoiceHeader[];  // Registros que el cliente no tiene
+  deleted_cufes: string[];           // CUFEs que el cliente tiene pero fueron eliminados
+  total_missing: number;             // Total faltantes (puede ser > missing_records.length)
+  server_timestamp: string;          // UTC timestamp
+}
+```
+
+**Ejemplo Request - Lista vacía (obtener todos):**
+
+```bash
+curl -X POST "http://localhost:8000/api/v4/invoices/headers/recovery" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "known_cufes": [],
+       "limit": 3
+     }'
+```
+
+**Ejemplo Response - Lista vacía:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "missing_records": [
+      {
+        "cufe": "FE01200000000434-15-93796-2200512026010900000938190020318917814654",
+        "issuer_name": "IMPORTADORA RICAMAR S A",
+        "issuer_ruc": "434-15-93796",
+        "store_id": "0051",
+        "no": "0000093819",
+        "date": "2026-01-09T18:52:46Z",
+        "tot_amount": 34.11,
+        "tot_itbms": 2.24,
+        "url": "https://dgi-fep.mef.gob.pa/...",
+        "process_date": "2026-01-14T16:26:07.480828Z",
+        "reception_date": "2026-01-14T16:26:06.092100Z",
+        "type": "QR",
+        "update_date": "2026-01-14T21:26:07.483880Z"
+      }
+    ],
+    "deleted_cufes": [],
+    "total_missing": 527,
+    "server_timestamp": "2026-01-14T21:50:00Z"
+  },
+  "error": null,
+  "request_id": "35fa8af8-270c-42ec-9574-b19d0de4fa34",
+  "timestamp": "2026-01-14T21:50:00Z",
+  "execution_time_ms": 45,
+  "cached": false
+}
+```
+
+**Ejemplo Request - Con CUFEs conocidos:**
+
+```bash
+curl -X POST "http://localhost:8000/api/v4/invoices/headers/recovery" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "known_cufes": [
+         "FE01200000000434-15-93796-2200512026010900000938190020318917814654"
+       ],
+       "limit": 100
+     }'
+```
+
+**Ejemplo Response - Con filtrado:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "missing_records": [...],
+    "deleted_cufes": [],
+    "total_missing": 526,
+    "server_timestamp": "2026-01-14T21:50:00Z"
+  }
+}
+```
+
+**Cuándo usar:**
+- Usuario reporta "faltan facturas"
+- `sync-status` muestra count diferente al local
+- Después de recuperar backup local corrupto
+- Verificación periódica de integridad (opcional)
+- Primera sincronización (enviar `known_cufes: []`)
+
+---
+
+### 6. POST /api/v4/invoices/details/recovery ⭐ NUEVO
+
+**Descripción:** Recovery sync para detalles de facturas. Similar a headers pero usando IDs compuestos (cufe_code).
+
+**Headers:**
+| Header | Requerido | Descripción |
+|--------|-----------|-------------|
+| `Authorization` | ✅ Sí | `Bearer <jwt_token>` |
+| `Content-Type` | ✅ Sí | `application/json` |
+
+**Request Body:**
+
+```typescript
+interface DetailsRecoveryRequest {
+  known_ids: string[];    // IDs compuestos "cufe_code" (max 50,000)
+  limit?: number;         // Max registros (default: 100, max: 1000)
+}
+```
+
+**Response:**
+
+```typescript
+interface DetailsRecoveryResponse<InvoiceDetail> {
+  missing_records: InvoiceDetail[];
+  deleted_ids: string[];       // Siempre vacío (details se eliminan con su header)
+  total_missing: number;
+  server_timestamp: string;
+}
+```
+
+**Ejemplo Request - Lista vacía:**
+
+```bash
+curl -X POST "http://localhost:8000/api/v4/invoices/details/recovery" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "known_ids": [],
+       "limit": 3
+     }'
+```
+
+**Ejemplo Response - Lista vacía:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "missing_records": [
+      {
+        "cufe": "FE01200000000434-15-93796-2200512026010900000938190020318917814654",
+        "code": "7461323129244",
+        "description": "RON BARCELO ANEJO BO",
+        "quantity": "1",
+        "unit_price": "10.9900",
+        "amount": "10.99",
+        "itbms": "1.10",
+        "total": "12.09",
+        "unit_discount": "0.0000",
+        "information_of_interest": "",
+        "update_date": "2026-01-14T21:26:07.483880Z"
+      }
+    ],
+    "deleted_ids": [],
+    "total_missing": 3429,
+    "server_timestamp": "2026-01-14T21:50:00Z"
+  },
+  "error": null,
+  "request_id": "...",
+  "execution_time_ms": 50,
+  "cached": false
+}
+```
+
+**Ejemplo Request - Con IDs conocidos:**
+
+```bash
+curl -X POST "http://localhost:8000/api/v4/invoices/details/recovery" \
+     -H "Authorization: Bearer <token>" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "known_ids": [
+         "FE01200000000434-15-93796-2200512026010900000938190020318917814654_7461323129244"
+       ],
+       "limit": 100
+     }'
+```
+
+**Ejemplo Response - Con filtrado:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "missing_records": [...],
+    "deleted_ids": [],
+    "total_missing": 3428,
+    "server_timestamp": "2026-01-14T21:50:00Z"
+  }
+}
+```
+
+**Formato del ID compuesto:**
+```
+{cufe}_{code}
+```
+
+Ejemplo: `FE01200000000434-15-93796-2200512026010900000938190020318917814654_7461323129244`
+
+**Cuándo usar:**
+- Después de recovery de headers para obtener los detalles faltantes
+- Verificación de integridad de líneas de facturas
+- Corrupción de datos locales en detalles
+
+---
+
+### 7. GET /api/v4/invoices/{resource}/version
 
 **Descripción:** Endpoint ligero para verificar version del dataset sin descargar datos
 
@@ -1182,6 +1821,6 @@ async function handleRefreshButton() {
 
 Para preguntas o issues relacionados con este sistema de sincronización, contactar al equipo de desarrollo backend.
 
-**Última actualización:** 2025-11-08  
-**Versión del documento:** 2.1  
+**Última actualización:** 2026-01-14  
+**Versión del documento:** 3.0  
 **Estado:** ✅ EN PRODUCCIÓN

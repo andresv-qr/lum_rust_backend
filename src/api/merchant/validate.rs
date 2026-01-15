@@ -4,7 +4,7 @@
 
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{StatusCode, HeaderMap},
     response::{IntoResponse, Response},
     Extension,
     Json,
@@ -199,17 +199,16 @@ pub async fn validate_redemption(
             })
         }
         Err(_) => {
-            // Query by redemption_code (string) - SOLO búsqueda exacta por seguridad
-            // Códigos parciales deshabilitados para prevenir ataques de fuerza bruta
+            // Query by redemption_code (string) OR short_code
             let search_code = payload.code.trim().to_uppercase();
             
-            // Validar formato mínimo del código
-            if search_code.len() < 10 {
+            // Validar formato mínimo del código (6 para short_code, 19 para full code)
+            if search_code.len() < 6 {
                 return Ok(Json(ValidationResponse {
                     success: true,
                     valid: false,
                     redemption: None,
-                    message: "Código de redención inválido. Escanea el QR completo.".to_string(),
+                    message: "Código de redención inválido. Verifique el código.".to_string(),
                 }));
             }
 
@@ -225,7 +224,7 @@ pub async fn validate_redemption(
                     ro.name_friendly as offer_name
                 FROM rewards.user_redemptions ur
                 INNER JOIN rewards.redemption_offers ro ON ur.offer_id = ro.offer_id
-                WHERE ur.redemption_code = $1
+                WHERE ur.redemption_code = $1 OR ur.short_code = $1
                 LIMIT 1
                 "#,
                 search_code
@@ -350,11 +349,18 @@ pub async fn validate_redemption(
 pub async fn confirm_redemption(
     State(state): State<Arc<AppState>>,
     Extension(merchant): Extension<MerchantClaims>,
+    headers: HeaderMap,
     Path(redemption_id): Path<Uuid>,
     body: Option<Json<ConfirmRedemptionRequest>>,
 ) -> Result<Json<ConfirmationResponse>, ApiError> {
     info!("Merchant {} (id: {:?}) confirming redemption: {}", 
           merchant.merchant_name, merchant.get_merchant_id(), redemption_id);
+    
+    // Extraer IP del cliente para trazabilidad
+    let client_ip = headers.get("x-forwarded-for")
+        .or_else(|| headers.get("x-real-ip"))
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.split(',').next().unwrap_or(s).trim().to_string());
     
     let request = body.map(|b| b.0).unwrap_or_default();
     
@@ -476,19 +482,21 @@ pub async fn confirm_redemption(
         })?;
     }
     
-    // Update status to confirmed with merchant info
+    // Update status to confirmed with merchant info and IP
     sqlx::query(
         r#"
         UPDATE rewards.user_redemptions
         SET 
             redemption_status = 'confirmed',
             validated_at = NOW(),
-            validated_by_merchant_id = $2
+            validated_by_merchant_id = $2,
+            validation_ip_address = $3::inet
         WHERE redemption_id = $1
         "#
     )
     .bind(redemption_id)
     .bind(merchant.get_merchant_id())
+    .bind(&client_ip)
     .execute(&mut *tx)
     .await
     .map_err(|e| {

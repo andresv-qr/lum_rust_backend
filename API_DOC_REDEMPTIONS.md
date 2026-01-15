@@ -1,7 +1,7 @@
 # 📱 API de Redención de Lumis - Documentación Completa
 
-> **Versión:** 2.0  
-> **Última actualización:** 10 de Diciembre, 2025  
+> **Versión:** 2.1  
+> **Última actualización:** 14 de Enero, 2026  
 > **Base URL:** `https://api.lumis.pa/api/v1`
 
 ---
@@ -9,16 +9,35 @@
 ## 📋 Índice
 
 1. [Resumen del Sistema](#resumen-del-sistema)
-2. [Flujo de Redención](#flujo-de-redención)
-3. [Endpoints de Usuario](#endpoints-de-usuario)
-4. [Endpoints de Comercio](#endpoints-de-comercio)
-5. [Endpoints de Administración](#endpoints-de-administración)
-6. [PWA Scanner para Comercios](#pwa-scanner-para-comercios)
-7. [Modelos de Datos](#modelos-de-datos)
-8. [Códigos de Error](#códigos-de-error)
-9. [Rate Limiting](#rate-limiting)
-10. [Webhooks](#webhooks)
-11. [Seguridad](#seguridad)
+2. [Timestamps y Zonas Horarias (UTC)](#timestamps-y-zonas-horarias-utc)
+3. [Flujo de Redención](#flujo-de-redención)
+4. [Endpoints de Usuario](#endpoints-de-usuario)
+5. [Endpoints de Comercio](#endpoints-de-comercio)
+6. [Endpoints de Administración](#endpoints-de-administración)
+7. [PWA Scanner para Comercios](#pwa-scanner-para-comercios)
+8. [Modelos de Datos](#modelos-de-datos)
+9. [Códigos de Error](#códigos-de-error)
+10. [Rate Limiting](#rate-limiting)
+11. [Webhooks](#webhooks)
+12. [Seguridad](#seguridad)
+
+---
+
+## ⏰ Timestamps y Zonas Horarias (UTC)
+
+> **IMPORTANTE:** Todos los timestamps en la API se manejan en **UTC**.
+
+| Campo | Formato | Ejemplo |
+|-------|---------|---------|
+| `created_at` | ISO 8601 | `2025-01-14T15:30:00Z` |
+| `expires_at` | ISO 8601 | `2025-01-14T15:31:00Z` |
+| `validated_at` | ISO 8601 | `2025-01-14T15:30:45Z` |
+| `used_at` | ISO 8601 | `2025-01-14T15:30:50Z` |
+
+**Notas para clientes:**
+- Los timestamps siempre vienen con sufijo `Z` (UTC)
+- El cliente debe convertir a hora local para mostrar al usuario
+- Panamá está en UTC-5 (EST), sin horario de verano
 
 ---
 

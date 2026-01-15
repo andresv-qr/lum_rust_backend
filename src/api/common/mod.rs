@@ -1,10 +1,12 @@
 // Módulos de sincronización incremental
 pub mod sync_types;
 pub mod sync_helpers;
+pub mod query_structs;
 
 // Re-exports para facilitar imports
 pub use sync_types::*;
 pub use sync_helpers::*;
+pub use query_structs::*;
 
 use axum::{
     extract::{Request, State},

@@ -5,7 +5,7 @@ use tracing::{info, warn, error};
 use base64::{Engine as _, engine::general_purpose};
 use serde_json::{json, Value};
 use reqwest::Client;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Utc, TimeZone};
 use sqlx::types::Decimal;
 use std::str::FromStr;
 
@@ -1326,20 +1326,20 @@ impl OcrService {
         let date_obj = if let Some(date_str) = &ocr_response.date {
             if !date_str.is_empty() {
                 chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-                .map(|d| d.and_hms_opt(0, 0, 0).unwrap_or_else(|| Utc::now().naive_utc()))
-                .unwrap_or_else(|_| Utc::now().naive_utc())
+                .map(|d| d.and_hms_opt(0, 0, 0).map(|dt| Utc.from_utc_datetime(&dt)).unwrap_or_else(Utc::now))
+                .unwrap_or_else(|_| Utc::now())
             } else {
-                Utc::now().naive_utc()
+                Utc::now()
             }
         } else {
-            Utc::now().naive_utc()
+            Utc::now()
         };
 
         let query_result = sqlx::query!(
             "SELECT cufe FROM public.invoice_header WHERE issuer_name = $1 AND no = $2 AND date::date = $3::date AND user_id = $4 LIMIT 1",
             ocr_response.issuer_name,
             ocr_response.invoice_number,
-            date_obj.date(),
+            date_obj.date_naive(),
             user_id as i32
         )
         .fetch_optional(&state.db_pool)
@@ -1348,7 +1348,7 @@ impl OcrService {
         match query_result {
             Some(row) => {
                 info!("🔍 Duplicado encontrado por datos: issuer={:?}, no={:?}, date={:?}", 
-                      ocr_response.issuer_name, ocr_response.invoice_number, date_obj.date());
+                      ocr_response.issuer_name, ocr_response.invoice_number, date_obj.date_naive());
                 Ok(row.cufe)
             },
             None => Ok(None),
@@ -1385,7 +1385,7 @@ impl OcrService {
         // Generate current timestamp GMT-5 (Colombia time) for date field
         let current_time = Utc::now();
         let colombia_offset = chrono::FixedOffset::west_opt(5 * 3600).unwrap(); // GMT-5
-        let colombia_time = current_time.with_timezone(&colombia_offset);
+        let _colombia_time = current_time.with_timezone(&colombia_offset);
 
         
         // Generate current time in HHMMSS format
@@ -1395,7 +1395,7 @@ impl OcrService {
             cufe: cufe.to_string(),
             issuer_name: ocr_data.issuer_name.clone().unwrap_or_else(|| "UNKNOWN".to_string()),
             no: ocr_data.invoice_number.clone().unwrap_or_else(|| "UNKNOWN".to_string()),
-            date: colombia_time.naive_local(), // Timestamp GMT-5 como NaiveDateTime
+            date: current_time, // Timestamp UTC
             tot_amount: ocr_data.total.unwrap_or(0.0),
             issuer_ruc: ocr_data.ruc.clone(),
             issuer_dv: ocr_data.dv.clone(),
@@ -2185,7 +2185,7 @@ struct InvoiceHeaderData {
     cufe: String,
     issuer_name: String,
     no: String,
-    date: chrono::NaiveDateTime, // Timestamp GMT-5
+    date: DateTime<Utc>, // Timestamp UTC
     tot_amount: f64,
     issuer_ruc: Option<String>,
     issuer_dv: Option<String>,

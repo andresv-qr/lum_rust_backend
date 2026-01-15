@@ -21,7 +21,8 @@ use crate::state::AppState;
 /// NOTE: Routes are relative - this router is nested under /api/v4/invoices
 pub fn create_invoices_v4_router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/:id", get(get_invoice_details))
+        // Changed from /:id to /by-id/:id to avoid conflicts with other routes like /sync-status
+        .route("/by-id/:id", get(get_invoice_details))
         // OCR iterative endpoints (protected by auth)
         .route("/ocr-process", post(process_ocr_iterative))
         .route("/save-ocr", post(save_ocr_invoice))

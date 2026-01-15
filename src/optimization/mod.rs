@@ -64,10 +64,17 @@ pub async fn create_optimized_db_pool(
         .idle_timeout(config.idle_timeout)
         .max_lifetime(config.max_lifetime)
         .test_before_acquire(true)
+        // Statement timeout: kill queries running longer than 30 seconds (DoS protection)
+        .after_connect(|conn, _meta| Box::pin(async move {
+            sqlx::query("SET statement_timeout = '30s'")
+                .execute(conn)
+                .await?;
+            Ok(())
+        }))
         .connect(database_url)
         .await?;
 
-    info!("✅ Database pool created successfully");
+    info!("✅ Database pool created with 30s statement_timeout");
     Ok(pool)
 }
 

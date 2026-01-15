@@ -128,7 +128,45 @@ pub fn get_deleted_items_query(table_name: &str, id_column: &str) -> String {
     )
 }
 
-/// Obtener items eliminados desde una fecha específica
+/// Obtener items eliminados desde una fecha específica (versión DateTime<Utc>)
+/// 
+/// # Arguments
+/// * `pool` - Pool de conexiones PostgreSQL
+/// * `table_name` - Nombre de la tabla
+/// * `id_column` - Columna de ID
+/// * `since` - DateTime<Utc> desde el cual buscar eliminaciones
+/// 
+/// # Returns
+/// Vector de DeletedItem o vector vacío si hay error (logged)
+/// 
+/// # Note
+/// Errors are logged but not propagated to avoid breaking sync operations
+/// for non-critical deletion tracking
+pub async fn get_deleted_items_since_utc(
+    pool: &PgPool,
+    table_name: &str,
+    id_column: &str,
+    since: &chrono::DateTime<chrono::Utc>,
+) -> Vec<DeletedItem> {
+    let query = get_deleted_items_query(table_name, id_column);
+    
+    match sqlx::query_as::<_, DeletedItem>(&query)
+        .bind(since)
+        .fetch_all(pool)
+        .await
+    {
+        Ok(items) => items,
+        Err(e) => {
+            tracing::warn!(
+                "⚠️ Failed to fetch deleted items from {} (non-critical): {}",
+                table_name, e
+            );
+            Vec::new()
+        }
+    }
+}
+
+/// Obtener items eliminados desde una fecha específica (versión String - legacy)
 /// 
 /// # Arguments
 /// * `pool` - Pool de conexiones PostgreSQL
@@ -137,7 +175,11 @@ pub fn get_deleted_items_query(table_name: &str, id_column: &str) -> String {
 /// * `since` - Timestamp desde el cual buscar eliminaciones
 /// 
 /// # Returns
-/// Vector de DeletedItem o vector vacío si hay error
+/// Vector de DeletedItem o vector vacío si hay error (logged)
+/// 
+/// # Note
+/// Errors are logged but not propagated to avoid breaking sync operations
+#[deprecated(since = "3.0.0", note = "Use get_deleted_items_since_utc instead")]
 pub async fn get_deleted_items_since(
     pool: &PgPool,
     table_name: &str,
@@ -146,11 +188,20 @@ pub async fn get_deleted_items_since(
 ) -> Vec<DeletedItem> {
     let query = get_deleted_items_query(table_name, id_column);
     
-    sqlx::query_as::<_, DeletedItem>(&query)
+    match sqlx::query_as::<_, DeletedItem>(&query)
         .bind(since)
         .fetch_all(pool)
         .await
-        .unwrap_or_default()
+    {
+        Ok(items) => items,
+        Err(e) => {
+            tracing::warn!(
+                "⚠️ Failed to fetch deleted items from {} (non-critical): {}",
+                table_name, e
+            );
+            Vec::new()
+        }
+    }
 }
 
 /// Obtener total de registros activos (no eliminados) en una tabla
@@ -227,40 +278,101 @@ pub fn validate_date_format(date_str: &str) -> Result<String, String> {
 /// # Formatos aceptados
 /// - ISO 8601 con timezone: "2025-11-07T10:30:45Z" o "2025-11-07T10:30:45.123456Z"
 /// - DateTime sin timezone: "2025-11-07T10:30:45"
-/// - Solo fecha: "2025-11-07" (asume 00:00:00)
-pub fn parse_date_to_naive(date_str: &str) -> Result<chrono::NaiveDateTime, String> {
-    use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime};
+/// - Solo fecha: "2025-11-07" (asume 00:00:00 UTC)
+pub fn parse_date_to_utc(date_str: &str) -> Result<chrono::DateTime<chrono::Utc>, String> {
+    use chrono::{DateTime, Utc, TimeZone};
     
-    // Intentar parsear como DateTime con timezone (RFC3339) y convertir a NaiveDateTime
+    // RFC3339 (Includes Timezone) - e.g. "2025-11-07T10:00:00Z"
     if let Ok(dt) = DateTime::parse_from_rfc3339(date_str) {
-        return Ok(dt.naive_utc());
+        return Ok(dt.with_timezone(&Utc));
     }
     
-    // Intentar parsear como NaiveDateTime con microsegundos
-    if let Ok(naive_dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S%.f") {
-        return Ok(naive_dt);
+    // Naive formats - Assume UTC
+    if let Ok(naive_dt) = chrono::NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S%.f") {
+        return Ok(Utc.from_utc_datetime(&naive_dt));
     }
     
-    // Intentar parsear como NaiveDateTime sin fracciones de segundo
-    if let Ok(naive_dt) = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S") {
-        return Ok(naive_dt);
+    if let Ok(naive_dt) = chrono::NaiveDateTime::parse_from_str(date_str, "%Y-%m-%dT%H:%M:%S") {
+        return Ok(Utc.from_utc_datetime(&naive_dt));
     }
     
-    // Intentar parsear como fecha sola (YYYY-MM-DD) - asumir 00:00:00
-    if let Ok(naive_date) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
-        return Ok(NaiveDateTime::new(naive_date, NaiveTime::from_hms_opt(0, 0, 0).unwrap()));
+    // Solo fecha - asume 00:00:00 UTC
+    if let Ok(naive_date) = chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+        return Ok(Utc.from_utc_datetime(&naive_date.and_hms_opt(0, 0, 0).unwrap()));
     }
     
-    Err(format!(
-        "Invalid date format '{}'. Use ISO 8601 format (e.g., 2025-11-07T10:30:45Z, 2025-11-07T10:30:45, or 2025-11-07)",
-        date_str
-    ))
+    Err(format!("Could not parse date: {}", date_str))
+}
+
+// DEPRECATED: Use parse_date_to_utc instead. Kept for temporary compatibility if needed.
+pub fn parse_date_to_naive(date_str: &str) -> Result<chrono::NaiveDateTime, String> {
+    parse_date_to_utc(date_str).map(|dt| dt.naive_utc())
+}
+
+/// Convierte fecha de Panamá (DD/MM/YYYY HH:MM:SS) a DateTime<Utc>
+/// 
+/// Las facturas de DGI/MEF de Panamá vienen en hora local de Panamá (UTC-5).
+/// Esta función interpreta la fecha como hora de Panamá y la convierte a UTC.
+/// 
+/// # Arguments
+/// * `date_str` - Fecha en formato "DD/MM/YYYY HH:MM:SS" o "DD/MM/YYYY"
+/// 
+/// # Returns
+/// DateTime<Utc> con la fecha convertida correctamente a UTC
+/// 
+/// # Formatos aceptados
+/// - Con hora: "25/06/2025 14:30:00" → "2025-06-25 19:30:00 UTC" (Panamá UTC-5)
+/// - Solo fecha: "25/06/2025" → "2025-06-25 05:00:00 UTC" (medianoche Panamá = 05:00 UTC)
+/// 
+/// # Example
+/// ```
+/// let utc = parse_panama_date_to_utc("25/06/2025 14:30:00")?;
+/// assert_eq!(utc.to_rfc3339(), "2025-06-25T19:30:00+00:00");
+/// ```
+pub fn parse_panama_date_to_utc(date_str: &str) -> Result<chrono::DateTime<chrono::Utc>, String> {
+    use chrono::{NaiveDateTime, NaiveDate, TimeZone, Utc};
+    use chrono_tz::America::Panama;
+    
+    // Intentar parsear formato: DD/MM/YYYY HH:MM:SS
+    if let Ok(naive_dt) = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S") {
+        match Panama.from_local_datetime(&naive_dt) {
+            chrono::LocalResult::Single(panama_dt) => {
+                return Ok(panama_dt.with_timezone(&Utc));
+            }
+            chrono::LocalResult::Ambiguous(earliest, _) => {
+                // En caso de ambigüedad (cambio de horario), usar la más temprana
+                return Ok(earliest.with_timezone(&Utc));
+            }
+            chrono::LocalResult::None => {
+                return Err(format!("Invalid datetime for Panama timezone: {}", date_str));
+            }
+        }
+    }
+    
+    // Intentar parsear formato: DD/MM/YYYY (sin hora) - asumir medianoche Panamá
+    if let Ok(naive_date) = NaiveDate::parse_from_str(date_str, "%d/%m/%Y") {
+        if let Some(naive_dt) = naive_date.and_hms_opt(0, 0, 0) {
+            match Panama.from_local_datetime(&naive_dt) {
+                chrono::LocalResult::Single(panama_dt) => {
+                    return Ok(panama_dt.with_timezone(&Utc));
+                }
+                chrono::LocalResult::Ambiguous(earliest, _) => {
+                    return Ok(earliest.with_timezone(&Utc));
+                }
+                chrono::LocalResult::None => {
+                    return Err(format!("Invalid date for Panama timezone: {}", date_str));
+                }
+            }
+        }
+    }
+    
+    Err(format!("Could not parse Panama date: {}. Expected format: DD/MM/YYYY HH:MM:SS", date_str))
 }
 
 /// Extraer max update_date de un vector de items
 /// 
 /// Este es un helper genérico que funciona con cualquier tipo que tenga
-/// un campo update_date: Option<chrono::NaiveDateTime>
+/// un campo update_date: Option<chrono::DateTime<chrono::Utc>>
 /// 
 /// # Type Parameters
 /// * `T` - Tipo que implementa el trait HasUpdateDate
@@ -270,7 +382,7 @@ pub fn parse_date_to_naive(date_str: &str) -> Result<chrono::NaiveDateTime, Stri
 /// 
 /// # Returns
 /// Option con el timestamp más reciente, o None si no hay items o ninguno tiene update_date
-pub fn extract_max_update_date<T>(items: &[T]) -> Option<chrono::NaiveDateTime>
+pub fn extract_max_update_date<T>(items: &[T]) -> Option<chrono::DateTime<chrono::Utc>>
 where
     T: HasUpdateDate,
 {
@@ -284,7 +396,7 @@ where
 /// 
 /// Implementar este trait permite usar extract_max_update_date
 pub trait HasUpdateDate {
-    fn get_update_date(&self) -> Option<chrono::NaiveDateTime>;
+    fn get_update_date(&self) -> Option<chrono::DateTime<chrono::Utc>>;
 }
 
 /// Extraer IDs de un vector de items

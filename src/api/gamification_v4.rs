@@ -293,6 +293,29 @@ pub async fn get_dashboard(
     Extension(current_user): Extension<CurrentUser>,
 ) -> ResponseJson<UserDashboard> {
     let start_time = Utc::now();
+
+    // Refrescar rachas de forma best-effort para que el frontend vea datos actuales
+    // aunque el batch/cron no esté corriendo o el FE no llame explícitamente /track.
+    //
+    // - daily_login: se actualiza 1 vez por día (idempotente si se llama varias veces)
+    // - consistent_month: recalcula basado en facturas
+    let user_id = current_user.user_id as i32;
+
+    if let Err(e) = sqlx::query("SELECT gamification.update_daily_login_streak($1)")
+        .bind(user_id)
+        .fetch_optional(&state.db_pool)
+        .await
+    {
+        tracing::warn!("Failed to refresh daily_login streak for user {}: {}", user_id, e);
+    }
+
+    if let Err(e) = sqlx::query("SELECT gamification.update_user_streaks($1)")
+        .bind(user_id)
+        .fetch_optional(&state.db_pool)
+        .await
+    {
+        tracing::warn!("Failed to refresh consistent_month streak for user {}: {}", user_id, e);
+    }
     
     // Usar la vista materializada que tiene los datos correctos
     let dashboard = sqlx::query_as!(
@@ -320,7 +343,7 @@ pub async fn get_dashboard(
         FROM gamification.v_user_dashboard
         WHERE user_id = $1
         "#,
-        current_user.user_id as i32
+        user_id
     )
     .fetch_optional(&state.db_pool)
     .await

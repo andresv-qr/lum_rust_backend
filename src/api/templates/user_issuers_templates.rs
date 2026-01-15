@@ -109,12 +109,12 @@ pub struct UserIssuersResponse {
     pub l2: Option<String>,
     pub l3: Option<String>,
     pub l4: Option<String>,
-    pub update_date: Option<chrono::NaiveDateTime>,
+    pub update_date: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 // Implement traits for incremental sync helpers
 impl HasUpdateDate for UserIssuersResponse {
-    fn get_update_date(&self) -> Option<chrono::NaiveDateTime> {
+    fn get_update_date(&self) -> Option<chrono::DateTime<chrono::Utc>> {
         self.update_date
     }
 }
@@ -142,6 +142,9 @@ pub struct UserIssuersRequest {
     pub offset: Option<i64>,
     pub search: Option<String>, // Future: for filtering by issuer name
     pub update_date_from: Option<String>, // Filter by update_date >= this date (ISO 8601 format)
+    /// If true, returns ALL records ignoring update_date_from (full resync)
+    #[serde(default)]
+    pub full_sync: bool,
 }
 
 /// Complete response with pagination

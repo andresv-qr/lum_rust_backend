@@ -1,8 +1,26 @@
 # 🎮 Gamification System Documentation (Optimized)
 
-> **Version:** 2.0 (Optimized Schema)
-> **Date:** November 30, 2025
+> **Version:** 2.1 (UTC Timestamps)
+> **Date:** January 14, 2026
 > **Status:** Production Ready
+
+---
+
+## ⏰ Timestamps and Time Zones (UTC)
+
+> **IMPORTANT:** All timestamps in the gamification system are stored and returned in **UTC**.
+
+| Field | Format | Example |
+|-------|--------|---------|
+| `created_at` | ISO 8601 | `2025-01-14T15:30:00Z` |
+| `expires_at` | ISO 8601 | `2025-01-21T23:59:59Z` |
+| `last_activity` | ISO 8601 | `2025-01-14T10:00:00Z` |
+| `streak_updated_at` | ISO 8601 | `2025-01-14T05:00:00Z` |
+
+**Client-side considerations:**
+- Panama is UTC-5 (no daylight saving time)
+- Convert UTC timestamps to local time for display
+- Send timestamps in ISO 8601 format with `Z` suffix
 
 ---
 

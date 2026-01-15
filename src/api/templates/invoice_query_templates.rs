@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize, Deserializer};
-use chrono::{DateTime, Utc, NaiveDateTime};
+use chrono::{DateTime, Utc};
 use chrono_tz::America::Panama;
 use base64::Engine as _;
 
@@ -117,7 +117,7 @@ pub struct InvoiceDetailItem {
     pub cufe: Option<String>,
     pub quantity: Option<f64>,
     pub code: Option<String>,
-    pub date: Option<NaiveDateTime>,
+    pub date: Option<DateTime<Utc>>,
     pub total: Option<f64>,
     pub unit_price: Option<f64>,
     pub amount: Option<f64>,
@@ -130,7 +130,7 @@ pub struct InvoiceDetailItem {
 #[derive(Debug, Serialize)]
 pub struct InvoiceHeaderItem {
     pub id: i64,
-    pub date: Option<NaiveDateTime>,
+    pub date: Option<DateTime<Utc>>,
     pub tot_itbms: Option<f64>,
     pub issuer_name: Option<String>,
     pub no: Option<String>,
@@ -711,7 +711,7 @@ impl CursorPosition {
     pub fn from_invoice_item(item: &InvoiceDetailItem) -> Self {
         CursorPosition {
             reception_date: item.reception_date,
-            date: item.date.map(|d| d.and_utc()),
+            date: item.date,
             amount: item.amount.map(|a| rust_decimal::Decimal::from_f64_retain(a).unwrap_or_default()),
             id: Some(item.id),
         }

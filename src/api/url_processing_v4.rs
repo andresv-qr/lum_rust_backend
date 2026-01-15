@@ -463,7 +463,13 @@ pub async fn process_url_handler(
                     
                     // Return error response to client with user-friendly message
                     let user_friendly_message = categorize_scraping_error(&error_response.message);
-                    let friendly_response = ProcessUrlResponse::error(user_friendly_message);
+                    let mut friendly_response = ProcessUrlResponse::error(user_friendly_message);
+                    
+                    // SPECIAL CASE: MEF Pending is considered a "successful queueing"
+                    if user_friendly_message.contains("Tu factura ha sido recibida") {
+                        friendly_response.success = true;
+                    }
+
                     let response = ApiResponse {
                         success: false,
                         data: Some(friendly_response),
@@ -520,7 +526,13 @@ pub async fn process_url_handler(
             
             // Return user-friendly error with categorized message
             let user_message = categorize_scraping_error(&e);
-            let error_response = ProcessUrlResponse::error(user_message);
+            let mut error_response = ProcessUrlResponse::error(user_message);
+            
+            // SPECIAL CASE: MEF Pending is considered a "successful queueing"
+            if user_message.contains("Tu factura ha sido recibida") {
+                error_response.success = true;
+            }
+
             let response = ApiResponse {
                 success: false,
                 data: Some(error_response),

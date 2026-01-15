@@ -847,7 +847,7 @@ async fn handle_keyset_pagination(
         let next_cursor = if has_more {
             let last_item = detail_items.last().unwrap();
             Some(CursorPosition::new(
-                last_item.date.map(|d| d.and_utc()),
+                last_item.date,
                 last_item.amount.map(|a| rust_decimal::Decimal::from_f64_retain(a).unwrap_or_default()),
                 Some(last_item.id),
                 last_item.reception_date,
@@ -860,7 +860,7 @@ async fn handle_keyset_pagination(
             // For next page, previous cursor is the first item
             let first_item = detail_items.first().unwrap();
             Some(CursorPosition::new(
-                first_item.date.map(|d| d.and_utc()),
+                first_item.date,
                 first_item.amount.map(|a| rust_decimal::Decimal::from_f64_retain(a).unwrap_or_default()),
                 Some(first_item.id),
                 first_item.reception_date,

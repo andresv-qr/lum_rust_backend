@@ -79,6 +79,61 @@ pub struct OfferFilters {
     pub offset: Option<i64>,
 }
 
+/// Filtros para endpoint my-offers
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct MyOffersFilters {
+    /// Estado: active (vigentes sin redimir), redeemed (redimidas), expired (expiradas), all
+    pub status: Option<String>,
+    pub category: Option<String>,
+    pub limit: Option<i64>,
+    pub offset: Option<i64>,
+}
+
+/// Resumen de redenciones de una oferta por el usuario
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RedemptionsSummary {
+    pub total: i32,
+    pub pending: i32,
+    pub confirmed: i32,
+    pub cancelled: i32,
+    pub expired: i32,
+}
+
+/// Item de oferta para "Mis Ofertas" con información enriquecida
+#[derive(Debug, Serialize)]
+pub struct MyOfferItem {
+    pub offer_id: Uuid,
+    pub name_friendly: String,
+    pub description_friendly: String,
+    pub lumis_cost: i32,
+    pub category: String,
+    pub merchant_name: String,
+    pub image_url: Option<String>,
+    /// Estado de la oferta para este usuario: active, redeemed, expired
+    pub status: String,
+    /// Si la oferta sigue vigente en el catálogo
+    pub is_still_available: bool,
+    /// Cuántas veces el usuario ha redimido esta oferta
+    pub user_redemptions_count: i32,
+    /// Máximo permitido por usuario
+    pub max_redemptions_per_user: i32,
+    /// Última vez que redimió esta oferta
+    pub last_redeemed_at: Option<DateTime<Utc>>,
+    /// Fecha de expiración de la oferta
+    pub offer_expires_at: Option<DateTime<Utc>>,
+    /// Resumen de redenciones por estado
+    pub redemptions_summary: RedemptionsSummary,
+    /// Stock inicial de la oferta (None = ilimitado)
+    pub stock_initial: Option<i32>,
+    /// Stock restante disponible
+    pub stock_remaining: Option<i32>,
+    /// Total de redenciones de TODOS los usuarios (no canceladas)
+    pub total_redemptions_count: i32,
+    /// Porcentaje de uso (0-100) basado en stock o null si ilimitado
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub usage_percentage: Option<f32>,
+}
+
 // ======================================================================
 // REDENCIONES
 // ======================================================================
@@ -90,6 +145,7 @@ pub struct UserRedemption {
     pub lumis_spent: i32,
     pub new_balance: i32,
     pub redemption_code: String,
+    pub short_code: Option<String>, // Nuevo campo
     pub qr_image_url: Option<String>,
     pub qr_landing_url: Option<String>,
     pub redemption_status: String,
@@ -128,6 +184,9 @@ pub struct UserRedemptionItem {
     /// Código de redención - None si ya fue usado o expiró
     #[serde(skip_serializing_if = "Option::is_none")]
     pub redemption_code: Option<String>,
+    /// Código corto legible - None si ya fue usado o expiró
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub short_code: Option<String>,
     /// URL del QR - None si ya fue usado o expiró
     #[serde(skip_serializing_if = "Option::is_none")]
     pub qr_landing_url: Option<String>,
@@ -149,6 +208,7 @@ impl UserRedemptionItem {
         merchant_name: Option<String>,
         lumis_spent: i32,
         redemption_code: String,
+        short_code: Option<String>,
         qr_landing_url: String,
         redemption_status: String,
         code_expires_at: DateTime<Utc>,
@@ -179,6 +239,7 @@ impl UserRedemptionItem {
             lumis_spent,
             // Ocultar código si no es visible
             redemption_code: if qr_visible { Some(redemption_code) } else { None },
+            short_code: if qr_visible { short_code } else { None },
             qr_landing_url: if qr_visible { Some(qr_landing_url) } else { None },
             redemption_status,
             code_expires_at,
@@ -210,6 +271,7 @@ pub struct CreateRedemptionRequest {
 pub struct RedemptionCreatedResponse {
     pub redemption_id: Uuid,
     pub redemption_code: String,
+    pub short_code: String, // Nuevo campo
     pub offer_name: String,
     pub lumis_spent: i32,
     pub qr_landing_url: String,
@@ -219,7 +281,7 @@ pub struct RedemptionCreatedResponse {
     pub status: String,
     pub merchant_name: String,
     pub message: String,
-    pub new_balance: i64,
+    pub new_balance: i32,
 }
 
 #[derive(Debug, Serialize)]

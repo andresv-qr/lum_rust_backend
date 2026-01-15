@@ -381,7 +381,7 @@ impl TokenService {
         }
         
         let now = chrono::Utc::now();
-        let expiration = now + chrono::Duration::hours(24); // 24 hour expiration
+        let expiration = now + chrono::Duration::days(90); // 90 days expiration
         
         let claims = Claims {
             sub: user_id.to_string(),

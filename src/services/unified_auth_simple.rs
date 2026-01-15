@@ -305,7 +305,7 @@ impl SimpleUnifiedAuthService {
                     last_login_at: row.last_login_at,
                 },
                 token,
-                expires_at: chrono::Utc::now() + chrono::Duration::hours(24),
+                expires_at: chrono::Utc::now() + chrono::Duration::days(90),
             },
             metadata: AuthMetadata {
                 request_id: request_id.to_string(),
@@ -394,7 +394,7 @@ impl SimpleUnifiedAuthService {
                     last_login_at: None,
                 },
                 token,
-                expires_at: chrono::Utc::now() + chrono::Duration::hours(24),
+                expires_at: chrono::Utc::now() + chrono::Duration::days(90),
             },
             metadata: AuthMetadata {
                 request_id: request_id.to_string(),
@@ -522,7 +522,7 @@ impl SimpleUnifiedAuthService {
                     last_login_at: None,
                 },
                 token,
-                expires_at: chrono::Utc::now() + chrono::Duration::hours(24),
+                expires_at: chrono::Utc::now() + chrono::Duration::days(90),
             },
             metadata: AuthMetadata {
                 request_id: request_id.to_string(),

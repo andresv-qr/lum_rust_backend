@@ -4,7 +4,7 @@
 //! incremental Nivel 2, que garantiza integridad de datos entre backend y frontend.
 
 use serde::{Deserialize, Serialize};
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 
 /// Response estructura para endpoints de sincronización incremental
 /// 
@@ -75,12 +75,12 @@ pub struct SyncMetadata {
     /// Esto resuelve race conditions: si un registro se modifica DESPUÉS
     /// de que el servidor generó esta respuesta, será capturado en el
     /// próximo sync.
-    pub max_update_date: Option<NaiveDateTime>,
+    pub max_update_date: Option<DateTime<Utc>>,
     
     /// Timestamp del servidor al momento de generar esta respuesta
     /// 
     /// Útil para detectar desfases de reloj entre cliente y servidor.
-    pub server_timestamp: NaiveDateTime,
+    pub server_timestamp: DateTime<Utc>,
     
     /// SHA256 checksum de los datos retornados
     /// 
@@ -138,7 +138,7 @@ pub struct DeletedItem {
     pub id: String,
     
     /// Timestamp cuando fue marcado como eliminado
-    pub deleted_at: NaiveDateTime,
+    pub deleted_at: DateTime<Utc>,
 }
 
 /// Response para endpoints de version check (/api/v4/invoices/{resource}/version)
@@ -161,10 +161,10 @@ pub struct VersionResponse {
     pub dataset_version: i64,
     
     /// Timestamp de la última modificación al dataset
-    pub last_modified: NaiveDateTime,
+    pub last_modified: DateTime<Utc>,
     
     /// Timestamp del servidor al generar esta respuesta
-    pub server_timestamp: NaiveDateTime,
+    pub server_timestamp: DateTime<Utc>,
     
     /// Total de registros en el dataset (opcional, puede ser costoso de calcular)
     #[serde(skip_serializing_if = "Option::is_none")]

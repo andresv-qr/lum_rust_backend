@@ -7,7 +7,51 @@
 **Servidor Fallback QR:** Puerto 8008 (Python QReader API)  
 **Arquitectura:** Sistema Híbrido Rust + Python con Pipeline QR Completo + Encuestas + Unified Authentication
 **Estado:** Production Ready - Sistema Multi-Capa: 3 Detectores Rust + **2 Modelos ONNX ML** + **Python QReader Optimizado** + Encuestas + OAuth2
-**Fecha:** 2025-09-19
+**Fecha:** 2025-01-14 (Actualizado)
+
+---
+
+## ⏰ TIMESTAMPS Y ZONAS HORARIAS (UTC)
+
+> **IMPORTANTE:** Toda la API opera en **UTC (Coordinated Universal Time)**.
+
+### Convenciones generales:
+
+| Aspecto | Especificación |
+|---------|----------------|
+| **Zona horaria** | UTC (Z) para todos los timestamps |
+| **Formato de entrada** | ISO 8601 / RFC3339: `YYYY-MM-DDTHH:MM:SSZ` |
+| **Formato de salida** | ISO 8601 / RFC3339: `2025-01-14T15:30:00Z` |
+| **Almacenamiento BD** | PostgreSQL `TIMESTAMP WITH TIME ZONE` (TIMESTAMPTZ) |
+
+### Campos de fecha comunes:
+
+| Campo | Descripción |
+|-------|-------------|
+| `timestamp` | Timestamp UTC del servidor cuando se generó la respuesta |
+| `created_at` | Momento UTC de creación del registro |
+| `update_date` | Momento UTC de última modificación |
+| `last_login_at` | Último inicio de sesión (UTC) |
+
+### Facturas (invoice_header):
+
+| Campo | Origen | Descripción |
+|-------|--------|-------------|
+| `date` | DGI/MEF | Fecha de emisión según DGI. **Convertida de hora Panamá (UTC-5) a UTC**. |
+| `process_date` | Servidor | Timestamp UTC cuando terminó el procesamiento |
+| `reception_date` | Servidor | Timestamp UTC cuando se recibió la petición |
+
+### Ejemplo de conversión (facturas DGI):
+```
+Fecha en documento DGI (Panamá):  "25/06/2025 14:30:00" (UTC-5)
+                                          ↓
+Almacenado en BD (UTC):           "2025-06-25T19:30:00Z"
+```
+
+### Recomendaciones para clientes:
+1. **Enviar timestamps** en formato ISO 8601 con zona horaria: `2025-01-14T10:30:00Z`
+2. **Convertir a hora local** en el frontend según la zona del usuario
+3. **Filtros de fecha** (like `since`) deben estar en UTC
 
 ---
 

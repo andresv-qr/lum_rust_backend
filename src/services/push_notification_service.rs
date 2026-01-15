@@ -87,6 +87,10 @@ pub struct FcmAndroidNotification {
     pub click_action: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub channel_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -299,6 +303,8 @@ impl PushNotificationService {
                         sound: "default".to_string(),
                         click_action: Some("FLUTTER_NOTIFICATION_CLICK".to_string()),
                         channel_id: Some("high_importance_channel".to_string()),
+                        icon: None,
+                        color: None,
                     }),
                 }),
                 apns: Some(FcmApnsConfig {
@@ -742,6 +748,8 @@ impl PushNotificationService {
                                         sound: "default".to_string(),
                                         click_action: Some("FLUTTER_NOTIFICATION_CLICK".to_string()),
                                         channel_id: Some("high_importance_channel".to_string()),
+                                        icon: None,
+                                        color: None,
                                     }),
                                 }),
                                 apns: Some(FcmApnsConfig {

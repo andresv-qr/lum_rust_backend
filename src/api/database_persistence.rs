@@ -1,6 +1,7 @@
 use sqlx::PgPool;
 use tracing::{info, warn, error as log_error};
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, DateTime, Utc, TimeZone};
+use chrono_tz::America::Panama;
 
 use crate::api::webscraping::{InvoiceHeader, InvoiceDetail, InvoicePayment, ScrapingResult};
 use crate::api::templates::url_processing_templates::ProcessUrlResponse;
@@ -9,21 +10,51 @@ use crate::api::templates::url_processing_templates::ProcessUrlResponse;
 // DATE UTILITIES
 // ============================================================================
 
-/// Convierte fecha en formato DD/MM/YYYY HH:MM:SS (formato latinoamericano)
-/// a formato ISO YYYY-MM-DD HH:MM:SS para PostgreSQL
-fn convert_latin_date_to_iso(date_str: &str) -> Option<String> {
+/// Convierte fecha en formato DD/MM/YYYY HH:MM:SS (hora local de Panamá)
+/// a DateTime<Utc> para almacenamiento correcto en PostgreSQL TIMESTAMPTZ.
+/// 
+/// Las facturas de DGI/MEF de Panamá vienen en hora local de Panamá (UTC-5).
+/// Esta función interpreta la fecha como hora de Panamá y la convierte a UTC.
+/// 
+/// Ejemplo: "25/06/2025 14:30:00" (Panamá) → "2025-06-25 19:30:00+00" (UTC)
+fn convert_panama_date_to_utc(date_str: &str) -> Option<DateTime<Utc>> {
     // Intentar parsear formato: DD/MM/YYYY HH:MM:SS
-    if let Ok(dt) = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S") {
-        return Some(dt.format("%Y-%m-%d %H:%M:%S").to_string());
+    if let Ok(naive_dt) = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S") {
+        // Interpretar como hora de Panamá y convertir a UTC
+        match Panama.from_local_datetime(&naive_dt) {
+            chrono::LocalResult::Single(panama_dt) => {
+                return Some(panama_dt.with_timezone(&Utc));
+            }
+            chrono::LocalResult::Ambiguous(earliest, _) => {
+                // En caso de ambigüedad (cambio de horario), usar la más temprana
+                warn!("⚠️ Ambiguous datetime for Panama: {}, using earliest", date_str);
+                return Some(earliest.with_timezone(&Utc));
+            }
+            chrono::LocalResult::None => {
+                // Hora inválida (gap por cambio de horario)
+                warn!("⚠️ Invalid datetime for Panama timezone: {}", date_str);
+            }
+        }
     }
     
-    // Intentar parsear formato: DD/MM/YYYY (sin hora)
-    if let Ok(dt) = chrono::NaiveDate::parse_from_str(date_str, "%d/%m/%Y") {
-        return Some(format!("{} 00:00:00", dt.format("%Y-%m-%d")));
+    // Intentar parsear formato: DD/MM/YYYY (sin hora) - asumir medianoche
+    if let Ok(naive_date) = chrono::NaiveDate::parse_from_str(date_str, "%d/%m/%Y") {
+        let naive_dt = naive_date.and_hms_opt(0, 0, 0)?;
+        match Panama.from_local_datetime(&naive_dt) {
+            chrono::LocalResult::Single(panama_dt) => {
+                return Some(panama_dt.with_timezone(&Utc));
+            }
+            chrono::LocalResult::Ambiguous(earliest, _) => {
+                return Some(earliest.with_timezone(&Utc));
+            }
+            chrono::LocalResult::None => {
+                warn!("⚠️ Invalid date for Panama timezone: {}", date_str);
+            }
+        }
     }
     
-    // Si ya está en formato ISO o no se puede parsear, devolver original
-    warn!("⚠️ Could not convert date format: {}", date_str);
+    // Si no se puede parsear, log y retornar None
+    warn!("⚠️ Could not parse date format: {}", date_str);
     None
 }
 
@@ -173,12 +204,13 @@ async fn save_invoice_header(
 ) -> Result<String, sqlx::Error> {
     info!("Saving invoice header with CUFE: {}", header.cufe);
     
-    // Convertir fecha de formato DD/MM/YYYY HH:MM:SS a formato ISO YYYY-MM-DD HH:MM:SS
-    let converted_date = header.date.as_ref().and_then(|d| convert_latin_date_to_iso(d));
+    // Convertir fecha de Panamá (DD/MM/YYYY HH:MM:SS) a UTC
+    // La fecha viene en hora local de Panamá y se convierte a UTC para almacenamiento correcto
+    let date_utc: Option<DateTime<Utc>> = header.date.as_ref().and_then(|d| convert_panama_date_to_utc(d));
     
     // CORRECTED: Fixed table name (singular) and all field names to match PostgreSQL schema
     // Changed return type from i32 to String (returns CUFE instead of ID)
-    // Using sqlx::query instead of sqlx::query! to allow String->TIMESTAMP conversion
+    // Now using DateTime<Utc> directly for date field (no CAST needed)
     sqlx::query(
         r#"
         INSERT INTO invoice_header (
@@ -189,13 +221,13 @@ async fn save_invoice_header(
             reception_date, time, user_id, user_email, user_phone_number,
             user_telegram_id, user_ws
         )
-        VALUES ($1, $2, CAST($3 AS TIMESTAMP), $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 
                 $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
         "#
     )
     .bind(&header.cufe)
     .bind(&header.no)
-    .bind(&converted_date) // Option<String> - Convertida de DD/MM/YYYY a YYYY-MM-DD
+    .bind(&date_utc) // Option<DateTime<Utc>> - Fecha de Panamá convertida a UTC
     .bind(&header.issuer_name)
     .bind(&header.issuer_ruc)
     .bind(&header.issuer_dv)

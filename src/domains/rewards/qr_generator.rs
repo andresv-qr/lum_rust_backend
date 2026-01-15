@@ -63,6 +63,19 @@ impl QrGenerator {
         format!("LUMS-{}-{}-{}-{}", hex1, hex2, hex3, hex4)
     }
 
+    /// Genera un código corto legible para humanos (ej: "K9P2X5")
+    pub fn generate_short_code(&self) -> String {
+        let mut rng = rand::thread_rng();
+        const CHARSET: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Excluye I, 1, O, 0
+        
+        (0..6)
+            .map(|_| {
+                let idx = rng.gen_range(0..CHARSET.len());
+                CHARSET[idx] as char
+            })
+            .collect()
+    }
+
     /// Genera QR code con logo overlay
     pub async fn generate_qr_with_logo(
         &self,

@@ -36,9 +36,12 @@ pub async fn get_reward_by_id(pool: &PgPool, redemption_id: i32) -> Result<Optio
     Ok(reward)
 }
 
+/// DEPRECATED: Use redemption_service.rs for new redemptions.
+/// This function is kept for WhatsApp bot backward compatibility.
 pub async fn redeem_reward(pool: &PgPool, user_id: i64, reward: &Reward) -> Result<()> {
     let mut tx = pool.begin().await?;
 
+    // 1. Lock balance row to prevent race conditions
     let balance_record = sqlx::query!(
         "SELECT balance::integer FROM rewards.fact_balance_points WHERE user_id = $1 FOR UPDATE",
         user_id as i32
@@ -53,17 +56,27 @@ pub async fn redeem_reward(pool: &PgPool, user_id: i64, reward: &Reward) -> Resu
         return Err(anyhow::anyhow!(format!("Saldo insuficiente. Tienes {} Lümis y necesitas {}.", current_balance, points_cost)));
     }
 
-    let new_balance = current_balance - points_cost;
-    sqlx::query!(
-        "UPDATE rewards.fact_balance_points SET balance = $1 WHERE user_id = $2",
-        new_balance as i32,
-        user_id as i32
+    // 2. LEDGER MODEL: Insert spend into fact_accumulations with NEGATIVE quantity.
+    //    The DB trigger will automatically update fact_balance_points.
+    sqlx::query(
+        r#"
+        INSERT INTO rewards.fact_accumulations (
+            user_id, accum_type, dtype, quantity, balance, date
+        )
+        SELECT
+            $1, 'spend', 'legacy_reward', -$2,
+            COALESCE(fbp.balance, 0) - $2,
+            NOW()
+        FROM rewards.fact_balance_points fbp
+        WHERE fbp.user_id = $1
+        "#,
     )
+    .bind(user_id as i32)
+    .bind(points_cost)
     .execute(&mut *tx)
     .await?;
 
-    // TODO: MIGRATED - Use new redemption system (user_redemptions table)
-    // This legacy code is kept for backward compatibility but should be migrated
+    // 3. Also record in legacy table for historical compatibility (read-only audit)
     sqlx::query!(
         r#"
         INSERT INTO rewards.fact_redemptions_legacy (user_id, redem_id, quantity, date, condition1)
@@ -428,26 +441,23 @@ pub async fn deduct_lumis_for_ocr(pool: &PgPool, user_id: i64, cost: i32) -> Res
         return Err(anyhow::anyhow!(format!("Saldo insuficiente. Tienes {} Lümis y necesitas {}.", current_balance, cost)));
     }
 
-    // 3. Update balance in fact_balance_points
-    let new_balance = current_balance - cost;
-    sqlx::query!(
-        "UPDATE rewards.fact_balance_points SET balance = $1 WHERE user_id = $2",
-        new_balance as i32,
-        user_id as i32
-    )
-    .execute(&mut *tx)
-    .await?;
-
-    // 4. Record the transaction in fact_redemptions_legacy with positive value
-    // TODO: MIGRATED - Use new redemption system
-    sqlx::query!(
+    // 3. Record the transaction in the ledger (fact_accumulations)
+    // Balance will be updated by the DB trigger on fact_accumulations.
+    sqlx::query(
         r#"
-        INSERT INTO rewards.fact_redemptions_legacy (user_id, redem_id, quantity, date, condition1)
-        VALUES ($1, 'ocr_service_cost', $2, NOW(), 'deducted')
+        INSERT INTO rewards.fact_accumulations (
+            user_id, accum_type, dtype, quantity, balance, date
+        )
+        SELECT
+            $1, 'spend', 'ocr', -$2,
+            COALESCE(fbp.balance, 0) - $2,
+            NOW()
+        FROM rewards.fact_balance_points fbp
+        WHERE fbp.user_id = $1
         "#,
-        user_id as i32,
-        cost as i32  // Positive value for the redemption record
     )
+    .bind(user_id as i32)
+    .bind(cost)
     .execute(&mut *tx)
     .await?;
 
@@ -466,28 +476,25 @@ pub async fn refund_lumis_for_ocr(pool: &PgPool, user_id: i64, cost: i32) -> Res
     .fetch_optional(&mut *tx)
     .await?;
 
-    let current_balance = balance_record.map_or(0, |r| r.balance.unwrap_or(0));
+    let _current_balance = balance_record.map_or(0, |r| r.balance.unwrap_or(0));
 
-    // 2. Update balance in fact_balance_points (add the refund)
-    let new_balance = current_balance + cost;
-    sqlx::query!(
-        "UPDATE rewards.fact_balance_points SET balance = $1 WHERE user_id = $2",
-        new_balance as i32,
-        user_id as i32
-    )
-    .execute(&mut *tx)
-    .await?;
-
-    // 3. Record the refund transaction in fact_redemptions_legacy
-    // TODO: MIGRATED - Use new redemption system
-    sqlx::query!(
+    // 2. Record the refund in the ledger (fact_accumulations)
+    // Balance will be updated by the DB trigger on fact_accumulations.
+    sqlx::query(
         r#"
-        INSERT INTO rewards.fact_redemptions_legacy (user_id, redem_id, quantity, date, condition1)
-        VALUES ($1, 'ocr_service_refund', $2, NOW(), 'refunded')
+        INSERT INTO rewards.fact_accumulations (
+            user_id, accum_type, dtype, quantity, balance, date
+        )
+        SELECT
+            $1, 'earn', 'ocr_refund', $2,
+            COALESCE(fbp.balance, 0) + $2,
+            NOW()
+        FROM rewards.fact_balance_points fbp
+        WHERE fbp.user_id = $1
         "#,
-        user_id as i32,
-        cost as i32  // Positive value for the refund record
     )
+    .bind(user_id as i32)
+    .bind(cost)
     .execute(&mut *tx)
     .await?;
 

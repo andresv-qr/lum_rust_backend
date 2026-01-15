@@ -1,11 +1,29 @@
 # Análisis de Schema de Base de Datos - `/invoices/process-from-url`
 
-**Fecha:** 2024-10-01  
+**Fecha:** 2026-01-14 (Actualizado)  
 **Endpoint:** `POST /api/v4/invoices/process-from-url`
 
 ---
 
-## 🚨 PROBLEMA CRÍTICO IDENTIFICADO
+## ⏰ ACTUALIZACIÓN: Timestamps UTC (Enero 2026)
+
+> **Todos los campos de timestamp ahora usan `TIMESTAMP WITH TIME ZONE` (TIMESTAMPTZ) y se almacenan en UTC.**
+
+### Campos actualizados:
+| Campo | Tipo Anterior | Tipo Actual |
+|-------|---------------|-------------|
+| `date` | `timestamp without time zone` | `TIMESTAMPTZ` |
+| `process_date` | `timestamp with time zone` | `TIMESTAMPTZ` |
+| `reception_date` | `timestamp with time zone` | `TIMESTAMPTZ` |
+| `update_date` | `timestamp without time zone` | `TIMESTAMPTZ` |
+
+### Conversión de fechas DGI:
+Las fechas extraídas de DGI (formato `DD/MM/YYYY HH:MM:SS` hora Panamá) ahora se **convierten a UTC** antes de almacenar:
+- `25/06/2025 14:30:00` (Panamá UTC-5) → `2025-06-25T19:30:00Z` (UTC)
+
+---
+
+## 🚨 PROBLEMA CRÍTICO IDENTIFICADO (Resuelto)
 
 ### **La implementación actual NO coincide con el schema real de la base de datos**
 

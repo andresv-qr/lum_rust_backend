@@ -319,7 +319,7 @@ pub mod jwt_security {
             Self {
                 sub: user_id.to_string(),
                 email,
-                exp: (now + Duration::hours(24)).timestamp(),
+                exp: (now + Duration::days(90)).timestamp(), // 90 days expiration
                 iat: now.timestamp(),
                 jti: uuid::Uuid::new_v4().to_string(),
                 role,

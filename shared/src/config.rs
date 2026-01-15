@@ -91,9 +91,9 @@ impl Config {
             auth: AuthConfig {
                 jwt_secret: env::var("JWT_SECRET")
                     .unwrap_or_else(|_| "your-super-secret-jwt-key-here".to_string()),
-                // Default access token TTL: 15 minutes (900 seconds)
+                // Default access token TTL: 90 days (7776000 seconds)
                 access_token_ttl_seconds: env::var("JWT_ACCESS_TOKEN_TTL_SECONDS")
-                    .unwrap_or_else(|_| "900".to_string())
+                    .unwrap_or_else(|_| "7776000".to_string())
                     .parse()?,
                 // Default refresh token TTL: 45 days (in seconds) => 45 * 24 * 3600 = 3_888_000
                 refresh_token_ttl_seconds: env::var("JWT_REFRESH_TOKEN_TTL_SECONDS")

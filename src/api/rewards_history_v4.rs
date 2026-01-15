@@ -21,13 +21,21 @@ use crate::{
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RewardsHistoryItem {
-    pub source_type: String,
     pub user_id: i32,
-    pub name_friendly: Option<String>,
-    pub description_friendly: Option<String>,
-    pub quantity: Option<sqlx::types::Decimal>, // Changed to Decimal to match NUMERIC
-    pub date: Option<DateTime<Utc>>, // Changed to DateTime<Utc> to match TIMESTAMPTZ
-    pub img: Option<String>,
+    pub accum_type: Option<String>,           // 'accumulation' or 'redemption'
+    pub dtype: Option<String>,                // Detail type
+    pub quantity: Option<sqlx::types::Decimal>,
+    pub balance: Option<i64>,
+    pub date: Option<DateTime<Utc>>,
+    pub accumulation_name: Option<String>,
+    pub accumulation_points: Option<i32>,
+    pub offer_name: Option<String>,
+    pub redemption_cost: Option<i32>,
+    pub merchant_name: Option<String>,
+    pub redemption_id: Option<Uuid>,
+    pub redemption_code: Option<String>,
+    pub redemption_status: Option<String>,
+    pub validated_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,24 +101,32 @@ pub async fn get_rewards_history(
         where_conditions.push(format!("date <= ${}", param_count));
     }
 
-    // Filtro por tipo de fuente
+    // Filtro por tipo de fuente (accum_type en lugar de source_type)
     if params.source_type_filter.is_some() {
         param_count += 1;
-        where_conditions.push(format!("source_type ILIKE ${}", param_count));
+        where_conditions.push(format!("accum_type ILIKE ${}", param_count));
     }
 
     let where_clause = where_conditions.join(" AND ");
 
-    // Query principal para obtener los items
+    // Query principal para obtener los items (columnas reales de la vista)
     let items_query = format!(r#"
         SELECT 
-            'Acumulación' as source_type,
             user_id,
-            name_friendly,
-            description_friendly,
+            accum_type,
+            dtype,
             quantity,
+            balance,
             date,
-            img
+            accumulation_name,
+            accumulation_points,
+            offer_name,
+            redemption_cost,
+            merchant_name,
+            redemption_id,
+            redemption_code,
+            redemption_status,
+            validated_at
         FROM rewards.vw_hist_accum_redem
         WHERE {}
         ORDER BY date DESC, user_id DESC
@@ -124,12 +140,12 @@ pub async fn get_rewards_history(
         WHERE {}
     "#, where_clause);
 
-    // Query para estadísticas de resumen
+    // Query para estadísticas de resumen (usando accum_type en lugar de source_type)
     let summary_query = format!(r#"
         SELECT 
             COUNT(*) as total_items,
-            COUNT(CASE WHEN source_type = 'Acumulación' THEN 1 END) as total_acumulaciones,
-            COUNT(CASE WHEN source_type = 'Redención' THEN 1 END) as total_redenciones,
+            COUNT(CASE WHEN accum_type = 'accumulation' THEN 1 END) as total_acumulaciones,
+            COUNT(CASE WHEN accum_type = 'redemption' THEN 1 END) as total_redenciones,
             COALESCE(SUM(quantity), 0) as sum_quantity
         FROM rewards.vw_hist_accum_redem
         WHERE {}

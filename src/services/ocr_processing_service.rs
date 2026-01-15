@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tracing::info;
 use uuid::Uuid;
 use rust_decimal::Decimal;
+use chrono::TimeZone;
 
 use crate::{
     models::ocr::*,
@@ -47,16 +48,18 @@ impl OcrProcessingService {
         state: &Arc<AppState>,
         data: &InvoiceData,
     ) -> Result<bool> {
-        // Parse date string to NaiveDateTime for database query
-        let parsed_date = data.date
+        // Parse date string to DateTime<Utc> for database query
+        let parsed_date: Option<chrono::DateTime<chrono::Utc>> = data.date
             .as_ref()
             .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
             .and_then(|d| d.and_hms_opt(0, 0, 0))
+            .map(|naive_dt| chrono::Utc.from_utc_datetime(&naive_dt))
             .or_else(|| {
                 // Try different date formats
                 data.date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDateTime::parse_from_str(d, "%Y-%m-%d %H:%M:%S").ok())
+                    .map(|naive_dt| chrono::Utc.from_utc_datetime(&naive_dt))
             });
 
         let existing = sqlx::query!(
@@ -100,16 +103,18 @@ impl OcrProcessingService {
 
     /// Verificar si la factura ya existe (por RIF + número + fecha)
     pub async fn check_duplicate_invoice(state: &Arc<AppState>, data: &InvoiceData) -> Result<Option<String>> {
-        // Parse date string to NaiveDateTime for database query
+        // Parse date string to DateTime<Utc> for database query
         let parsed_date = data.date
             .as_ref()
             .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
             .and_then(|d| d.and_hms_opt(0, 0, 0))
+            .map(|naive_dt| chrono::Utc.from_utc_datetime(&naive_dt))
             .or_else(|| {
                 // Try different date formats
                 data.date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDateTime::parse_from_str(d, "%Y-%m-%d %H:%M:%S").ok())
+                    .map(|naive_dt| chrono::Utc.from_utc_datetime(&naive_dt))
             });
 
         let query_result = sqlx::query!(
@@ -157,13 +162,15 @@ impl OcrProcessingService {
             .as_ref()
             .and_then(|d| chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
             .and_then(|d| d.and_hms_opt(0, 0, 0))
+            .map(|naive_dt| chrono::Utc.from_utc_datetime(&naive_dt))
             .or_else(|| {
                 // Try different date formats
                 data.date
                     .as_ref()
                     .and_then(|d| chrono::NaiveDateTime::parse_from_str(d, "%Y-%m-%d %H:%M:%S").ok())
+                    .map(|naive_dt| chrono::Utc.from_utc_datetime(&naive_dt))
             })
-            .unwrap_or_else(|| chrono::Utc::now().naive_utc());
+            .unwrap_or_else(chrono::Utc::now);
 
         // 2. Insert header
         let _cufe_result = sqlx::query!(
@@ -218,7 +225,7 @@ impl OcrProcessingService {
             Decimal::from_f64_retain(0.05).unwrap_or_default(), // placeholder cost
             true,
             500, // placeholder processing time
-            chrono::Utc::now().naive_utc()
+            chrono::Utc::now()
         )
         .execute(&mut *tx)
         .await
@@ -251,7 +258,7 @@ impl OcrProcessingService {
             Decimal::from_f64_retain(cost_usd).unwrap_or_default(),
             success,
             500, // placeholder processing time
-            chrono::Utc::now().naive_utc()
+            chrono::Utc::now()
         )
         .execute(&state.db_pool)
         .await

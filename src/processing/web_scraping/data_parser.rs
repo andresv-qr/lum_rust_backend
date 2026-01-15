@@ -1,9 +1,26 @@
 use crate::models::invoice::{InvoiceHeader, InvoiceDetail, InvoicePayment};
 use anyhow::{Context, Result};
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, DateTime, Utc, TimeZone};
+use chrono_tz::America::Panama;
 
 fn to_f64(value: &str) -> Option<f64> {
     value.replace(',', "").trim().parse().ok()
+}
+
+/// Convierte fecha de Panamá (DD/MM/YYYY HH:MM:SS) a DateTime<Utc>
+/// Las facturas de DGI/MEF vienen en hora local de Panamá (UTC-5)
+fn parse_panama_datetime(date_str: &str) -> Result<DateTime<Utc>> {
+    let naive_dt = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S")
+        .context(format!("Invalid date format: '{}'. Expected format: DD/MM/YYYY HH:MM:SS", date_str))?;
+    
+    // Interpret as Panama timezone and convert to UTC
+    match Panama.from_local_datetime(&naive_dt) {
+        chrono::LocalResult::Single(panama_dt) => Ok(panama_dt.with_timezone(&Utc)),
+        chrono::LocalResult::Ambiguous(earliest, _) => Ok(earliest.with_timezone(&Utc)),
+        chrono::LocalResult::None => {
+            anyhow::bail!("Invalid datetime for Panama timezone: {}", date_str)
+        }
+    }
 }
 
 pub fn parse_invoice_data(
@@ -33,8 +50,8 @@ pub fn parse_invoice_data(
         .filter(|s| !s.is_empty())
         .context("Invoice date not found or empty")?;
     
-    let date = NaiveDateTime::parse_from_str(date_str, "%d/%m/%Y %H:%M:%S")
-        .context(format!("Invalid date format: '{}'. Expected format: DD/MM/YYYY HH:MM:SS", date_str))?;
+    // Convertir fecha de Panamá a UTC (DGI usa hora local de Panamá, UTC-5)
+    let date = parse_panama_datetime(date_str)?;
 
     // ✅ VALIDACIÓN ESTRICTA: Nombre del emisor es obligatorio y no puede estar vacío
     let issuer_name = main_info

@@ -15,8 +15,8 @@ use crate::state::AppState;
 #[derive(Debug, serde::Serialize)]
 pub struct VersionResponse {
     pub dataset_version: i64,
-    pub last_modified: Option<chrono::NaiveDateTime>,
-    pub server_timestamp: chrono::NaiveDateTime,
+    pub last_modified: Option<chrono::DateTime<chrono::Utc>>,
+    pub server_timestamp: chrono::DateTime<chrono::Utc>,
     pub total_records: i64,
 }
 
@@ -35,7 +35,7 @@ pub async fn get_resource_version(
 ) -> Result<Json<ApiResponse<VersionResponse>>, StatusCode> {
     let start_time = std::time::Instant::now();
     let request_id = Uuid::new_v4().to_string();
-    let server_timestamp = chrono::Utc::now().naive_utc();
+    let server_timestamp = chrono::Utc::now();
     
     info!("📊 Fetching version for resource: {} [{}]", resource, request_id);
 
@@ -60,7 +60,7 @@ pub async fn get_resource_version(
         })?;
 
     // Get last_modified from dataset_versions table
-    let last_modified: Option<chrono::NaiveDateTime> = sqlx::query_scalar(
+    let last_modified: Option<chrono::DateTime<chrono::Utc>> = sqlx::query_scalar(
         "SELECT last_modified FROM dataset_versions WHERE table_name = $1"
     )
     .bind(table_name)

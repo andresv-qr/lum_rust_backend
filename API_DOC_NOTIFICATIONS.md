@@ -2,8 +2,8 @@
 
 ## Documento para Equipo Backend
 
-**Fecha:** 1 de Diciembre, 2025  
-**Versión:** 2.2 (Revisada - Correcciones Críticas)  
+**Fecha:** 14 de Enero, 2026  
+**Versión:** 2.3 (Actualizada - Timestamps UTC)  
 **App:** Lüm (Flutter)  
 **API Version:** v4  
 **Base URL:** `https://webh.lumapp.org/api/v4`
@@ -19,13 +19,30 @@ El frontend de Lüm necesita un sistema de notificaciones que permita:
 4. Registrar tokens de dispositivos para push
 5. Obtener contador de no leídas (para badge UI)
 
-### 1.1 Cambios en v2.0
+### 1.1 Cambios en v2.3
+- ✅ **Todos los timestamps ahora en UTC** (TIMESTAMPTZ en PostgreSQL)
+- ✅ Formato de respuesta: ISO 8601 con sufijo `Z` (ej: `2025-01-14T15:30:00Z`)
+- ✅ El cliente debe convertir a hora local de Panamá (UTC-5) para mostrar
+
+### 1.2 Cambios en v2.0
 - ✅ Corregido `user_id` de `UUID` a `BIGINT` (consistente con `dim_users.id`)
 - ✅ Agregado endpoint `GET /notifications/count` para badge
 - ✅ Agregado índice de deduplicación para evitar notificaciones duplicadas
 - ✅ Agregado trigger para manejo seguro de tokens FCM en cambio de cuenta
 - ✅ Documentado rate limiting con Redis
 - ✅ Agregado manejo de race conditions
+
+---
+
+## ⏰ Timestamps y Zonas Horarias
+
+> **IMPORTANTE:** Todos los timestamps en la API están en **UTC**.
+
+| Campo | Tipo BD | Formato Respuesta |
+|-------|---------|-------------------|
+| `created_at` | TIMESTAMPTZ | `2025-01-14T15:30:00Z` |
+| `read_at` | TIMESTAMPTZ | `2025-01-14T15:35:00Z` |
+| `expires_at` | TIMESTAMPTZ | `2025-01-21T15:30:00Z` |
 
 ---
 

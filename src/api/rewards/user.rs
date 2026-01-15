@@ -17,6 +17,7 @@ use uuid::Uuid;
 use crate::{
     domains::rewards::models::{
         UserRedemptionItem, UserRedemptionStats, RedemptionError,
+        MyOffersFilters, MyOfferItem,
         // CancellationResponse, // Unused - CancelResponse defined locally
     },
     middleware::auth::CurrentUser,
@@ -82,11 +83,16 @@ pub async fn list_user_redemptions(
 ) -> Result<Json<RedemptionsResponse>, ApiError> {
     let user_id = current_user.user_id as i32;
     
+    // Validate and cap limit to max 100
+    let limit = std::cmp::min(query.limit.unwrap_or(50), 100);
+    let offset = query.offset.unwrap_or(0);
+    
     info!(
-        "Listing redemptions for user_id={} status={:?} limit={}",
+        "Listing redemptions for user_id={} status={:?} limit={} offset={}",
         user_id,
         query.status,
-        query.limit.unwrap_or(50)
+        limit,
+        offset
     );
     
     // Get redemptions
@@ -94,8 +100,8 @@ pub async fn list_user_redemptions(
         .get_user_redemptions(
             user_id,
             query.status.clone(),
-            query.limit.unwrap_or(50),
-            query.offset.unwrap_or(0),
+            limit,
+            offset,
         )
         .await
         .map_err(|e| {
@@ -303,6 +309,80 @@ pub async fn get_user_stats(
         cancelled_redemptions: redemption_stats.cancelled as i32,
         total_lumis_spent: redemption_stats.total_lumis_spent as i32,
     }))
+}
+
+/// List user's offers with enriched status information
+/// 
+/// # Endpoint
+/// GET /api/v1/rewards/my-offers?status=active|redeemed|expired|all
+/// 
+/// # Authentication
+/// Requires valid JWT token
+/// 
+/// # Query Parameters
+/// - status: Filter by offer status for user (active, redeemed, expired, all)
+/// - category: Filter by offer category (optional)
+/// - limit: Max results (default: 50, max: 100)
+/// - offset: Pagination offset (default: 0)
+/// 
+/// # Returns
+/// - 200 OK: List of offers with user-specific status and redemption summary
+pub async fn list_my_offers(
+    State(state): State<Arc<AppState>>,
+    Extension(current_user): Extension<CurrentUser>,
+    Query(filters): Query<MyOffersFilters>,
+) -> Result<Json<MyOffersResponse>, ApiError> {
+    let user_id = current_user.user_id as i32;
+    
+    info!(
+        "Listing my-offers for user_id={} with status={:?}",
+        user_id, filters.status
+    );
+    
+    let offers = state.offer_service
+        .get_user_offers(user_id, filters)
+        .await
+        .map_err(|e| {
+            error!("Failed to list my-offers: {:?}", e);
+            ApiError::from(e)
+        })?;
+    
+    let total_count = offers.len();
+    
+    // Calculate summary stats
+    let active_count = offers.iter().filter(|o| o.status == "active").count();
+    let redeemed_count = offers.iter().filter(|o| o.status == "redeemed").count();
+    let expired_count = offers.iter().filter(|o| o.status == "expired").count();
+    
+    info!("Successfully retrieved {} offers for user_id={}", total_count, user_id);
+    
+    Ok(Json(MyOffersResponse {
+        success: true,
+        offers,
+        total_count,
+        summary: MyOffersSummary {
+            active: active_count,
+            redeemed: redeemed_count,
+            expired: expired_count,
+        },
+    }))
+}
+
+/// Response for my-offers endpoint
+#[derive(Debug, Serialize)]
+pub struct MyOffersResponse {
+    pub success: bool,
+    pub offers: Vec<MyOfferItem>,
+    pub total_count: usize,
+    pub summary: MyOffersSummary,
+}
+
+/// Summary of offers by status
+#[derive(Debug, Serialize)]
+pub struct MyOffersSummary {
+    pub active: usize,
+    pub redeemed: usize,
+    pub expired: usize,
 }
 
 /// Response for user statistics

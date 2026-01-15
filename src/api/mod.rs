@@ -58,12 +58,15 @@ pub mod user_issuers_v4; // Nuevo módulo para obtener issuers de un usuario
 pub mod user_products_v4; // Nuevo módulo para obtener productos de un usuario
 pub mod user_invoice_headers_v4; // Nuevo módulo para obtener headers de facturas de un usuario
 pub mod user_invoice_details_v4; // Nuevo módulo para obtener detalles de facturas de un usuario
+pub mod sync_status_v4; // Nuevo módulo para estado de sincronización
 pub mod integrity_summary_v4; // Nuevo módulo para validación de integridad diaria
 // pub mod invoices_version_v4; // DEPRECATED - dataset_version system removed
 pub mod unified_password; // Nuevo módulo para gestión unificada de contraseñas
 pub mod ofertasws_v4; // Nuevo módulo para ofertas WS con cache Redis
 pub mod notifications_v4; // Sistema de notificaciones in-app y push
 pub mod admin_v4; // Admin endpoints - DGI captcha configuration
+pub mod ask_ai_v4; // AI endpoint for natural language queries
+pub mod interpret_results_v4; // AI interpretation of query results
 
 // NEW: Invoice processing module
 pub mod invoice_processor; // New robust invoice processing API
@@ -96,8 +99,10 @@ fn create_invoices_v4_router() -> Router<Arc<AppState>> {
         .merge(user_invoice_headers_v4::create_user_invoice_headers_v4_router())
         .merge(user_invoice_details_v4::create_user_invoice_details_v4_router())
         .merge(integrity_summary_v4::create_integrity_summary_v4_router())
+        // Sync status MUST be merged before invoices_v4 which has /:id route
+        .merge(sync_status_v4::create_sync_status_v4_router())
         // .merge(invoices_version_v4::create_version_v4_router())  // DEPRECATED
-        // IMPORTANTE: Incluir el router de invoices que contiene upload-ocr
+        // IMPORTANTE: invoices_v4 tiene /:id que captura rutas genéricas, debe ir AL FINAL
         .merge(invoices_v4::create_invoices_v4_router())
         // Solo middlewares que NO requieren estado
         .layer(from_fn(validate_upload_middleware))
@@ -157,6 +162,9 @@ fn create_protected_v4_router() -> Router<Arc<AppState>> {
         .route("/api/v4/ofertasws/refresh", post(ofertasws_v4::refresh_ofertasws_cache))
         // Admin endpoints - DGI configuration
         .nest("/api/v4/admin", admin_v4::router())
+        // AI endpoints
+        .route("/api/v4/ask-ai", post(ask_ai_v4::ask_ai_data))
+        .route("/api/v4/interpret-results", post(interpret_results_v4::interpret_results))
         .layer(from_fn(extract_current_user))
 }
 
